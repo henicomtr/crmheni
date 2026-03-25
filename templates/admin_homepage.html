@@ -1,0 +1,857 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+/* ── wrapper ── */
+.hp-edit-wrap { max-width: 900px; }
+
+/* ── header ── */
+.hp-edit-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+}
+.hp-edit-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+
+/* ── lang bar ── */
+.lang-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+.lang-tab {
+    padding: 6px 14px; border-radius: 8px; font-size: .82rem; font-weight: 600;
+    text-decoration: none; color: #374151; background: #f3f4f6; border: 1px solid transparent;
+    transition: all .2s;
+}
+.lang-tab:hover { background: #e5e7eb; }
+.lang-tab.active { background: #111; color: #fff; border-color: #111; }
+
+/* ── section tabs ── */
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; flex-wrap: wrap; }
+.tab-btn {
+    padding: 10px 18px; font-size: .86rem; font-weight: 600; color: #6b7280;
+    text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: color .2s, border-color .2s; white-space: nowrap;
+}
+.tab-btn:hover { color: #111; }
+.tab-btn.active { color: #111; border-bottom-color: #111; }
+
+/* ── form elements ── */
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.form-hint  { font-size: .76rem; color: #9ca3af; margin-top: 4px; }
+.form-input, .form-textarea {
+    width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: .92rem; color: #111; outline: none; box-sizing: border-box; transition: border-color .2s;
+}
+.form-input:focus, .form-textarea:focus { border-color: #111; }
+.form-textarea { min-height: 100px; resize: vertical; font-family: inherit; }
+
+/* ── grid pairs ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 60px 1fr 1fr; gap: 12px; }
+
+/* ── repeater card ── */
+.repeater-card {
+    border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px;
+    background: #f9fafb;
+}
+.repeater-card-head { font-size: .82rem; font-weight: 700; color: #6b7280; margin-bottom: 14px; letter-spacing: .05em; text-transform: uppercase; }
+
+/* ── image preview ── */
+.img-preview-wrap { position: relative; }
+.img-preview {
+    width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px;
+    border: 1px solid #e5e7eb; display: none; margin-top: 8px;
+}
+.img-preview.show { display: block; }
+
+/* ── görsel: link + PC'den yükle ── */
+.img-url-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.img-url-row .form-input { flex: 1; min-width: 200px; }
+.btn-upload {
+    padding: 8px 16px; background: #1e40af; color: #fff; border: none;
+    border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: opacity .2s;
+}
+.btn-upload:hover { opacity: .9; }
+.btn-upload:disabled { opacity: .6; cursor: wait; }
+.hp-img-file { display: none; }
+
+/* ── paylaşılan görsel sync butonu ── */
+.btn-sync-img {
+    padding: 8px 14px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+    border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-sync-img:hover { background: #dcfce7; border-color: #86efac; }
+.btn-sync-img:disabled { opacity: .5; cursor: wait; }
+.shared-img-hint {
+    font-size: .76rem; color: #6b7280; margin-top: 4px;
+    display: flex; align-items: center; gap: 5px;
+}
+.shared-img-hint.is-fallback { color: #d97706; }
+.shared-img-fallback-preview {
+    width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px;
+    border: 1px dashed #d97706; display: none; margin-top: 8px; background: #fffbeb;
+}
+
+/* ── save bar ── */
+.save-bar {
+    position: sticky; bottom: 0; background: #fff;
+    border-top: 1px solid #e5e7eb; padding: 14px 0;
+    display: flex; align-items: center; gap: 12px; z-index: 10; margin-top: 32px;
+}
+.btn-save {
+    padding: 10px 28px; background: #111; color: #fff; border: none;
+    border-radius: 8px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: opacity .2s;
+}
+.btn-save:hover { opacity: .8; }
+.btn-preview {
+    padding: 10px 20px; background: #f3f4f6; color: #374151; text-decoration: none;
+    border-radius: 8px; font-size: .9rem; font-weight: 600; transition: background .2s;
+}
+.btn-preview:hover { background: #e5e7eb; }
+
+/* ── tip box ── */
+.tip-box {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+    padding: 12px 16px; font-size: .83rem; color: #1e40af; margin-bottom: 20px;
+}
+</style>
+
+<div class="hp-edit-wrap">
+
+    <!-- Header -->
+    <div class="hp-edit-header">
+        <div>
+            <h1>Anasayfa Düzenleyici</h1>
+            <p style="color:#6b7280;font-size:.88rem;margin-top:4px;">
+                Sekmeler, anasayfada (homepage) görünen bölümlere karşılık gelir. Dili yukarıdan seçin.
+            </p>
+        </div>
+        <a href="/" target="_blank" class="btn-preview">🔗 Anasayfayı Görüntüle</a>
+    </div>
+
+    <!-- Dil seçici -->
+    <div class="lang-bar">
+        {% for lc in supported_langs %}
+        <a href="/admin/homepage?lang={{ lc }}&tab={{ tab }}"
+           class="lang-tab {% if lc == lang %}active{% endif %}">
+            {{ lang_labels[lc] }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Bölüm sekmeleri — homepage.html şablonundaki sıra ve isimler -->
+    <div class="tab-nav">
+        <a href="?lang={{ lang }}&tab=hero"          class="tab-btn {% if tab=='hero'          %}active{% endif %}">🖼 Hero</a>
+        <a href="?lang={{ lang }}&tab=services"     class="tab-btn {% if tab=='services'     %}active{% endif %}">🏭 Üretim Alanları</a>
+        <a href="?lang={{ lang }}&tab=raw_materials" class="tab-btn {% if tab=='raw_materials' %}active{% endif %}">🧪 Ham Madde</a>
+        <a href="?lang={{ lang }}&tab=private_label" class="tab-btn {% if tab=='private_label' %}active{% endif %}">🏷 Private Label</a>
+        <a href="?lang={{ lang }}&tab=export"       class="tab-btn {% if tab=='export'       %}active{% endif %}">🌍 Export</a>
+        <a href="?lang={{ lang }}&tab=certification" class="tab-btn {% if tab=='certification' %}active{% endif %}">✓ Sertifikasyon</a>
+        <a href="?lang={{ lang }}&tab=nav"          class="tab-btn {% if tab=='nav'          %}active{% endif %}">🗂 Menü & CTA</a>
+        <a href="?lang={{ lang }}&tab=cta"          class="tab-btn {% if tab=='cta'          %}active{% endif %}">📣 CTA Bölümü</a>
+        <a href="?lang={{ lang }}&tab=seo"          class="tab-btn {% if tab=='seo'          %}active{% endif %}">🔍 SEO</a>
+    </div>
+
+    <form method="POST" action="/admin/homepage/save">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="tab"  value="{{ tab }}">
+
+        <!-- ══════════ HERO — Anasayfanın en üst bölümü ══════════ -->
+        {% if tab == 'hero' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfanın en üstündeki büyük alan: başlık, alt metin, 2 buton ve arka plan görseli.</p>
+        <div class="tip-box">
+            💡 <strong>HTML kullanabilirsiniz.</strong> Vurgu için: <code>&lt;span&gt;kelime&lt;/span&gt;</code>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Hero Başlığı (H1)</label>
+            <textarea name="hero_title" class="form-textarea" style="min-height:80px;"
+                      placeholder="Türkiye'nin &lt;span&gt;Öncü&lt;/span&gt; Kimya Üreticisi">{{ data.get('hero_title','') }}</textarea>
+            <p class="form-hint">HTML desteklenir. &lt;span&gt;kelime&lt;/span&gt; → altın renk</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Alt Başlık (subtitle)</label>
+            <textarea name="hero_subtitle" class="form-textarea" style="min-height:70px;"
+                      placeholder="Kozmetik, deterjan ve kimyasal ürünlerde güvenilir üretim ortağınız.">{{ data.get('hero_subtitle','') }}</textarea>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Birinci Buton Metni</label>
+                <input type="text" name="hero_btn1_text" class="form-input"
+                       value="{{ data.get('hero_btn1_text','') }}" placeholder="Ürünlerimiz">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Birinci Buton URL</label>
+                <input type="text" name="hero_btn1_url" class="form-input"
+                       value="{{ data.get('hero_btn1_url','') }}" placeholder="#hizmetler">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">İkinci Buton Metni</label>
+                <input type="text" name="hero_btn2_text" class="form-input"
+                       value="{{ data.get('hero_btn2_text','') }}" placeholder="Teklif Al">
+            </div>
+            <div class="form-group">
+                <label class="form-label">İkinci Buton URL</label>
+                <input type="text" name="hero_btn2_url" class="form-input"
+                       value="{{ data.get('hero_btn2_url','') }}" placeholder="#teklif">
+            </div>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Hero Arka Plan Görseli URL</label>
+            <div class="img-url-row">
+                <input type="text" name="hero_image_url" id="heroImgUrl" class="form-input"
+                       value="{{ data.get('hero_image_url','') }}"
+                       placeholder="Link yapıştırın veya Yükle ile PC'den ekleyin">
+                <input type="file" accept="image/*" class="hp-img-file" id="heroImgFile" data-target="heroImgUrl" data-preview="heroImgPreview">
+                <button type="button" class="btn-upload" data-for="heroImgFile">Yükle</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img"
+                        data-field="hero_image_url" data-src-lang="{{ lang }}">
+                    🌐 Tüm dillere uygula
+                </button>
+                {% endif %}
+            </div>
+            {% if lang != 'tr' and not data.get('hero_image_url') and shared_images.get('hero_image_url') %}
+            <p class="shared-img-hint is-fallback">
+                ⚠️ Bu dile ait görsel yok — <strong>tr</strong> dili görseli gösteriliyor. Yükleyerek dil bazlı özelleştirebilir ya da "Tüm dillere uygula" ile mevcut görseli diğer dillere kopyalayabilirsiniz.
+            </p>
+            <img src="{{ shared_images.get('hero_image_url','') }}"
+                 class="shared-img-fallback-preview" style="display:block;">
+            {% elif lang == 'tr' and data.get('hero_image_url') %}
+            <p class="shared-img-hint">
+                ℹ️ Bu görsel, görsel yüklenmemiş diğer dillerde otomatik olarak kullanılır.
+                <button type="button" class="btn-sync-img" style="margin-left:4px;"
+                        data-field="hero_image_url" data-src-lang="tr">
+                    🌐 Tüm dillere uygula
+                </button>
+            </p>
+            {% endif %}
+            <p class="form-hint">Link girebilir veya «Yükle» ile bilgisayardan görsel seçin (static/upload/images klasörüne kaydedilir).</p>
+            <img id="heroImgPreview"
+                 src="{{ data.get('hero_image_url','') or shared_images.get('hero_image_url','') }}"
+                 class="img-preview {% if data.get('hero_image_url') or shared_images.get('hero_image_url') %}show{% endif %}">
+        </div>
+
+        <!-- ══════════ ÜRETİM ALANLARI (homepage: "Our Production Areas" kartları) ══════════ -->
+        {% elif tab == 'services' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfadaki <strong>Üretim Alanları / Our Production Areas</strong> bölümü — başlık, alt açıklama ve en fazla 4 kart.</p>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="services_title" class="form-input"
+                   value="{{ data.get('services_title','') }}" placeholder="Our Production Areas">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Başlığın Altındaki Açıklama</label>
+            <input type="text" name="services_subtitle" class="form-input"
+                   value="{{ data.get('services_subtitle','') }}"
+                   placeholder="Comprehensive manufacturing solutions across three industrial sectors">
+            <p class="form-hint">Bu metin başlığın hemen altında görünür (örn. Üretim Hizmetlerimiz altındaki açıklama).</p>
+        </div>
+        {% set default_svcs = [
+            {"title":"Kozmetik Üretimi","image":"https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=60","url":""},
+            {"title":"Deterjan Üretimi","image":"https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=600&q=60","url":""},
+            {"title":"Parfüm Üretimi","image":"https://images.unsplash.com/photo-1599946347371-68eb71b16afc?w=600&q=60","url":""},
+            {"title":"Hammadde Tedarik","image":"https://images.unsplash.com/photo-1574669056338-b9b5e0b62db7?w=600&q=60","url":""}
+        ] %}
+        {% set svcs = data.get('services', default_svcs) %}
+        {% for i in range(1, 5) %}
+        {% set s = svcs[loop.index0] if loop.index0 < svcs|length else {} %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">KART {{ i }}</div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="svc{{ i }}_title" class="form-input"
+                       value="{{ s.get('title','') }}" placeholder="Kozmetik Üretimi">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kısa Açıklama</label>
+                <textarea name="svc{{ i }}_short_description" class="form-textarea" style="min-height:64px;"
+                          placeholder="Kozmetik üretiminde çözüm ve kapsam…">{{ s.get('short_description','') }}</textarea>
+            </div>
+            <div class="form-group img-preview-wrap">
+                <label class="form-label">Görsel URL</label>
+                {% set _svc_fallback = shared_images.get('svc' ~ i ~ '_image', '') %}
+                <div class="img-url-row">
+                    <input type="text" name="svc{{ i }}_image" class="form-input svc-img-inp" id="svc{{ i }}ImgUrl"
+                           data-preview="svcPrev{{ i }}"
+                           value="{{ s.get('image','') }}" placeholder="Link veya Yükle ile ekleyin">
+                    <input type="file" accept="image/*" class="hp-img-file" id="svc{{ i }}ImgFile" data-target="svc{{ i }}ImgUrl" data-preview="svcPrev{{ i }}">
+                    <button type="button" class="btn-upload" data-for="svc{{ i }}ImgFile">Yükle</button>
+                    {% if lang != 'tr' %}
+                    <button type="button" class="btn-sync-img"
+                            data-field="svc{{ i }}_image" data-src-lang="{{ lang }}">
+                        🌐 Tüm dillere uygula
+                    </button>
+                    {% endif %}
+                </div>
+                {% if lang != 'tr' and not s.get('image') and _svc_fallback %}
+                <p class="shared-img-hint is-fallback">⚠️ Bu dile ait görsel yok — <strong>tr</strong> görseli kullanılıyor.</p>
+                {% elif lang == 'tr' and s.get('image') %}
+                <p class="shared-img-hint">
+                    ℹ️ Bu görsel yüklenmemiş dillerde otomatik kullanılır.
+                    <button type="button" class="btn-sync-img" style="margin-left:4px;"
+                            data-field="svc{{ i }}_image" data-src-lang="tr">
+                        🌐 Tüm dillere uygula
+                    </button>
+                </p>
+                {% endif %}
+                <img id="svcPrev{{ i }}" src="{{ s.get('image','') or _svc_fallback }}"
+                     class="img-preview {% if s.get('image') or _svc_fallback %}show{% endif %}"
+                     style="max-height:120px;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Link URL <span style="color:#9ca3af;font-weight:400">(boş = ürünler sayfası)</span></label>
+                <input type="text" name="svc{{ i }}_url" class="form-input"
+                       value="{{ s.get('url','') }}" placeholder="/tr/urunler">
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- ══════════ HAM MADDE TİCARETİ (Global Raw Material Trading) ══════════ -->
+        {% elif tab == 'raw_materials' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfadaki <strong>Global Raw Material Trading</strong> bölümü — başlık, iki paragraf, buton ve sağdaki görsel.</p>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="raw_materials_title" class="form-input"
+                   value="{{ data.get('raw_materials_title','') }}" placeholder="Global Raw Material Trading">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Birinci Paragraf</label>
+            <textarea name="raw_materials_p1" class="form-textarea" style="min-height:80px;"
+                      placeholder="We source and supply premium chemical raw materials from trusted suppliers worldwide...">{{ data.get('raw_materials_p1','') }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">İkinci Paragraf</label>
+            <textarea name="raw_materials_p2" class="form-textarea" style="min-height:80px;"
+                      placeholder="From surfactants and emulsifiers to active ingredients and fragrances...">{{ data.get('raw_materials_p2','') }}</textarea>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Buton Metni</label>
+                <input type="text" name="raw_materials_btn_text" class="form-input"
+                       value="{{ data.get('raw_materials_btn_text','') }}" placeholder="Request Raw Materials →">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Buton URL</label>
+                <input type="text" name="raw_materials_btn_url" class="form-input"
+                       value="{{ data.get('raw_materials_btn_url','') }}" placeholder="#contact">
+            </div>
+        </div>
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Sağdaki Görsel URL</label>
+            {% set _rm_fallback = shared_images.get('raw_materials_image_url', '') %}
+            <div class="img-url-row">
+                <input type="text" name="raw_materials_image_url" id="rawMaterialsImgUrl" class="form-input"
+                       value="{{ data.get('raw_materials_image_url','') }}" placeholder="Link veya Yükle ile ekleyin">
+                <input type="file" accept="image/*" class="hp-img-file" id="rawMaterialsImgFile" data-target="rawMaterialsImgUrl" data-preview="rawMaterialsImgPreview">
+                <button type="button" class="btn-upload" data-for="rawMaterialsImgFile">Yükle</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img"
+                        data-field="raw_materials_image_url" data-src-lang="{{ lang }}">
+                    🌐 Tüm dillere uygula
+                </button>
+                {% endif %}
+            </div>
+            {% if lang != 'tr' and not data.get('raw_materials_image_url') and _rm_fallback %}
+            <p class="shared-img-hint is-fallback">⚠️ Bu dile ait görsel yok — <strong>tr</strong> görseli kullanılıyor.</p>
+            {% elif lang == 'tr' and data.get('raw_materials_image_url') %}
+            <p class="shared-img-hint">
+                ℹ️ Bu görsel yüklenmemiş dillerde otomatik kullanılır.
+                <button type="button" class="btn-sync-img" style="margin-left:4px;"
+                        data-field="raw_materials_image_url" data-src-lang="tr">
+                    🌐 Tüm dillere uygula
+                </button>
+            </p>
+            {% endif %}
+            <p class="form-hint">Link girebilir veya «Yükle» ile PC'den ekleyin (static/upload/images).</p>
+            <img id="rawMaterialsImgPreview"
+                 src="{{ data.get('raw_materials_image_url','') or _rm_fallback }}"
+                 class="img-preview {% if data.get('raw_materials_image_url') or _rm_fallback %}show{% endif %}"
+                 style="max-height:180px;">
+        </div>
+
+        <!-- ══════════ PRIVATE LABEL (We Manufacture for Global Brands) ══════════ -->
+        {% elif tab == 'private_label' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfadaki <strong>We Manufacture for Global Brands</strong> bölümü — başlık, açıklama ve 4 yetenek kartı.</p>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="private_label_title" class="form-input"
+                   value="{{ data.get('private_label_title','') }}" placeholder="We Manufacture for Global Brands">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Açıklama Metni</label>
+            <textarea name="private_label_text" class="form-textarea" style="min-height:70px;"
+                      placeholder="Complete private label and contract manufacturing services...">{{ data.get('private_label_text','') }}</textarea>
+        </div>
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Sağ Taraftaki Görsel URL</label>
+            {% set _pl_fallback = shared_images.get('private_label_image_url', '') %}
+            <div class="img-url-row">
+                <input type="text" name="private_label_image_url" class="form-input" id="privateLabelImgUrl"
+                       value="{{ data.get('private_label_image_url','') }}" placeholder="Link veya Yükle ile ekleyin">
+                <input type="file" accept="image/*" class="hp-img-file" id="privateLabelImgFile" data-target="privateLabelImgUrl" data-preview="privateLabelImgPreview">
+                <button type="button" class="btn-upload" data-for="privateLabelImgFile">Yükle</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img"
+                        data-field="private_label_image_url" data-src-lang="{{ lang }}">
+                    🌐 Tüm dillere uygula
+                </button>
+                {% endif %}
+            </div>
+            {% if lang != 'tr' and not data.get('private_label_image_url') and _pl_fallback %}
+            <p class="shared-img-hint is-fallback">⚠️ Bu dile ait görsel yok — <strong>tr</strong> görseli kullanılıyor.</p>
+            {% elif lang == 'tr' and data.get('private_label_image_url') %}
+            <p class="shared-img-hint">
+                ℹ️ Bu görsel yüklenmemiş dillerde otomatik kullanılır.
+                <button type="button" class="btn-sync-img" style="margin-left:4px;"
+                        data-field="private_label_image_url" data-src-lang="tr">
+                    🌐 Tüm dillere uygula
+                </button>
+            </p>
+            {% endif %}
+            <p class="form-hint">Link girebilir veya «Yükle» ile PC'den ekleyin (static/upload/images).</p>
+            <img id="privateLabelImgPreview"
+                 src="{{ data.get('private_label_image_url','') or _pl_fallback }}"
+                 class="img-preview {% if data.get('private_label_image_url') or _pl_fallback %}show{% endif %}"
+                 style="max-height:180px;">
+        </div>
+        <p style="font-size:.85rem;font-weight:700;color:#374151;margin:20px 0 12px;">4 Yetenek Kartı (başlık + açıklama)</p>
+        {% set default_caps = [
+            {"title":"Custom Formulation","description":"Develop unique formulas tailored to your brand requirements"},
+            {"title":"Packaging Solutions","description":"Complete packaging design and assembly services"},
+            {"title":"Label Design","description":"Professional label and artwork design support"},
+            {"title":"Global Logistics","description":"Worldwide shipping and distribution management"}
+        ] %}
+        {% set caps = data.get('private_label_cards', default_caps) %}
+        {% for i in range(1, 5) %}
+        {% set c = caps[loop.index0] if loop.index0 < caps|length else {} %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">KART {{ i }}</div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="pl{{ i }}_title" class="form-input"
+                       value="{{ c.get('title','') }}" placeholder="Custom Formulation">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama</label>
+                <input type="text" name="pl{{ i }}_description" class="form-input"
+                       value="{{ c.get('description','') }}" placeholder="Develop unique formulas tailored to your brand requirements">
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- ══════════ EXPORT (Exporting to 70+ Countries) ══════════ -->
+        {% elif tab == 'export' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfadaki <strong>Exporting to 70+ Countries</strong> bölümü — başlık, alt metin ve 3 istatistik kutusu.</p>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="export_title" class="form-input"
+                   value="{{ data.get('export_title','') }}" placeholder="Exporting to 70+ Countries">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Alt Açıklama</label>
+            <input type="text" name="export_subtitle" class="form-input"
+                   value="{{ data.get('export_subtitle','') }}"
+                   placeholder="Trusted manufacturing partner for international brands across six continents">
+        </div>
+        <p style="font-size:.85rem;font-weight:700;color:#374151;margin:20px 0 12px;">3 İstatistik (sayı + etiket)</p>
+        {% set default_export_stats = [
+            {"value":"70+","label":"Countries"},
+            {"value":"500+","label":"Global Clients"},
+            {"value":"30+","label":"Years Experience"}
+        ] %}
+        {% set export_stats = data.get('export_stats', default_export_stats) %}
+        {% for i in range(1, 4) %}
+        {% set es = export_stats[loop.index0] if loop.index0 < export_stats|length else {} %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">İSTATİSTİK {{ i }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Değer (sayı/metin)</label>
+                    <input type="text" name="export_stat{{ i }}_value" class="form-input"
+                           value="{{ es.get('value','') }}" placeholder="70+">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Etiket</label>
+                    <input type="text" name="export_stat{{ i }}_label" class="form-input"
+                           value="{{ es.get('label','') }}" placeholder="Countries">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- ══════════ SERTİFİKASYON (Certification & Regulatory Support) ══════════ -->
+        {% elif tab == 'certification' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfadaki <strong>Certification & Regulatory Support</strong> bölümü — başlık, alt açıklama ve 4 sertifika kartı.</p>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="cert_title" class="form-input"
+                   value="{{ data.get('cert_title','') }}" placeholder="Certification & Regulatory Support">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Alt Açıklama</label>
+            <input type="text" name="cert_subtitle" class="form-input"
+                   value="{{ data.get('cert_subtitle','') }}"
+                   placeholder="Comprehensive compliance and consulting services for global markets">
+        </div>
+        <p style="font-size:.85rem;font-weight:700;color:#374151;margin:20px 0 12px;">4 Sertifika / Hizmet Kartı (başlık + açıklama)</p>
+        {% set default_cert = [
+            {"title":"GMP Certified","description":"Good Manufacturing Practice compliance","icon":"✓"},
+            {"title":"ISO Standards","description":"International quality management systems","icon":"✓"},
+            {"title":"MSDS & Documentation","description":"Complete safety data and technical sheets","icon":"✓"},
+            {"title":"Regulatory Consulting","description":"Expert guidance on global regulations","icon":"✓"}
+        ] %}
+        {% set cert_cards = data.get('cert_cards', default_cert) %}
+        {% for i in range(1, 5) %}
+        {% set c = cert_cards[loop.index0] if loop.index0 < cert_cards|length else {} %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">KART {{ i }}</div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="cert{{ i }}_title" class="form-input"
+                       value="{{ c.get('title','') }}" placeholder="GMP Certified">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama</label>
+                <input type="text" name="cert{{ i }}_description" class="form-input"
+                       value="{{ c.get('description','') }}" placeholder="Good Manufacturing Practice compliance">
+            </div>
+            <div class="form-group">
+                <label class="form-label">İkon <span style="color:#9ca3af;font-weight:400">(tek karakter, boş = ✓)</span></label>
+                <input type="text" name="cert{{ i }}_icon" class="form-input" maxlength="4"
+                       value="{{ c.get('icon','') }}" placeholder="✓" style="max-width:80px;">
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- ══════════ MENÜ & CTA (header) ══════════ -->
+        {% elif tab == 'nav' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfa (ve tüm sayfalar) header menüsündeki linkler ve sağ üst <strong>CTA butonu</strong>.</p>
+        <div class="tip-box">
+            💡 Menü linkleri: <code>#manufacturing</code>, <code>#contact</code>, <code>/products</code> gibi. Boş bırakırsanız varsayılan menü gösterilir.
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Sağ Üst CTA Butonu Metni</label>
+                <input type="text" name="nav_cta_text" class="form-input"
+                       value="{{ data.get('nav_cta_text','') }}" placeholder="Teklif Al">
+            </div>
+            <div class="form-group">
+                <label class="form-label">CTA URL</label>
+                <input type="text" name="nav_cta_url" class="form-input"
+                       value="{{ data.get('nav_cta_url','') }}" placeholder="#teklif">
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:8px 0 20px;">
+        <p style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:14px;">Menü Linkleri (en fazla 6)</p>
+        {% set default_nav = [
+            {"label":"Home","url":"/"},
+            {"label":"About","url":"#about"},
+            {"label":"Manufacturing","url":"#manufacturing"},
+            {"label":"Products","url":"/products"},
+            {"label":"Contact","url":"#contact"}
+        ] %}
+        {% set nav_links = data.get('nav_links', default_nav) %}
+        {% for i in range(1, 7) %}
+        {% set nl = nav_links[loop.index0] if loop.index0 < nav_links|length else {} %}
+        <div class="grid-2" style="margin-bottom:12px;">
+            <input type="text" name="nav{{ i }}_label" class="form-input"
+                   value="{{ nl.get('label','') }}" placeholder="Link {{ i }} başlığı">
+            <input type="text" name="nav{{ i }}_url" class="form-input"
+                   value="{{ nl.get('url','') }}" placeholder="/tr/... veya #bolum">
+        </div>
+        {% endfor %}
+
+        <!-- ══════════ CTA BÖLÜMÜ (homepage: "Build Your Brand..." alanı) ══════════ -->
+        {% elif tab == 'cta' %}
+        <p class="form-hint" style="margin-bottom:16px;">Anasayfada iletişim / teklif bölümü — büyük başlık ve alt metin (şablonda <code>#contact</code> bölümü).</p>
+
+        <div class="form-group">
+            <label class="form-label">CTA Başlığı (büyük metin)</label>
+            <input type="text" name="cta_title" class="form-input"
+                   value="{{ data.get('cta_title','') }}" placeholder="Teklif almak için bize ulaşın">
+            <p class="form-hint">Örn: Teklif almak için bize ulaşın</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Alt Metin (açıklama)</label>
+            <input type="text" name="cta_subtitle" class="form-input"
+                   value="{{ data.get('cta_subtitle', data.get('sticky_sub','')) }}"
+                   placeholder="Bir sonraki projeniz için güvenilir bir üreticiyle iş birliği yapın">
+            <p class="form-hint">Başlığın hemen altında görünen kısa metin.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Buton Metni</label>
+            <input type="text" name="cta_btn_text" class="form-input"
+                   value="{{ data.get('cta_btn_text','') }}" placeholder="Projenizi Başlatın →">
+            <p class="form-hint">CTA bölümündeki büyük butonun yazısı (örn. Projenizi Başlatın →).</p>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Buton URL</label>
+            <input type="text" name="cta_btn_url" class="form-input"
+                   value="{{ data.get('cta_btn_url','') }}" placeholder="#contact">
+            <p class="form-hint">Boş bırakırsanız ürünler (showroom) sayfasına gider.</p>
+        </div>
+
+        <details class="form-group" style="margin-top:24px;padding:12px;background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
+            <summary style="font-size:.85rem;font-weight:600;color:#6b7280;cursor:pointer;">İsteğe bağlı alanlar (şablonda şu an kullanılmıyor)</summary>
+            <div style="margin-top:12px;">
+                <div class="form-group">
+                    <label class="form-label">Sticky şerit ana metin</label>
+                    <input type="text" name="sticky_title" class="form-input" value="{{ data.get('sticky_title','') }}" placeholder="Toplu sipariş için hazırız">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sertifika / rozet (virgülle)</label>
+                    <input type="text" name="cta_badges" class="form-input" value="{{ data.get('cta_badges', 'ISO,GMP,REACH') }}" placeholder="ISO,GMP,REACH">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ortak logoları (virgülle)</label>
+                    <input type="text" name="partners" class="form-input" value="{{ data.get('partners','') }}" placeholder="Unilever, Eczacıbaşı">
+                </div>
+            </div>
+        </details>
+
+        <!-- ══════════ SEO (sayfa başlığı, meta, sosyal medya) ══════════ -->
+        {% elif tab == 'seo' %}
+        <p class="form-hint" style="margin-bottom:16px;">Tarayıcı sekmesi başlığı, arama motoru açıklaması ve sosyal medyada paylaşım metinleri.</p>
+        <div class="seo-preview" style="border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;background:#f9fafb;margin-bottom:20px;">
+            <div id="prev-title" style="font-size:1.1rem;color:#1a0dab;font-weight:600;margin-bottom:2px;">
+                {{ data.get('meta_title') or (site.site_name or 'Heni') + ' — Anasayfa' if data else 'Heni — Anasayfa' }}
+            </div>
+            <div style="font-size:.82rem;color:#006621;margin-bottom:6px;">heni.com.tr</div>
+            <div id="prev-desc" style="font-size:.85rem;color:#4d5156;line-height:1.5;">
+                {{ data.get('meta_description') or 'Meta açıklama girilmemiş…' }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Başlık (title tag)</label>
+            <input type="text" name="meta_title" id="inpMetaTitle" class="form-input" maxlength="70"
+                   value="{{ data.get('meta_title','') }}"
+                   placeholder="Heni — Kozmetik & Deterjan Üretimi">
+            <p class="form-hint"><span id="mt-cnt">0</span>/70 karakter · Önerilen: 50–60</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Açıklama</label>
+            <textarea name="meta_description" id="inpMetaDesc" class="form-textarea"
+                      style="min-height:90px;" maxlength="160"
+                      placeholder="Kozmetik, deterjan ve kimyasal ürünlerde fason üretim ve toplu tedarik…">{{ data.get('meta_description','') }}</textarea>
+            <p class="form-hint"><span id="md-cnt">0</span>/160 karakter · Önerilen: 120–155</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">OG Başlık <span style="color:#9ca3af;font-weight:400">(sosyal medya)</span></label>
+            <input type="text" name="og_title" class="form-input"
+                   value="{{ data.get('og_title','') }}" placeholder="Facebook/Twitter başlığı">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">OG Açıklama</label>
+            <textarea name="og_description" class="form-textarea" style="min-height:80px;"
+                      placeholder="Facebook/Twitter açıklaması">{{ data.get('og_description','') }}</textarea>
+        </div>
+
+        {% endif %}
+
+        <!-- Save bar (her sekmede görünür) -->
+        {% if request.query_params.get('saved') %}
+        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 16px;margin-bottom:10px;font-size:.88rem;color:#065f46;font-weight:600;">
+            ✅ Değişiklikler başarıyla kaydedildi.
+        </div>
+        {% elif request.query_params.get('save_error') %}
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 16px;margin-bottom:10px;font-size:.88rem;color:#991b1b;font-weight:600;">
+            ❌ Kayıt hatası: {{ request.query_params.get('save_error') }}
+        </div>
+        {% endif %}
+        <div class="save-bar">
+            <button type="submit" class="btn-save">💾 Kaydet</button>
+            <a href="/" target="_blank" class="btn-preview">🔗 Önizle</a>
+        </div>
+    </form>
+
+</div><!-- /.hp-edit-wrap -->
+
+<script>
+// Hero image preview
+const heroInp  = document.getElementById('heroImgUrl');
+const heroPrev = document.getElementById('heroImgPreview');
+if (heroInp && heroPrev) {
+    heroInp.addEventListener('input', () => {
+        heroPrev.src = heroInp.value;
+        heroPrev.classList.toggle('show', !!heroInp.value);
+    });
+}
+
+// Service image previews
+document.querySelectorAll('.svc-img-inp').forEach(inp => {
+    const prevId = inp.dataset.preview;
+    const prev   = document.getElementById(prevId);
+    if (prev) {
+        inp.addEventListener('input', () => {
+            prev.src = inp.value;
+            prev.classList.toggle('show', !!inp.value);
+        });
+    }
+});
+
+// Private Label image preview
+const plImgInp = document.getElementById('privateLabelImgUrl');
+const plImgPrev = document.getElementById('privateLabelImgPreview');
+if (plImgInp && plImgPrev) {
+    plImgInp.addEventListener('input', () => {
+        plImgPrev.src = plImgInp.value;
+        plImgPrev.classList.toggle('show', !!plImgInp.value);
+    });
+}
+
+// Yükle butonu: dosya seçtirir
+document.querySelectorAll('.btn-upload').forEach(btn => {
+    const fileInputId = btn.getAttribute('data-for');
+    if (!fileInputId) return;
+    btn.addEventListener('click', () => document.getElementById(fileInputId).click());
+});
+
+// PC'den görsel yükleme → static/upload/images, URL alanına yaz
+document.querySelectorAll('.hp-img-file').forEach(fileInput => {
+    fileInput.addEventListener('change', async function() {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const btn = document.querySelector('.btn-upload[data-for="' + this.id + '"]');
+        if (btn) btn.disabled = true;
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch('/admin/upload-homepage-image', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            const url = data.url || data.location;
+            const targetId = this.getAttribute('data-target');
+            const previewId = this.getAttribute('data-preview');
+            if (targetId) {
+                const target = document.getElementById(targetId);
+                if (target) target.value = url;
+            }
+            if (previewId) {
+                const preview = document.getElementById(previewId);
+                if (preview) {
+                    preview.src = url;
+                    preview.classList.add('show');
+                }
+            }
+        } catch (e) {
+            alert('Yükleme başarısız: ' + (e.message || 'Beklenmeyen hata'));
+        } finally {
+            if (btn) btn.disabled = false;
+            this.value = '';
+        }
+    });
+});
+
+// Raw Materials image preview
+const rmImgInp = document.getElementById('rawMaterialsImgUrl');
+const rmImgPrev = document.getElementById('rawMaterialsImgPreview');
+if (rmImgInp && rmImgPrev) {
+    rmImgInp.addEventListener('input', () => {
+        rmImgPrev.src = rmImgInp.value;
+        rmImgPrev.classList.toggle('show', !!rmImgInp.value);
+    });
+}
+
+// "Tüm dillere uygula" butonu — seçili görsel URL'ini tüm dil kayıtlarına kopyalar
+document.querySelectorAll('.btn-sync-img').forEach(btn => {
+    btn.addEventListener('click', async function () {
+        const field   = this.dataset.field;
+        const srcLang = this.dataset.srcLang;
+
+        // Görseli input'tan al: data-field ile eşleşen input'u bul
+        let imgUrl = '';
+        if (field.startsWith('svc') && field.endsWith('_image')) {
+            const num = field.replace('svc', '').replace('_image', '');
+            const inp = document.getElementById('svc' + num + 'ImgUrl');
+            imgUrl = inp ? inp.value : '';
+        } else if (field === 'hero_image_url') {
+            const inp = document.getElementById('heroImgUrl');
+            imgUrl = inp ? inp.value : '';
+        } else if (field === 'raw_materials_image_url') {
+            const inp = document.getElementById('rawMaterialsImgUrl');
+            imgUrl = inp ? inp.value : '';
+        } else if (field === 'private_label_image_url') {
+            const inp = document.getElementById('privateLabelImgUrl');
+            imgUrl = inp ? inp.value : '';
+        }
+
+        if (!imgUrl) {
+            alert('Önce bu alana bir görsel yükleyin veya link girin.');
+            return;
+        }
+
+        if (!confirm('Bu görsel tüm dil kayıtlarına kopyalanacak. Devam edilsin mi?')) return;
+
+        this.disabled = true;
+        const origText = this.textContent;
+        this.textContent = '⏳ Kopyalanıyor…';
+
+        try {
+            const fd = new FormData();
+            fd.append('field',    field);
+            fd.append('src_lang', srcLang);
+            const res  = await fetch('/admin/homepage/sync-image', {
+                method: 'POST', body: fd, credentials: 'same-origin'
+            });
+            const data = await res.json();
+            if (data.ok) {
+                const langs = (data.synced_to || []).join(', ');
+                alert('✅ Görsel şu dillere kopyalandı: ' + langs);
+            } else {
+                alert('Hata: ' + (data.error || 'Bilinmeyen hata'));
+            }
+        } catch (e) {
+            alert('İstek başarısız: ' + e.message);
+        } finally {
+            this.disabled = false;
+            this.textContent = origText;
+        }
+    });
+});
+
+
+const titleInp = document.getElementById('inpMetaTitle');
+const descInp  = document.getElementById('inpMetaDesc');
+const prevT    = document.getElementById('prev-title');
+const prevD    = document.getElementById('prev-desc');
+const mtCnt    = document.getElementById('mt-cnt');
+const mdCnt    = document.getElementById('md-cnt');
+if (titleInp) {
+    titleInp.addEventListener('input', () => {
+        if (prevT) prevT.textContent = titleInp.value || titleInp.placeholder;
+        if (mtCnt) mtCnt.textContent = titleInp.value.length;
+    });
+    if (mtCnt) mtCnt.textContent = titleInp.value.length;
+}
+if (descInp) {
+    descInp.addEventListener('input', () => {
+        if (prevD) prevD.textContent = descInp.value || descInp.placeholder;
+        if (mdCnt) mdCnt.textContent = descInp.value.length;
+    });
+    if (mdCnt) mdCnt.textContent = descInp.value.length;
+}
+</script>
+
+{% endblock %}

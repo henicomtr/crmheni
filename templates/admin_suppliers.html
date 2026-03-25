@@ -1,0 +1,803 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .btn-toggle-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 18px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-toggle-form:hover {
+        background: var(--dark-3);
+    }
+
+    /* Özet kartlar */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card .stat-val {
+        font-size: 26px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .stat-card .stat-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    /* Form kartı */
+    .add-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 28px;
+        overflow: hidden;
+    }
+
+    .add-card-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .add-card-header h2 {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .add-card-body {
+        padding: 24px;
+    }
+
+    .form-section-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 20px 0 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .form-section-title:first-child {
+        margin-top: 0;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-group.span-2 {
+        grid-column: span 2;
+    }
+
+    .form-group.span-full {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        border-color: var(--dark);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 72px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-cancel-form {
+        padding: 10px 18px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-cancel-form:hover {
+        background: var(--surface-3);
+    }
+
+    .btn-submit {
+        padding: 10px 24px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+        background: var(--dark-3);
+        transform: translateY(-1px);
+    }
+
+    /* Liste başlığı */
+    .list-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .list-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .search-input {
+        padding: 8px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+        width: 220px;
+    }
+
+    .search-input:focus {
+        border-color: var(--dark);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    /* Tablo */
+    .suppliers-table-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .suppliers-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .suppliers-table th {
+        text-align: left;
+        padding: 12px 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        white-space: nowrap;
+    }
+
+    .suppliers-table td {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .suppliers-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .suppliers-table tr:hover td {
+        background: var(--surface-2);
+    }
+
+    .supplier-row.hidden {
+        display: none;
+    }
+
+    /* Avatar */
+    .supplier-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+        letter-spacing: 0.02em;
+    }
+
+    .supplier-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .supplier-name {
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .supplier-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    /* Lokasyon badge */
+    .location-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 10px;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    /* VKN */
+    .vkn-tag {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-muted);
+        background: var(--surface-3);
+        padding: 2px 8px;
+        border-radius: 4px;
+        letter-spacing: 0.05em;
+    }
+
+    /* İletişim */
+    .contact-line {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-bottom: 3px;
+    }
+
+    .contact-line a {
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+
+    .contact-line a:hover {
+        color: var(--text-primary);
+        text-decoration: underline;
+    }
+
+    /* Aksiyon butonları */
+    .row-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-edit-sm {
+        padding: 5px 12px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-edit-sm:hover {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+    }
+
+    .btn-delete-sm {
+        padding: 5px 12px;
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, .25);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-delete-sm:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+    }
+
+    /* Not */
+    .notes-cell {
+        font-size: 12px;
+        color: var(--text-muted);
+        max-width: 160px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Boş */
+    .empty-state {
+        padding: 64px 28px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    /* Mobil */
+    .mobile-supplier-card {
+        display: none;
+    }
+
+    @media (max-width: 1000px) {
+        .stats-row {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 900px) {
+
+        .form-grid-2,
+        .form-grid-3 {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.span-2,
+        .form-group.span-full {
+            grid-column: span 1;
+        }
+
+        .search-input {
+            width: 100%;
+        }
+
+        .list-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .suppliers-table-wrap {
+            display: none;
+        }
+
+        .mobile-supplier-card {
+            display: block;
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .mobile-supplier-card:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .mobile-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .mobile-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+    }
+</style>
+
+<!-- BAŞLIK -->
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Tedarikçiler</h1>
+    <button class="btn-toggle-form" onclick="toggleForm()">
+        <span id="form-toggle-icon">＋</span> Tedarikçi Ekle
+    </button>
+</div>
+
+<!-- ÖZET KARTLAR -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-val">{{ suppliers|length }}</div>
+        <div class="stat-lbl">Toplam Tedarikçi</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ city_count }}</div>
+        <div class="stat-lbl">Farklı Şehir</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ weekly_new }}</div>
+        <div class="stat-lbl">Bu Hafta Yeni</div>
+    </div>
+</div>
+
+<!-- TEDARİKÇİ EKLE FORMU -->
+<div class="add-card" id="add-form" style="display:none;">
+    <div class="add-card-header">
+        <h2>Yeni Tedarikçi</h2>
+    </div>
+    <div class="add-card-body">
+        <form method="POST" action="/admin/suppliers/create">
+
+            <div class="form-section-title">Firma Bilgileri</div>
+            <div class="form-grid-2">
+                <div class="form-group span-2">
+                    <label class="form-label">Firma Ünvanı *</label>
+                    <input type="text" name="name" class="form-control" placeholder="Örn: ABC Kimya San. ve Tic. A.Ş."
+                        required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vergi Kimlik No</label>
+                    <input type="text" name="tax_id" class="form-control" placeholder="1234567890" maxlength="11">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fatura Adresi</label>
+                    <input type="text" name="billing_address" class="form-control" placeholder="Cadde, Mahalle, No...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Şehir</label>
+                    <input type="text" name="city" class="form-control" placeholder="İstanbul">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İlçe</label>
+                    <input type="text" name="district" class="form-control" placeholder="Kadıköy">
+                </div>
+            </div>
+
+            <div class="form-section-title">İletişim Bilgileri</div>
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Kontak Kişi</label>
+                    <input type="text" name="contact_person" class="form-control" placeholder="Ad Soyad">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-posta</label>
+                    <input type="email" name="email" class="form-control" placeholder="info@firma.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon</label>
+                    <input type="text" name="phone" class="form-control" placeholder="+90 212 000 00 00">
+                </div>
+            </div>
+
+            <div class="form-section-title">Notlar</div>
+            <div class="form-group">
+                <textarea name="notes" class="form-control" placeholder="Tedarikçi hakkında notlar..."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-cancel-form" onclick="toggleForm()">İptal</button>
+                <button type="submit" class="btn-submit">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- LİSTE -->
+<div class="list-header">
+    <span class="list-title">Tedarikçi Listesi</span>
+    <input type="text" class="search-input" placeholder="🔍 Ara..." oninput="filterSuppliers(this.value)">
+</div>
+
+<div class="suppliers-table-card">
+    {% if suppliers %}
+
+    <!-- MASAÜSTÜ -->
+    <div class="suppliers-table-wrap">
+        <table class="suppliers-table">
+            <thead>
+                <tr>
+                    <th>Firma</th>
+                    <th>Konum</th>
+                    <th>İletişim</th>
+                    <th>Vergi No</th>
+                    <th>Cari Bakiye</th>
+                    <th>Not</th>
+                    <th>Kayıt</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in suppliers %}
+                <tr class="supplier-row" data-name="{{ s.name|lower }}" data-city="{{ (s.city or '')|lower }}"
+                    data-contact="{{ (s.contact_person or '')|lower }}">
+                    <td>
+                        <div class="supplier-name-cell">
+                            <div class="supplier-avatar">
+                                {{ s.name[0]|upper }}{% if s.name|length > 1 %}{{ s.name.split(' ')[1][0]|upper if
+                                s.name.split(' ')|length > 1 else '' }}{% endif %}
+                            </div>
+                            <div>
+                                <div class="supplier-name">{{ s.name }}</div>
+                                {% if s.contact_person %}
+                                <div class="supplier-sub">{{ s.contact_person }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if s.city or s.district %}
+                        <span class="location-tag">
+                            📍 {{ s.district + ', ' if s.district else '' }}{{ s.city or '' }}
+                        </span>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.email %}
+                        <div class="contact-line">
+                            ✉️ <a href="mailto:{{ s.email }}">{{ s.email }}</a>
+                        </div>
+                        {% endif %}
+                        {% if s.phone %}
+                        <div class="contact-line">
+                            📞 <a href="tel:{{ s.phone }}">{{ s.phone }}</a>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.tax_id %}
+                        <span class="vkn-tag">{{ s.tax_id }}</span>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set bdata = supplier_balances.get(s.id, {'native_balance': 0, 'dominant_currency': 'USD', 'balance_usd': 0}) %}
+                        {% set balance = bdata.native_balance %}
+                        {% set sym = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(bdata.dominant_currency, bdata.dominant_currency) %}
+                        <div style="font-size:13px;font-weight:700;font-family:var(--mono);
+                            color:{% if balance > 0 %}#c0392b{% elif balance < 0 %}#1a7a4a{% else %}var(--text-muted){% endif %};">
+                            {% if balance != 0 %}
+                                {{ sym }}{{ "{:,.2f}".format(balance|abs) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        {% if balance != 0 %}
+                        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                            {% if balance > 0 %}Tedarikçiye borçluyuz{% elif balance < 0 %}Tedarikçi borçlu{% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.notes %}
+                        <div class="notes-cell" title="{{ s.notes }}">{{ s.notes }}</div>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-size:12px;font-family:var(--mono);color:var(--text-secondary);">
+                            {{ s.created_at.strftime('%d %b %Y') }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="/admin/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
+                            <form method="POST" action="/admin/suppliers/delete/{{ s.id }}" style="margin:0;">
+                                <button type="submit" class="btn-delete-sm"
+                                    onclick="return confirm('{{ s.name }} silinsin mi?')">Sil</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MOBİL KARTLAR -->
+    {% for s in suppliers %}
+    <div class="mobile-supplier-card" data-name="{{ s.name|lower }}" data-city="{{ (s.city or '')|lower }}"
+        data-contact="{{ (s.contact_person or '')|lower }}">
+        <div class="mobile-card-top">
+            <div class="supplier-avatar">{{ s.name[0]|upper }}</div>
+            <div>
+                <div class="supplier-name">{{ s.name }}</div>
+                {% if s.contact_person %}<div class="supplier-sub">{{ s.contact_person }}</div>{% endif %}
+                {% if s.city or s.district %}
+                <span class="location-tag" style="margin-top:5px;display:inline-flex;">
+                    📍 {{ s.district + ', ' if s.district else '' }}{{ s.city or '' }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="mobile-card-body">
+            {% if s.email %}
+            <div class="contact-line">✉️ <a href="mailto:{{ s.email }}">{{ s.email }}</a></div>
+            {% endif %}
+            {% if s.phone %}
+            <div class="contact-line">📞 <a href="tel:{{ s.phone }}">{{ s.phone }}</a></div>
+            {% endif %}
+            {% if s.tax_id %}
+            <div><span class="vkn-tag">VKN: {{ s.tax_id }}</span></div>
+            {% endif %}
+            {% if s.notes %}
+            <div class="notes-cell">{{ s.notes }}</div>
+            {% endif %}
+        </div>
+        <div class="mobile-card-footer">
+            <span style="font-size:11px;font-family:var(--mono);color:var(--text-muted);">
+                {{ s.created_at.strftime('%d %b %Y') }}
+            </span>
+            <div class="row-actions">
+                <a href="/admin/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
+                <form method="POST" action="/admin/suppliers/delete/{{ s.id }}" style="margin:0;">
+                    <button type="submit" class="btn-delete-sm" onclick="return confirm('Silinsin mi?')">Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:40px;opacity:.25;margin-bottom:12px;">🏭</div>
+        <p>Henüz tedarikçi kaydı yok.</p>
+        <p style="font-size:12px;margin-top:6px;">Yukarıdaki butonu kullanarak manuel olarak ekleyebilirsiniz.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleForm() {
+        const form = document.getElementById('add-form');
+        const icon = document.getElementById('form-toggle-icon');
+        const isVisible = form.style.display !== 'none';
+        form.style.display = isVisible ? 'none' : 'block';
+        icon.textContent = isVisible ? '＋' : '－';
+        if (!isVisible) form.querySelector('input[name="name"]').focus();
+    }
+
+    function filterSuppliers(query) {
+        const q = query.toLowerCase().trim();
+        document.querySelectorAll('.supplier-row').forEach(row => {
+            const match = !q
+                || row.dataset.name.includes(q)
+                || row.dataset.city.includes(q)
+                || row.dataset.contact.includes(q);
+            row.classList.toggle('hidden', !match);
+        });
+        document.querySelectorAll('.mobile-supplier-card').forEach(card => {
+            const match = !q
+                || card.dataset.name.includes(q)
+                || card.dataset.city.includes(q)
+                || card.dataset.contact.includes(q);
+            card.style.display = match ? 'block' : 'none';
+        });
+    }
+</script>
+{% endblock %}

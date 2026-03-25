@@ -1,0 +1,29 @@
+# Ortam değişkenleri — asla commit etme
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Sanal ortam
+venv/
+.venv/
+
+# Veritabanı dosyaları
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# Kullanıcı yüklemeleri
+static/upload/
+
+# Log dosyaları
+*.log

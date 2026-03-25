@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="robots" content="noindex, nofollow">
+    <title>HENİ CRM</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>HENİ CRM Dashboard</h1>
+
+        <h2>Yeni Ürün Ekle</h2>
+
+        <form method="post" action="/admin/products/add">
+            <input type="text" name="name" placeholder="Ürün adı" required>
+            <textarea name="description" placeholder="Ürün açıklaması"></textarea>
+            <input type="number" name="price" placeholder="Fiyat (₺)" required>
+            <button type="submit">Ürünü Kaydet</button>
+        </form>
+
+        <h2>Ürünler</h2>
+
+        {% for product in products %}
+        <div class="card">
+            <strong>{{ product.name }}</strong><br>
+            <small>{{ product.description }}</small><br><br>
+            <strong>{{ product.price }} ₺</strong>
+        </div>
+        {% endfor %}
+
+        <h2>Mesajlar</h2>
+        <div id="messages"></div>
+
+    </div>
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+
+</html>

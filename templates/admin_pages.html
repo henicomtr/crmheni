@@ -1,0 +1,130 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
+    <div>
+        <h1 style="font-size:24px; font-weight:700; margin-bottom:4px;">Sayfalar</h1>
+        <p style="color:#888; font-size:14px;">Tüm site sayfalarını buradan yönetin.</p>
+    </div>
+    <button onclick="document.getElementById('new-page-modal').style.display='flex'"
+        style="background:#0a0a0a;color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+        + Yeni Sayfa
+    </button>
+</div>
+
+{% if request.query_params.get('saved') %}
+<div style="background:#edf7f2;border:1px solid #b6dfc8;color:#1a7a4a;padding:12px 18px;border-radius:8px;margin-bottom:20px;font-size:14px;">
+    ✓ Değişiklikler kaydedildi.
+</div>
+{% endif %}
+
+<div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;">
+        <thead>
+            <tr style="background:#f8f9fb;border-bottom:1px solid #e8eaf0;">
+                <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">Sayfa</th>
+                <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">Slug</th>
+                <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">Diller</th>
+                <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">Durum</th>
+                <th style="padding:14px 20px;text-align:left;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">Sıra</th>
+                <th style="padding:14px 20px;text-align:right;font-size:12px;font-weight:600;color:#666;letter-spacing:.06em;text-transform:uppercase;">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for page in pages %}
+            {% set en_trans = page.get_translation('en') %}
+            <tr style="border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background='#fafafa'" onmouseout="this.style.background=''">
+                <td style="padding:16px 20px;">
+                    <div style="font-weight:600;font-size:14px;color:#0a0a0a;">
+                        {{ en_trans.title if en_trans else page.slug }}
+                    </div>
+                    <div style="font-size:12px;color:#aaa;margin-top:2px;">{{ page.template }}</div>
+                </td>
+                <td style="padding:16px 20px;">
+                    <code style="background:#f3f4f6;padding:3px 8px;border-radius:4px;font-size:12px;color:#444;">/{{ page.slug }}</code>
+                </td>
+                <td style="padding:16px 20px;">
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        {% set existing_langs = page.translations | map(attribute='lang') | list %}
+                        {% for lc in langs %}
+                        <span style="padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;
+                            background:{% if lc in existing_langs %}#e8f5e9{% else %}#f3f4f6{% endif %};
+                            color:{% if lc in existing_langs %}#2e7d32{% else %}#aaa{% endif %};">
+                            {{ lc|upper }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </td>
+                <td style="padding:16px 20px;">
+                    <span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;
+                        background:{% if page.is_published %}#e8f5e9{% else %}#fff3e0{% endif %};
+                        color:{% if page.is_published %}#2e7d32{% else %}#e65100{% endif %};">
+                        {% if page.is_published %}● Yayında{% else %}○ Taslak{% endif %}
+                    </span>
+                </td>
+                <td style="padding:16px 20px;font-size:14px;color:#666;">{{ page.sort_order }}</td>
+                <td style="padding:16px 20px;text-align:right;">
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        {% for lc in langs %}
+                        <a href="/admin/pages/{{ page.id }}/edit?lang={{ lc }}"
+                           style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:12px;font-weight:600;color:#333;text-decoration:none;transition:.15s;"
+                           onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'"
+                           title="{{ lang_labels[lc] }}">
+                            {{ lc|upper }}
+                        </a>
+                        {% endfor %}
+                        <form method="post" action="/admin/pages/{{ page.id }}/delete"
+                              onsubmit="return confirm('Bu sayfayı silmek istediğinize emin misiniz?')"
+                              style="margin:0;">
+                            <button type="submit"
+                                style="padding:6px 12px;background:#fff0f0;border:none;border-radius:6px;font-size:12px;font-weight:600;color:#e53935;cursor:pointer;">
+                                Sil
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" style="padding:48px;text-align:center;color:#aaa;font-size:14px;">
+                    Henüz sayfa eklenmemiş. Yeni sayfa oluşturun.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- YENİ SAYFA MODAL -->
+<div id="new-page-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;padding:36px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+        <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">Yeni Sayfa Oluştur</h2>
+        <p style="font-size:13px;color:#888;margin-bottom:24px;">Sayfa oluşturduktan sonra tüm dilleri düzenleyebilirsiniz.</p>
+        <form method="post" action="/admin/pages/new">
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#555;">Master Slug (EN) *</label>
+                <input name="slug" required placeholder="hakkimizda" pattern="[a-z0-9\-]+"
+                    style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;">
+                <p style="font-size:11px;color:#aaa;margin-top:4px;">Sadece küçük harf, rakam ve tire kullanın. Örn: hakkimizda</p>
+            </div>
+            <div style="margin-bottom:24px;">
+                <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#555;">Şablon</label>
+                <select name="template" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+                    <option value="page_generic.html">Genel Sayfa</option>
+                    <option value="homepage.html">Anasayfa</option>
+                    <option value="contact.html">İletişim</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('new-page-modal').style.display='none'"
+                    style="padding:10px 20px;background:#f3f4f6;border:none;border-radius:8px;font-size:14px;font-weight:600;color:#333;cursor:pointer;">
+                    İptal
+                </button>
+                <button type="submit"
+                    style="padding:10px 20px;background:#0a0a0a;border:none;border-radius:8px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;">
+                    Oluştur →
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

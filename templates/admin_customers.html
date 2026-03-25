@@ -1,0 +1,688 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .btn-toggle-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 18px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-toggle-form:hover {
+        background: var(--dark-3);
+    }
+
+    /* Özet kartlar */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stat-card .stat-val {
+        font-size: 26px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .stat-card .stat-lbl {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    /* Müşteri Ekle Formu */
+    .add-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 28px;
+        overflow: hidden;
+    }
+
+    .add-card-header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .add-card-header h2 {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .add-card-body {
+        padding: 24px;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        border-color: var(--dark);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    .btn-cancel {
+        padding: 10px 18px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-cancel:hover {
+        background: var(--surface-3);
+    }
+
+    .btn-submit {
+        padding: 10px 24px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+        background: var(--dark-3);
+        transform: translateY(-1px);
+    }
+
+    /* Liste başlığı + arama */
+    .list-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .list-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .search-input {
+        padding: 8px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+        width: 220px;
+    }
+
+    .search-input:focus {
+        border-color: var(--dark);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .search-input::placeholder {
+        color: var(--text-muted);
+    }
+
+    /* Tablo */
+    .customers-table-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .customers-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .customers-table th {
+        text-align: left;
+        padding: 12px 20px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        white-space: nowrap;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .customers-table th:hover {
+        color: var(--text-primary);
+    }
+
+    .customers-table th .sort-icon {
+        opacity: 0.3;
+        margin-left: 4px;
+    }
+
+    .customers-table th.active .sort-icon {
+        opacity: 1;
+    }
+
+    .customers-table td {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+
+    .customers-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .customers-table tr:hover td {
+        background: var(--surface-2);
+    }
+
+    /* Avatar */
+    .customer-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--dark);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+        letter-spacing: 0.02em;
+    }
+
+    .customer-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .customer-name {
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .customer-date {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .country-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 10px;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--text-secondary);
+    }
+
+    /* Aksiyon butonları */
+    .row-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .btn-edit-sm {
+        padding: 5px 12px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-edit-sm:hover {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+    }
+
+    .btn-delete-sm {
+        padding: 5px 12px;
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, .25);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .btn-delete-sm:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+    }
+
+    /* Boş durum */
+    .empty-state {
+        padding: 64px 28px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    /* Satır gizle (arama filtresi) */
+    .customer-row.hidden {
+        display: none;
+    }
+
+    /* Mobil */
+    .mobile-customer-card {
+        display: none;
+    }
+
+    @media (max-width: 900px) {
+        .stats-row {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .form-grid-3 {
+            grid-template-columns: 1fr;
+        }
+
+        .search-input {
+            width: 100%;
+        }
+
+        .list-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .customers-table-wrap {
+            display: none;
+        }
+
+        .mobile-customer-card {
+            display: block;
+            border-bottom: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .mobile-customer-card:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .mobile-card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+</style>
+
+<!-- BAŞLIK -->
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Müşteriler</h1>
+    <button class="btn-toggle-form" onclick="toggleForm()">
+        <span id="form-toggle-icon">＋</span> Müşteri Ekle
+    </button>
+</div>
+
+<!-- ÖZET KARTLAR -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-val">{{ customers|length }}</div>
+        <div class="stat-lbl">Toplam Müşteri</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ weekly_new }}</div>
+        <div class="stat-lbl">Bu Hafta Yeni</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val">{{ country_count }}</div>
+        <div class="stat-lbl">Farklı Ülke</div>
+    </div>
+</div>
+
+<!-- MÜŞTERİ EKLE FORMU -->
+<div class="add-card" id="add-form" style="display:none;">
+    <div class="add-card-header">
+        <h2>Yeni Müşteri</h2>
+    </div>
+    <div class="add-card-body">
+        <form method="POST" action="/admin/customers/create">
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">Firma / Ad *</label>
+                    <input type="text" name="name" class="form-control" placeholder="Firma veya müşteri adı" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ülke</label>
+                    <input type="text" name="country" class="form-control" placeholder="Türkiye">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-posta</label>
+                    <input type="email" name="email" class="form-control" placeholder="ornek@firma.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon / WhatsApp</label>
+                    <input type="text" name="phone" class="form-control" placeholder="+90 500 000 00 00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İletişim Kişisi</label>
+                    <input type="text" name="contact_person" class="form-control" placeholder="Ad Soyad">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Not</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Kısa not...">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="toggleForm()">İptal</button>
+                <button type="submit" class="btn-submit">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- LİSTE -->
+<div class="list-header">
+    <span class="list-title">Müşteri Listesi</span>
+    <input type="text" class="search-input" placeholder="🔍 Ara..." oninput="filterCustomers(this.value)">
+</div>
+
+<div class="customers-table-card">
+    {% if customers %}
+
+    <!-- MASAÜSTÜ TABLO -->
+    <div class="customers-table-wrap">
+        <table class="customers-table" id="customers-table">
+            <thead>
+                <tr>
+                    <th>Müşteri</th>
+                    <th>Ülke</th>
+                    <th>İletişim</th>
+                    <th>Cari Bakiye</th>
+                    <th>Kayıt Tarihi</th>
+                    <th>Not</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody id="customers-tbody">
+                {% for c in customers %}
+                <tr class="customer-row" data-name="{{ c.name|lower }}" data-country="{{ (c.country or '')|lower }}">
+                    <td>
+                        <div class="customer-name-cell">
+                            <div class="customer-avatar">
+                                {{ c.name[0]|upper }}{% if c.name|length > 1 %}{{ c.name.split(' ')[-1][0]|upper if ' '
+                                in c.name else '' }}{% endif %}
+                            </div>
+                            <div>
+                                <div class="customer-name">{{ c.name }}</div>
+                                {% if c.contact_person is defined and c.contact_person %}
+                                <div class="customer-date">{{ c.contact_person }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.country %}
+                        <span class="country-tag">🌍 {{ c.country }}</span>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.email is defined and c.email %}
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:3px;">
+                            ✉️ <a href="mailto:{{ c.email }}" style="color:inherit;text-decoration:none;">{{ c.email
+                                }}</a>
+                        </div>
+                        {% endif %}
+                        {% if c.phone is defined and c.phone %}
+                        <div style="font-size:12px;color:var(--text-secondary);">
+                            📱 <a href="https://wa.me/{{ c.phone|replace(' ','')|replace('+','') }}" target="_blank"
+                                style="color:inherit;text-decoration:none;">{{ c.phone }}</a>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set bdata = customer_balances.get(c.id, {'native_balance': 0, 'dominant_currency': 'USD', 'balance_usd': 0}) %}
+                        {% set balance = bdata.native_balance %}
+                        {% set sym = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(bdata.dominant_currency, bdata.dominant_currency) %}
+                        <div style="font-size:13px;font-weight:700;font-family:var(--mono);
+                            color:{% if balance > 0 %}#c0392b{% elif balance < 0 %}#1a7a4a{% else %}var(--text-muted){% endif %};">
+                            {% if balance != 0 %}
+                                {{ sym }}{{ "{:,.2f}".format(balance|abs) }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                        {% if balance != 0 %}
+                        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
+                            {% if balance > 0 %}Müşteri borçlu{% elif balance < 0 %}Biz borçluyuz{% endif %}
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="font-size:12px;font-family:var(--mono);color:var(--text-secondary);">
+                            {{ c.created_at.strftime('%d %b %Y') }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.notes is defined and c.notes %}
+                        <div style="font-size:12px;color:var(--text-muted);max-width:160px;">{{ c.notes }}</div>
+                        {% else %}
+                        <span style="color:var(--text-muted);font-size:12px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a href="/admin/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
+                            <form method="POST" action="/admin/customers/delete/{{ c.id }}" style="margin:0;">
+                                <button type="submit" class="btn-delete-sm"
+                                    onclick="return confirm('{{ c.name }} silinsin mi?')">Sil</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- MOBİL KARTLAR -->
+    <div id="mobile-customers">
+        {% for c in customers %}
+        <div class="mobile-customer-card" data-name="{{ c.name|lower }}" data-country="{{ (c.country or '')|lower }}">
+            <div class="mobile-card-top">
+                <div class="customer-avatar">{{ c.name[0]|upper }}</div>
+                <div>
+                    <div class="customer-name">{{ c.name }}</div>
+                    {% if c.country %}<span class="country-tag" style="margin-top:4px;display:inline-flex;">🌍 {{
+                        c.country }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="mobile-card-body">
+                <div>
+                    {% if c.email is defined and c.email %}
+                    <div style="font-size:12px;color:var(--text-secondary);">✉️ {{ c.email }}</div>
+                    {% endif %}
+                    {% if c.phone is defined and c.phone %}
+                    <div style="font-size:12px;color:var(--text-secondary);">📱 {{ c.phone }}</div>
+                    {% endif %}
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                        {{ c.created_at.strftime('%d %b %Y') }}
+                    </div>
+                </div>
+                <div class="row-actions">
+                    <a href="/admin/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
+                    <form method="POST" action="/admin/customers/delete/{{ c.id }}" style="margin:0;">
+                        <button type="submit" class="btn-delete-sm"
+                            onclick="return confirm('Silinsin mi?')">Sil</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <div style="font-size:40px;opacity:.25;margin-bottom:12px;">🤝</div>
+        <p>Henüz müşteri kaydı yok.</p>
+        <p style="font-size:12px;margin-top:6px;">Talepler sayfasından onaylayarak veya manuel ekleyerek
+            oluşturabilirsiniz.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleForm() {
+        const form = document.getElementById('add-form');
+        const icon = document.getElementById('form-toggle-icon');
+        const isVisible = form.style.display !== 'none';
+        form.style.display = isVisible ? 'none' : 'block';
+        icon.textContent = isVisible ? '＋' : '－';
+    }
+
+    function filterCustomers(query) {
+        const q = query.toLowerCase().trim();
+        // Masaüstü satırları
+        document.querySelectorAll('.customer-row').forEach(row => {
+            const name = row.dataset.name || '';
+            const country = row.dataset.country || '';
+            row.classList.toggle('hidden', q && !name.includes(q) && !country.includes(q));
+        });
+        // Mobil kartlar
+        document.querySelectorAll('.mobile-customer-card').forEach(card => {
+            const name = card.dataset.name || '';
+            const country = card.dataset.country || '';
+            card.style.display = (q && !name.includes(q) && !country.includes(q)) ? 'none' : 'block';
+        });
+    }
+</script>
+{% endblock %}

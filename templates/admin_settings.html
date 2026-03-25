@@ -1,0 +1,483 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+<style>
+    .form-group { margin-bottom:20px; }
+    .form-label { display:block;font-size:11px;font-weight:700;color:#555;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase; }
+    .form-input { width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;transition:border-color .15s;font-family:inherit; }
+    .form-input:focus { border-color:#0a0a0a; }
+    textarea.form-input { min-height:90px; resize:vertical; }
+    .card { background:#fff;border-radius:12px;border:1px solid #e8eaf0;padding:28px;margin-bottom:24px; }
+    .card-title { font-size:14px;font-weight:700;color:#0a0a0a;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px; }
+    .upload-zone { border:2px dashed #ddd;border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:.2s;background:#fafafa;position:relative; }
+    .upload-zone:hover { border-color:#0a0a0a;background:#f3f4f6; }
+    .upload-zone input[type=file] { display:none; }
+    .current-asset { display:flex;align-items:center;gap:12px;padding:12px;background:#f8f9fb;border-radius:8px;margin-bottom:12px;border:1px solid #e8eaf0; }
+    .current-asset img { border-radius:4px; }
+    .asset-info small { font-size:11px;color:#aaa;display:block;word-break:break-all; }
+    .settings-tab { padding:9px 20px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;transition:.15s; }
+    .settings-tab.active { background:#0a0a0a;color:#fff;border-color:#0a0a0a; }
+    .color-preview { width:32px;height:32px;border-radius:6px;border:2px solid #eee;display:inline-block;vertical-align:middle;margin-right:8px; }
+    .hint { font-size:12px;color:#aaa;margin-top:4px; }
+    .live-preview-badge { display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#e8f5e9;color:#2e7d32;border-radius:20px;font-size:11px;font-weight:600; }
+    /* Logo & Favicon grid: hizalı sütunlar, kayma yok */
+    .settings-brand-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; align-items:start; }
+    .settings-brand-col { display:flex; flex-direction:column; min-width:0; }
+    .settings-brand-col .form-label { margin-bottom:8px; }
+    .settings-brand-col .current-asset { min-height:80px; margin-bottom:12px; }
+    .settings-brand-col .upload-zone { min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+    .settings-brand-col .upload-zone > div:first-child { margin-bottom:6px; }
+    .settings-brand-col .brand-hint { min-height:36px; margin-top:8px; font-size:12px; color:#aaa; }
+    .settings-brand-col .current-asset img { height:56px; max-width:160px; object-fit:contain; }
+</style>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
+    <div>
+        <h1 style="font-size:24px;font-weight:700;margin-bottom:4px;">Site Ayarları</h1>
+        <p style="color:#888;font-size:14px;">Logo, favicon, iletişim bilgileri, sosyal medya ve daha fazlası.</p>
+    </div>
+    {% if request.query_params.get('saved') %}
+    <span style="background:#e8f5e9;color:#2e7d32;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;">✓ Kaydedildi — Site güncellendi</span>
+    {% endif %}
+</div>
+
+<!-- Settings Tabs -->
+<div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
+    <button class="settings-tab active" onclick="switchSettings('brand',this)">🏷 Marka</button>
+    <button class="settings-tab" onclick="switchSettings('i18n',this)">🌐 Dil bazlı ayarlar</button>
+    <button class="settings-tab" onclick="switchSettings('social',this)">🔗 Sosyal Medya</button>
+    <button class="settings-tab" onclick="switchSettings('advanced',this)">⚙️ Gelişmiş</button>
+</div>
+
+<form method="post" action="/admin/settings" enctype="multipart/form-data" id="settings-form">
+
+    <!-- ═══ MARKA ═══ -->
+    <div id="settings-brand">
+
+        <!-- Logo & Favicon -->
+        <div class="card">
+            <div class="card-title">🖼 Logo & Favicon</div>
+            <div class="settings-brand-grid">
+
+                <!-- LOGO -->
+                <div class="settings-brand-col">
+                    <label class="form-label">Logo Görseli</label>
+                    {% if s.logo_url %}
+                    <div class="current-asset">
+                        <img src="{{ s.logo_url }}" alt="Logo" style="background:#f0f0f0;padding:4px;border-radius:4px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#333;">Mevcut Logo</div>
+                            <small>{{ s.logo_url }}</small>
+                            <div style="margin-top:4px;">
+                                <span class="live-preview-badge">✓ Sitede aktif</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="current-asset" style="visibility:hidden;pointer-events:none;margin-bottom:12px;" aria-hidden="true"><img src="" alt="" style="height:56px;width:1px;"><div><span>—</span></div></div>
+                    {% endif %}
+                    <label class="upload-zone" for="logo-input" id="logo-drop">
+                        <div style="font-size:28px;margin-bottom:8px;">🖼</div>
+                        <div style="font-size:14px;font-weight:600;color:#333;">{{ 'Logo Değiştir' if s.logo_url else 'Logo Yükle' }}</div>
+                        <div style="font-size:12px;color:#aaa;margin-top:4px;">PNG, SVG, WEBP — şeffaf arka plan, max 2MB</div>
+                        <input id="logo-input" type="file" name="logo" accept="image/*"
+                            onchange="previewFile(this,'logo-prev','logo-preview-wrap')">
+                    </label>
+                    <div id="logo-preview-wrap" style="display:none;margin-top:12px;padding:12px;background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;">
+                        <div style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;">YENİ LOGO ÖNİZLEME</div>
+                        <img id="logo-prev" style="max-height:72px;max-width:220px;object-fit:contain;">
+                    </div>
+                    <p class="brand-hint">Sayfa kaydırıldığında header koyulaşır; beyaz logo tanımlarsanız o kullanılır.</p>
+                </div>
+
+                <!-- LOGO BEYAZ -->
+                <div class="settings-brand-col">
+                    <label class="form-label">Logo (beyaz versiyon)</label>
+                    {% if s.logo_white_url %}
+                    <div class="current-asset">
+                        <img src="{{ s.logo_white_url }}" alt="Logo beyaz" style="background:#333;padding:4px;border-radius:4px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#333;">Mevcut beyaz logo</div>
+                            <small>{{ s.logo_white_url }}</small>
+                            <div style="margin-top:4px;">
+                                <span class="live-preview-badge">✓ Scroll'da koyu header'da kullanılıyor</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="current-asset" style="visibility:hidden;pointer-events:none;margin-bottom:12px;" aria-hidden="true"><img src="" alt="" style="height:56px;width:1px;"><div><span>—</span></div></div>
+                    {% endif %}
+                    <label class="upload-zone" for="logo-white-input" id="logo-white-drop">
+                        <div style="font-size:28px;margin-bottom:8px;">⬜</div>
+                        <div style="font-size:14px;font-weight:600;color:#333;">{{ 'Beyaz logo değiştir' if s.logo_white_url else 'Beyaz logo yükle' }}</div>
+                        <div style="font-size:12px;color:#aaa;margin-top:4px;">Koyu header'da beyaz/açık logo (PNG, SVG)</div>
+                        <input id="logo-white-input" type="file" name="logo_white" accept="image/*"
+                            onchange="previewFile(this,'logo-white-prev','logo-white-preview-wrap')">
+                    </label>
+                    <div id="logo-white-preview-wrap" style="display:none;margin-top:12px;padding:12px;background:#333;border-radius:8px;border:1px solid #555;">
+                        <div style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;">ÖNİZLEME (koyu zemin)</div>
+                        <img id="logo-white-prev" style="max-height:72px;max-width:220px;object-fit:contain;">
+                    </div>
+                    <p class="brand-hint">&nbsp;</p>
+                </div>
+
+                <!-- FAVİKON -->
+                <div class="settings-brand-col">
+                    <label class="form-label">Favicon</label>
+                    {% if s.favicon_url %}
+                    <div class="current-asset">
+                        <img src="{{ s.favicon_url }}" alt="Favicon" style="height:32px;width:32px;object-fit:contain;background:#f0f0f0;padding:2px;border-radius:4px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#333;">Mevcut Favicon</div>
+                            <small>{{ s.favicon_url }}</small>
+                            <div style="margin-top:4px;">
+                                <span class="live-preview-badge">✓ Sitede aktif</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="current-asset" style="visibility:hidden;pointer-events:none;margin-bottom:12px;" aria-hidden="true"><img src="" alt="" style="height:32px;width:1px;"><div><span>—</span></div></div>
+                    {% endif %}
+                    <label class="upload-zone" for="favicon-input">
+                        <div style="font-size:28px;margin-bottom:8px;">🔖</div>
+                        <div style="font-size:14px;font-weight:600;color:#333;">{{ 'Favicon Değiştir' if s.favicon_url else 'Favicon Yükle' }}</div>
+                        <div style="font-size:12px;color:#aaa;margin-top:4px;">ICO, PNG, SVG — 32×32 veya 64×64 piksel</div>
+                        <input id="favicon-input" type="file" name="favicon" accept="image/*,.ico"
+                            onchange="previewFile(this,'favicon-prev','favicon-preview-wrap')">
+                    </label>
+                    <div id="favicon-preview-wrap" style="display:none;margin-top:12px;padding:12px;background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;">
+                        <div style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;">YENİ FAVİKON ÖNİZLEME</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <img id="favicon-prev" style="height:32px;width:32px;object-fit:contain;">
+                            <div style="background:#e0e0e0;border-radius:4px;padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                                <img id="favicon-tab-prev" style="height:16px;width:16px;object-fit:contain;">
+                                <span>Tarayıcı sekmesi önizleme</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="brand-hint">&nbsp;</p>
+                </div>
+            </div>
+
+            <!-- Logo Nasıl Kullanılır? -->
+            <div style="margin-top:20px;padding:14px;background:#f0f4ff;border:1px solid #c7d4f5;border-radius:8px;font-size:13px;color:#3949ab;">
+                💡 <strong>Logo ve favicon</strong> yükledikten sonra sitedeki tüm sayfalarda (anasayfa, showroom, ürün detayları, sepet) otomatik olarak görünür hale gelir.
+                Favicon tarayıcı sekmesinde ve yer imlerinde gösterilir.
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ DİL BAZLI (Site adı, İletişim, SEO, Footer — her dil için ayrı) ═══ -->
+    <div id="settings-i18n" style="display:none;">
+        <input type="hidden" name="i18n_json" id="i18n_json" value="">
+        <div class="card" style="margin-bottom:20px;">
+            <div class="card-title">🌐 Dil seçin</div>
+            <div class="lang-bar" style="display:flex;gap:8px;flex-wrap:wrap;">
+                {% for lc in supported_langs %}
+                <button type="button" class="lang-tab-i18n settings-tab {% if loop.first %}active{% endif %}" data-lang="{{ lc }}">{{ lang_labels.get(lc, lc) }}</button>
+                {% endfor %}
+            </div>
+            <p class="hint" style="margin-top:12px;">Seçili dildeki site adı, iletişim, meta başlık/açıklama ve footer metinleri düzenlenir. Hangi dilde ziyaret edilirse o dildeki bilgiler gösterilir.</p>
+        </div>
+        <div class="card">
+            <div class="card-title">🏷 Site adı (seçili dil)</div>
+            <div class="form-group">
+                <input id="i18n_site_name" class="form-input" placeholder="Heni">
+                <p class="hint">Navbar ve sayfa başlıklarında görünür.</p>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📞 İletişim (seçili dil)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div class="form-group">
+                    <label class="form-label">E-posta</label>
+                    <input id="i18n_contact_email" class="form-input" type="email" placeholder="info@heni.com.tr">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon / WhatsApp</label>
+                    <input id="i18n_contact_phone" class="form-input" placeholder="+90 216 123 45 67">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Adres</label>
+                <input id="i18n_contact_address" class="form-input" placeholder="Örn: Atatürk Mah. İstanbul / Türkiye">
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">🔍 SEO (seçili dil)</div>
+            <div class="form-group">
+                <label class="form-label">Varsayılan meta başlık şablonu</label>
+                <input id="i18n_seo_title_template" class="form-input" placeholder="%s | Heni">
+                <p class="hint">%s = sayfa başlığı.</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Varsayılan meta açıklama</label>
+                <textarea id="i18n_seo_description" class="form-input" rows="3" placeholder="Genel açıklama..."></textarea>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📄 Footer (seçili dil)</div>
+            <div class="form-group">
+                <label class="form-label">Footer açıklama metni</label>
+                <textarea id="i18n_footer_description" class="form-input" rows="3" placeholder="Global industrial manufacturer..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telif — ana metin</label>
+                <input id="i18n_footer_copyright_lead" class="form-input" placeholder="© 2024 Heni. All rights reserved.">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telif — son ek</label>
+                <input id="i18n_footer_copyright" class="form-input" placeholder="| Industrial Manufacturing Excellence">
+            </div>
+            <div class="form-label" style="margin-bottom:12px;">Link sütunları (3 sütun × 4 link)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+                {% for i in [1, 2, 3] %}
+                <div style="border:1px solid #e8eaf0;border-radius:10px;padding:16px;background:#fafbfc;">
+                    <input id="i18n_footer_col{{ i }}_title" class="form-input" placeholder="{{ ['Company', 'Manufacturing', 'Services'][i-1] }}" style="margin-bottom:12px;">
+                    {% for j in [1, 2, 3, 4] %}
+                    <div style="margin-bottom:8px;">
+                        <input id="i18n_footer_col{{ i }}_link{{ j }}_label" class="form-input" placeholder="Link metni" style="margin-bottom:4px;">
+                        <input id="i18n_footer_col{{ i }}_link{{ j }}_url" class="form-input" placeholder="URL">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SOSYAL MEDYA ═══ -->
+    <div id="settings-social" style="display:none;">
+        <div class="card">
+            <div class="card-title">🔗 Sosyal Medya Bağlantıları</div>
+            <p style="font-size:13px;color:#888;margin-bottom:20px;">Boş bırakılan alanlar footer'da gösterilmez.</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                <div class="form-group">
+                    <label class="form-label">LinkedIn</label>
+                    <div style="display:flex;align-items:center;gap:0;">
+                        <span style="padding:10px 12px;background:#f3f4f6;border:1px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:18px;">🔵</span>
+                        <input name="social_linkedin" class="form-input" style="border-radius:0 8px 8px 0;" value="{{ s.social_linkedin or '' }}" placeholder="https://linkedin.com/company/...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Instagram</label>
+                    <div style="display:flex;align-items:center;gap:0;">
+                        <span style="padding:10px 12px;background:#f3f4f6;border:1px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:18px;">📷</span>
+                        <input name="social_instagram" class="form-input" style="border-radius:0 8px 8px 0;" value="{{ s.social_instagram or '' }}" placeholder="https://instagram.com/...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Twitter / X</label>
+                    <div style="display:flex;align-items:center;gap:0;">
+                        <span style="padding:10px 12px;background:#f3f4f6;border:1px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:18px;">🐦</span>
+                        <input name="social_twitter" class="form-input" style="border-radius:0 8px 8px 0;" value="{{ s.social_twitter or '' }}" placeholder="https://twitter.com/...">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">WhatsApp (iletişim butonu)</label>
+                    <div style="display:flex;align-items:center;gap:0;">
+                        <span style="padding:10px 12px;background:#f3f4f6;border:1px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:18px;">💬</span>
+                        <input name="social_whatsapp" class="form-input" style="border-radius:0 8px 8px 0;" value="{{ s.social_whatsapp or '' if s.social_whatsapp is defined else '' }}" placeholder="+90 5XX XXX XX XX">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ GELİŞMİŞ ═══ -->
+    <div id="settings-advanced" style="display:none;">
+        <div class="card">
+            <div class="card-title">⚙️ Gelişmiş Ayarlar</div>
+            <div class="form-group">
+                <label class="form-label">Footer arka plan görseli URL (tüm diller)</label>
+                <input name="footer_bg_image_url" class="form-input" value="{{ s.footer_bg_image_url or '' if s.footer_bg_image_url is defined else '' }}" placeholder="/static/upload/images/footer-factory.jpg">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Google Analytics / Tag Manager</label>
+                <textarea name="analytics_code" class="form-input" style="font-family:monospace;font-size:12px;min-height:80px;"
+                    placeholder="<!-- GTM / Analytics -->">{{ s.analytics_code or '' if s.analytics_code is defined else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Özel CSS</label>
+                <textarea name="custom_css" class="form-input" style="font-family:monospace;font-size:12px;min-height:120px;"
+                    placeholder="/* Özel CSS */">{{ s.custom_css or '' if s.custom_css is defined else '' }}</textarea>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #f0f0f0;margin:24px 0;">
+            <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:16px;">Bakım Modu</div>
+            <div style="display:flex;align-items:center;gap:16px;padding:16px;background:#fff8f0;border:1px solid #ffe0b2;border-radius:8px;">
+                <span style="font-size:24px;">🚧</span>
+                <div style="flex:1;">
+                    <div style="font-size:14px;font-weight:600;color:#e65100;">Bakım Modu</div>
+                    <div style="font-size:13px;color:#8d5a2c;margin-top:2px;">Etkinleştirildiğinde ziyaretçiler bakım sayfasını görür, admin paneli çalışır.</div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="maintenance_mode" value="1">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAVE BAR -->
+    <div style="position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e8eaf0;padding:14px 0;display:flex;justify-content:flex-end;gap:12px;z-index:50;">
+        <button type="button" onclick="window.open('/', '_blank')"
+            style="padding:10px 20px;background:#f3f4f6;color:#333;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+            👁 Siteyi Görüntüle ↗
+        </button>
+        <button type="submit"
+            style="padding:10px 32px;background:#0a0a0a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+            💾 Tüm Ayarları Kaydet
+        </button>
+    </div>
+</form>
+
+<script>
+function switchSettings(name, btn) {
+    ['brand','i18n','social','advanced'].forEach(s => {
+        const el = document.getElementById('settings-' + s);
+        if (el) el.style.display = 'none';
+    });
+    document.querySelectorAll('.settings-tab:not(.lang-tab-i18n)').forEach(b => b.classList.remove('active'));
+    const el = document.getElementById('settings-' + name);
+    if (el) el.style.display = 'block';
+    if (btn) btn.classList.add('active');
+}
+
+function previewFile(input, previewId, wrapId) {
+    const preview = document.getElementById(previewId);
+    const wrap    = document.getElementById(wrapId);
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            preview.src = e.target.result;
+            if (wrap) wrap.style.display = 'block';
+            // favicon için tab önizleme de güncelle
+            const tabPrev = document.getElementById('favicon-tab-prev');
+            if (tabPrev && previewId === 'favicon-prev') tabPrev.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Drag & Drop for logo
+const logoDrop = document.getElementById('logo-drop');
+if (logoDrop) {
+    ['dragover','dragenter'].forEach(ev => logoDrop.addEventListener(ev, e => { e.preventDefault(); logoDrop.style.borderColor = '#0a0a0a'; }));
+    ['dragleave','dragend'].forEach(ev => logoDrop.addEventListener(ev, () => { logoDrop.style.borderColor = ''; }));
+    logoDrop.addEventListener('drop', e => {
+        e.preventDefault();
+        logoDrop.style.borderColor = '';
+        const f = e.dataTransfer.files[0];
+        if (f) {
+            const inp = document.getElementById('logo-input');
+            const dt = new DataTransfer();
+            dt.items.add(f);
+            inp.files = dt.files;
+            previewFile(inp, 'logo-prev', 'logo-preview-wrap');
+        }
+    });
+}
+
+// ─── Dil bazlı ayarlar (i18n) ─────────────────────────────────────────
+const SUPPORTED_LANGS = {{ supported_langs | tojson }};
+let i18nData = {{ i18n | tojson }};
+let activeLang = 'en';
+// Eksik dilleri boş obje ile doldur
+SUPPORTED_LANGS.forEach(lc => { if (!i18nData[lc]) i18nData[lc] = {}; });
+
+function i18nFooterColsFromForm() {
+    const cols = [];
+    for (let i = 1; i <= 3; i++) {
+        const title = (document.getElementById('i18n_footer_col'+i+'_title') || {}).value || '';
+        const links = [];
+        for (let j = 1; j <= 4; j++) {
+            const label = (document.getElementById('i18n_footer_col'+i+'_link'+j+'_label') || {}).value || '';
+            const url = (document.getElementById('i18n_footer_col'+i+'_link'+j+'_url') || {}).value || '#';
+            links.push({ label, url });
+        }
+        cols.push({ title, links });
+    }
+    return cols;
+}
+function i18nFormToData() {
+    return {
+        site_name: (document.getElementById('i18n_site_name') || {}).value || '',
+        contact_email: (document.getElementById('i18n_contact_email') || {}).value || '',
+        contact_phone: (document.getElementById('i18n_contact_phone') || {}).value || '',
+        contact_address: (document.getElementById('i18n_contact_address') || {}).value || '',
+        seo_title_template: (document.getElementById('i18n_seo_title_template') || {}).value || '',
+        seo_description: (document.getElementById('i18n_seo_description') || {}).value || '',
+        footer_description: (document.getElementById('i18n_footer_description') || {}).value || '',
+        footer_copyright_lead: (document.getElementById('i18n_footer_copyright_lead') || {}).value || '',
+        footer_copyright: (document.getElementById('i18n_footer_copyright') || {}).value || '',
+        footer_columns: i18nFooterColsFromForm()
+    };
+}
+function i18nDataToForm(d) {
+    if (!d) d = {};
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = (v != null && v !== '') ? v : ''; };
+    set('i18n_site_name', d.site_name);
+    set('i18n_contact_email', d.contact_email);
+    set('i18n_contact_phone', d.contact_phone);
+    set('i18n_contact_address', d.contact_address);
+    set('i18n_seo_title_template', d.seo_title_template);
+    set('i18n_seo_description', d.seo_description);
+    set('i18n_footer_description', d.footer_description);
+    set('i18n_footer_copyright_lead', d.footer_copyright_lead);
+    set('i18n_footer_copyright', d.footer_copyright);
+    let cols = d.footer_columns;
+    if (typeof cols === 'string') { try { cols = JSON.parse(cols); } catch(e) { cols = []; } }
+    if (!Array.isArray(cols)) cols = [];
+    for (let i = 1; i <= 3; i++) {
+        const c = cols[i-1] || {};
+        set('i18n_footer_col'+i+'_title', c.title);
+        for (let j = 1; j <= 4; j++) {
+            const link = (c.links || [])[j-1] || {};
+            set('i18n_footer_col'+i+'_link'+j+'_label', link.label);
+            set('i18n_footer_col'+i+'_link'+j+'_url', link.url);
+        }
+    }
+}
+function saveCurrentI18nToData() {
+    i18nData[activeLang] = i18nFormToData();
+}
+function switchI18nLang(lang, btn) {
+    saveCurrentI18nToData();
+    activeLang = lang;
+    i18nDataToForm(i18nData[lang]);
+    document.querySelectorAll('.lang-tab-i18n').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Dil sekmesi tıklama (i18n paneli içindeki EN, TR, ...)
+    document.querySelectorAll('.lang-tab-i18n').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const lang = this.getAttribute('data-lang');
+            if (lang) switchI18nLang(lang, this);
+        });
+    });
+    // İlk yüklemede seçili dil formu doldur
+    const firstLang = document.querySelector('.lang-tab-i18n.active');
+    if (firstLang) {
+        activeLang = firstLang.getAttribute('data-lang') || 'en';
+        i18nDataToForm(i18nData[activeLang]);
+    }
+    // Form gönderilmeden önce i18n_json'u doldur
+    const form = document.getElementById('settings-form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            saveCurrentI18nToData();
+            const hidden = document.getElementById('i18n_json');
+            if (hidden) hidden.value = JSON.stringify(i18nData);
+        });
+    }
+    // Ana sekme (Marka, Dil bazlı, ...) URL ?tab=
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab) {
+        const mainBtn = [...document.querySelectorAll('.settings-tab')].filter(b => !b.classList.contains('lang-tab-i18n')).find(b => b.getAttribute('onclick')?.includes("'"+tab+"'"));
+        if (mainBtn) mainBtn.click();
+    }
+});
+</script>
+{% endblock %}

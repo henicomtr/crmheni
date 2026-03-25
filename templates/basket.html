@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set _base_title = ui.basket ~ ' – ' ~ (site.site_name or 'Heni') %}
+    <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.css" />
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js"></script>
+</head>
+
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <div class="basket-page-container">
+
+        <!-- SOL — ÜRÜNLER -->
+        <div class="basket-section">
+
+            <h2>{{ ui.basket }}
+                {% if basket_items %}
+                <span class="item-count">{{ basket_items|length }}</span>
+                {% endif %}
+            </h2>
+
+            {% if basket_items %}
+            <div class="basket-items">
+
+                {% for item in basket_items %}
+                {% set t = item.trans %}
+                <div class="basket-item" data-product-id="{{ item.product.id }}" data-unit-price="{{ item.unit_price }}"
+                    data-original-price="{{ item.original_price }}" data-discount-rate="{{ item.discount_rate }}"
+                    data-pieces-per-box="{{ item.product.pieces_per_box }}"
+                    data-boxes-per-pallet="{{ item.product.boxes_per_pallet }}">
+
+                    <!-- Görsel + Bilgi -->
+                    <div class="item-info">
+                        {% if item.product.image %}
+                        <img src="{{ item.product.image }}" class="basket-thumb" alt="{{ t.name if t else '' }}">
+                        {% else %}
+                        <div class="basket-thumb placeholder">📦</div>
+                        {% endif %}
+
+                        <div class="item-meta">
+                            <h3>{{ t.name if t else '—' }}</h3>
+                            <div class="item-price-row">
+                                {% if item.discount_rate > 0 %}
+                                <span class="item-old-price">{{ price(item.original_price) }}</span>
+                                {% endif %}
+                                <span class="item-unit-price">{{ price(item.unit_price) }} / {{ ui.qty }}</span>
+                                {% if item.discount_rate > 0 %}
+                                <span class="discount-tag">−%{{ (item.discount_rate * 100)|int }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Miktar Kontrolleri -->
+                    <div class="quantity-grid">
+                        <div class="control-group">
+                            <label>{{ ui.qty }}</label>
+                            <input type="number" class="qty-input" data-type="quantity" value="{{ item.quantity }}"
+                                min="1" step="1">
+                        </div>
+                        <div class="control-group">
+                            <label>{{ ui.boxes }}</label>
+                            <input type="number" class="qty-input" data-type="boxes" value="{{ item.boxes }}" readonly>
+                        </div>
+                        <div class="control-group">
+                            <label>{{ ui.pallets }}</label>
+                            <input type="number" class="qty-input" data-type="pallets" value="{{ item.pallets }}"
+                                readonly>
+                        </div>
+                    </div>
+
+                    <!-- Satır Toplamı -->
+                    <div class="item-total">
+                        <div class="item-total-price">{{ price(item.total_price) }}</div>
+                        <div class="item-total-label">{{ ui.total }}</div>
+                    </div>
+
+                    <!-- Güncelle / Sil -->
+                    <div class="item-actions">
+                        <form method="POST" action="{{ update_cart_url }}" class="inline-form update-form">
+                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                            <input type="hidden" name="quantity" class="update-qty-hidden" value="{{ item.quantity }}">
+                        </form>
+                        <form method="POST" action="{{ remove_cart_url }}" class="inline-form">
+                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                            <button type="submit" class="btn-remove">{{ ui.remove }}</button>
+                        </form>
+                    </div>
+
+                </div>
+                {% endfor %}
+
+            </div>
+
+            <div class="basket-footer">
+                <div class="total-label">{{ ui.basket_total }}</div>
+                <div class="total-amount" id="basket-total">{{ price(total_price) }}</div>
+            </div>
+
+            {% else %}
+            <div class="empty-basket">
+                <div class="empty-icon">📦</div>
+                <p>{{ ui.empty_basket }}</p>
+                <a href="{{ showroom_url }}" class="btn-primary">{{ ui.back_to_products }}</a>
+            </div>
+            {% endif %}
+
+        </div><!-- /basket-section -->
+
+
+        <!-- SAĞ — SIDEBAR -->
+        <div class="sidebar-section">
+
+            <div class="summary-card">
+                <h3>{{ ui.logistics_sim }}</h3>
+
+                <div class="logistics-row">
+                    <span>{{ ui.total_boxes }}</span>
+                    <span id="total-boxes">{{ total_boxes }}</span>
+                </div>
+                <div class="logistics-row">
+                    <span>{{ ui.total_pallets }}</span>
+                    <span id="total-pallets">{{ total_pallets }}</span>
+                </div>
+
+                <hr>
+
+                <div class="logistics-row highlight">
+                    <span>20FT <em style="opacity:.4;font-style:normal;font-size:11px;">(13 palet)</em></span>
+                    <span id="percent-20">{{ percent_20 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill-20" style="width:{{ percent_20 }}%;"></div>
+                </div>
+
+                <div class="logistics-row highlight">
+                    <span>40FT <em style="opacity:.4;font-style:normal;font-size:11px;">(24 palet)</em></span>
+                    <span id="percent-40">{{ percent_40 }}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill-40" style="width:{{ percent_40 }}%;"></div>
+                </div>
+
+                <hr>
+
+                <div class="logistics-row">
+                    <span>{{ ui.recommended }}</span>
+                    <span id="recommended-container" style="font-weight:800;letter-spacing:.04em;">
+                        {{ recommended_container }}
+                    </span>
+                </div>
+                <div class="logistics-row" style="opacity:.55;margin-top:4px;">
+                    <span style="font-size:11px;">{{ ui.remaining_20 }}</span>
+                    <span style="font-size:12px;">{{ remaining_pallets_20 }}</span>
+                </div>
+                <div class="logistics-row" style="opacity:.55;">
+                    <span style="font-size:11px;">{{ ui.remaining_40 }}</span>
+                    <span style="font-size:12px;">{{ remaining_pallets_40 }}</span>
+                </div>
+            </div>
+
+            <form id="order-request-form" method="POST" action="{{ quote_url }}">
+
+                <input type="text" name="company_name" placeholder="{{ ui.company }}" required>
+
+                <input type="text" name="contact_person" placeholder="{{ ui.contact }}" required>
+
+                <input type="tel" id="phone" name="phone" placeholder="{{ ui.phone }}" required>
+
+                <input type="hidden" name="country" id="country">
+
+                <input type="email" name="email" placeholder="{{ ui.email }}" required>
+
+                <textarea name="notes" placeholder="{{ ui.notes }}"></textarea>
+
+                <button type="submit">{{ ui.order_request }}</button>
+            </form>
+
+        </div><!-- /sidebar-section -->
+
+    </div>
+
+    <script>
+    window.BASKET_UI = {
+        lang: "{{ lang }}",
+        update_cart_url: "{{ update_cart_url }}",
+        rates: {
+            USD_TRY: {{ rates.USD_TRY }},
+            EUR_TRY: {{ rates.EUR_TRY }},
+            EUR_USD: {{ rates.EUR_USD }},
+            source:  "{{ rates.source }}",
+            updated: "{{ rates.updated }}",
+        }
+    };
+    </script>
+    <script src="{{ url_for('static', path='js/basket.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const phoneInput = document.querySelector("#phone");
+            const countryInput = document.querySelector("#country");
+
+            const iti = window.intlTelInput(phoneInput, {
+                initialCountry: "auto",
+                separateDialCode: true,
+                preferredCountries: ["tr", "de", "us", "gb", "fr"],
+                utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"
+            });
+
+            document.querySelector("#order-request-form").addEventListener("submit", function () {
+                phoneInput.value = iti.getNumber();
+                countryInput.value = iti.getSelectedCountryData().name;
+            });
+        });
+    </script>
+
+</body>
+
+</html>

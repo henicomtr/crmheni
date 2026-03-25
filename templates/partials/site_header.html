@@ -1,0 +1,176 @@
+{# Ortak site header — tüm sayfalarda sabit, anasayfa tarzı. hp, lang_urls, ui, site, home_url, showroom_url, basket_url, lang, cart gerekli. Opsiyonel: active_page (home|showroom|basket) #}
+<header class="site-header {% if site.logo_white_url %}has-white-logo{% endif %}" id="site-header">
+    <a href="{{ home_url }}" class="site-header-logo">
+        {% if site.logo_url %}
+        <img src="{{ site.logo_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-default">
+        {% if site.logo_white_url %}
+        <img src="{{ site.logo_white_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-white">
+        {% endif %}
+        {% else %}
+        <span class="site-header-logo-icon">{{ (site.site_name or 'H')[0]|upper }}</span>
+        <span class="site-header-logo-text">{{ (site.site_name or 'HENI KOZMETIK')|upper }}</span>
+        {% endif %}
+    </a>
+
+    <nav class="site-header-links">
+        {% if hp and hp.get('nav_links') %}
+        {% for item in hp.nav_links %}
+        <a href="{{ item.url or '#' }}">{{ item.label }}</a>
+        {% endfor %}
+        {% else %}
+        <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
+        <a href="{{ showroom_url }}" class="{% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
+        {% endif %}
+        <a href="{{ basket_url }}" class="site-header-basket {% if active_page == 'basket' %}active{% endif %}">
+            {{ ui.basket }}
+            {% set cart_count = cart|length %}
+            {% if cart_count > 0 %}
+            <span id="basket-badge" class="site-header-badge">{{ cart_count }}</span>
+            {% else %}
+            <span id="basket-badge" class="site-header-badge" style="display:none;">0</span>
+            {% endif %}
+        </a>
+    </nav>
+
+    <div class="site-header-lang" id="site-header-lang">
+        <button type="button" class="site-header-lang-trigger" id="lang-trigger" aria-expanded="false" aria-haspopup="true" aria-label="Dil seçin">
+            <svg class="site-header-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <span class="site-header-lang-current">{{ lang_labels.get(lang, lang) }}</span>
+            <svg class="site-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        </button>
+        <div class="site-header-lang-dropdown" id="lang-dropdown" role="menu" aria-hidden="true">
+            {% for lc, lurl in lang_urls.items() %}
+            <a href="{{ lurl }}" role="menuitem" class="{% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="site-header-cta">{{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →</a>
+
+    {# Mobil hamburger butonu — sadece ≤768px'de görünür #}
+    <button type="button" class="site-header-mobile-toggle" id="mobile-menu-toggle" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-menu">
+        <span class="mobile-toggle-bar"></span>
+        <span class="mobile-toggle-bar"></span>
+        <span class="mobile-toggle-bar"></span>
+    </button>
+</header>
+
+{# Mobil menü paneli — header'ın hemen altına açılır #}
+<div class="site-header-mobile-menu" id="mobile-menu" aria-hidden="true">
+    <nav class="mobile-menu-links">
+        {% if hp and hp.get('nav_links') %}
+        {% for item in hp.nav_links %}
+        <a href="{{ item.url or '#' }}">{{ item.label }}</a>
+        {% endfor %}
+        {% else %}
+        <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
+        <a href="{{ showroom_url }}" class="{% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
+        {% endif %}
+        <a href="{{ basket_url }}" class="{% if active_page == 'basket' %}active{% endif %}">
+            {{ ui.basket }}
+            {% set cart_count = cart|length %}
+            {% if cart_count > 0 %}
+            <span class="site-header-badge">{{ cart_count }}</span>
+            {% endif %}
+        </a>
+    </nav>
+
+    <div class="mobile-menu-divider"></div>
+
+    {# Dil seçimi — her dil doğrudan liste olarak #}
+    <div class="mobile-menu-lang">
+        <span class="mobile-menu-lang-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+        </span>
+        <div class="mobile-menu-lang-list">
+            {% for lc, lurl in lang_urls.items() %}
+            <a href="{{ lurl }}" class="{% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="mobile-menu-divider"></div>
+
+    {# CTA butonu #}
+    <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="mobile-menu-cta">
+        {{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →
+    </a>
+</div>
+
+<script>
+(function() {
+    var header = document.getElementById('site-header');
+    if (header) {
+        window.addEventListener('scroll', function() {
+            header.classList.toggle('scrolled', window.pageYOffset > 80);
+        });
+    }
+
+    // Masaüstü dil dropdown
+    var trigger = document.getElementById('lang-trigger');
+    var dropdown = document.getElementById('lang-dropdown');
+    var wrapper = document.getElementById('site-header-lang');
+    if (trigger && dropdown) {
+        function openLang() {
+            dropdown.classList.add('open');
+            if (wrapper) wrapper.classList.add('open');
+            dropdown.setAttribute('aria-hidden', 'false');
+            trigger.setAttribute('aria-expanded', 'true');
+            document.addEventListener('click', closeLangOnOutside);
+        }
+        function closeLang() {
+            dropdown.classList.remove('open');
+            if (wrapper) wrapper.classList.remove('open');
+            dropdown.setAttribute('aria-hidden', 'true');
+            trigger.setAttribute('aria-expanded', 'false');
+            document.removeEventListener('click', closeLangOnOutside);
+        }
+        function closeLangOnOutside(e) {
+            if (!trigger.contains(e.target) && !dropdown.contains(e.target)) closeLang();
+        }
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (dropdown.classList.contains('open')) closeLang(); else openLang();
+        });
+    }
+
+    // Mobil hamburger menü
+    var mobileToggle = document.getElementById('mobile-menu-toggle');
+    var mobileMenu = document.getElementById('mobile-menu');
+    if (mobileToggle && mobileMenu) {
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenu.setAttribute('aria-hidden', 'false');
+            mobileToggle.setAttribute('aria-expanded', 'true');
+            mobileToggle.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            mobileToggle.setAttribute('aria-expanded', 'false');
+            mobileToggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        mobileToggle.addEventListener('click', function() {
+            if (mobileMenu.classList.contains('open')) closeMobileMenu(); else openMobileMenu();
+        });
+        // Menü dışına tıklanınca kapat
+        document.addEventListener('click', function(e) {
+            if (mobileMenu.classList.contains('open') &&
+                !mobileMenu.contains(e.target) &&
+                !mobileToggle.contains(e.target)) {
+                closeMobileMenu();
+            }
+        });
+    }
+})();
+</script>

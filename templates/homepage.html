@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+{#
+  Gerekli context değişkenleri: hp (HomepageContent.get_data() sonucu dict),
+  lang, lang_urls, ui, site, home_url, showroom_url, basket_url, cart.
+  tr_data: (opsiyonel) "tr" dilindeki HomepageContent.get_data() — görsel fallback için.
+  Frontend route'unda şu şekilde geçirilmeli:
+    tr_hp  = db.query(HomepageContent).filter(HomepageContent.lang == "tr").first()
+    tr_data = tr_hp.get_data() if tr_hp else {}
+  tr_data geçirilmezse fallback çalışmaz ama sayfa hatasız render edilir.
+#}
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set _base_title = hp.get('meta_title') or ((site.site_name or 'Heni Kozmetik') ~ ' — Global Industrial Manufacturing Partner') %}
+    <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
+    {% if hp.get('meta_description') %}<meta name="description" content="{{ hp.meta_description }}">{% endif %}
+    {% if hp.get('og_title') %}<meta property="og:title" content="{{ hp.og_title }}">{% endif %}
+    {% if hp.get('og_description') %}<meta property="og:description" content="{{ hp.og_description }}">{% endif %}
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    {% for lc, lurl in lang_urls.items() %}
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    {% endfor %}
+    <link rel="alternate" hreflang="x-default" href="/">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── RESET & BASE ── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --navy:       #0f172a;
+            --navy-dark:  #0a0f1e;
+            --metallic:   #1e3a8a;
+            --white:      #ffffff;
+            --light-bg:   #f5f7fb;
+            --gray-100:   #f8fafc;
+            --gray-200:   #e2e8f0;
+            --gray-700:   #334155;
+            --gray-900:   #0f172a;
+            --font-body:  'Inter', -apple-system, sans-serif;
+            --ease: cubic-bezier(.4,0,.2,1);
+            --shadow-sm: 0 1px 3px rgba(15,23,42,0.08);
+            --shadow-md: 0 4px 12px rgba(15,23,42,0.12);
+            --shadow-lg: 0 12px 32px rgba(15,23,42,0.18);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: var(--font-body);
+            background: var(--white);
+            color: var(--navy);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        a { text-decoration: none; color: inherit; }
+        img { max-width: 100%; display: block; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+        section { position: relative; }
+
+        /* ── NAVBAR ── */
+        .hp-nav {
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            height: 72px;
+            display: flex;
+            align-items: center;
+            padding: 0 48px;
+            gap: 40px;
+            border-bottom: 1px solid var(--gray-200);
+            transition: all 0.3s var(--ease);
+        }
+        .hp-nav.scrolled {
+            background: rgba(15, 23, 42, 0.98);
+            border-bottom-color: rgba(255,255,255,0.1);
+        }
+        .hp-nav.scrolled .hp-nav-links a,
+        .hp-nav.scrolled .hp-nav-logo .logo-text {
+            color: var(--white);
+        }
+        .hp-nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: auto;
+        }
+        .hp-nav-logo .logo-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--navy);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--white);
+            border-radius: 6px;
+        }
+        .hp-nav-logo .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.02em;
+            transition: color 0.3s var(--ease);
+        }
+        .hp-nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+        .hp-nav-links a {
+            color: var(--gray-700);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            transition: color .2s;
+            position: relative;
+        }
+        .hp-nav-links a:hover { color: var(--metallic); }
+        .hp-nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--metallic);
+            transition: width 0.3s var(--ease);
+        }
+        .hp-nav-links a:hover::after { width: 100%; }
+        .hp-nav-lang {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--gray-700);
+            transition: all .2s;
+            border: 1px solid transparent;
+        }
+        .lang-btn:hover { 
+            color: var(--navy); 
+            background: var(--gray-100);
+        }
+        .lang-btn.active { 
+            background: var(--metallic); 
+            color: var(--white); 
+            border-color: var(--metallic); 
+        }
+        .hp-nav-cta {
+            background: var(--metallic);
+            color: var(--white);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 12px 28px;
+            border-radius: 6px;
+            letter-spacing: 0.02em;
+            transition: all .2s;
+        }
+        .hp-nav-cta:hover { 
+            background: var(--navy);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* ── HERO ── */
+        .hp-hero {
+            position: relative;
+            min-height: 100vh;
+            background: var(--navy);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .hp-hero-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url("{{ url_for('static', path='upload/images/hero-industrial.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            opacity: 0.35;
+        }
+        .hp-hero-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.5) 100%);
+        }
+        .hp-hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 120px 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .hp-hero-content h1 {
+            font-size: clamp(42px, 5.5vw, 68px);
+            font-weight: 800;
+            color: var(--white);
+            line-height: 1.1;
+            margin-bottom: 28px;
+            letter-spacing: -0.02em;
+            max-width: 900px;
+        }
+        .hp-hero-content p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 40px;
+            max-width: 620px;
+            line-height: 1.7;
+        }
+        .hp-hero-btns { 
+            display: flex; 
+            gap: 16px; 
+            flex-wrap: wrap; 
+        }
+        .btn-primary {
+            background: var(--metallic);
+            color: var(--white);
+            font-weight: 700;
+            font-size: 16px;
+            padding: 16px 36px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .3s var(--ease);
+            border: 2px solid var(--metallic);
+        }
+        .btn-primary:hover { 
+            background: var(--white);
+            color: var(--navy);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 16px;
+            padding: 14px 36px;
+            border-radius: 8px;
+            border: 2px solid rgba(255,255,255,0.5);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all .3s var(--ease);
+        }
+        .btn-outline:hover { 
+            border-color: var(--white); 
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* ── SECTION TITLES ── */
+        .section-title {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        .section-title h2 {
+            font-size: clamp(28px, 3vw, 42px);
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+        .section-title p {
+            font-size: 18px;
+            color: var(--gray-700);
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* ── PRODUCTION AREAS / INDUSTRIES SECTION ── */
+        .hp-industries {
+            padding: 100px 0;
+            background: var(--light-bg);
+        }
+        .industries-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 48px;
+        }
+        .industry-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+            border: 1px solid var(--gray-200);
+        }
+        .industry-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+        .industry-card-img {
+            height: 260px;
+            overflow: hidden;
+            background: var(--gray-200);
+        }
+        .industry-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .5s var(--ease);
+        }
+        .industry-card:hover .industry-card-img img { transform: scale(1.08); }
+        .industry-card-body {
+            padding: 32px;
+        }
+        .industry-card-body h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 12px;
+        }
+        .industry-card-body p {
+            font-size: 15px;
+            color: var(--gray-700);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* ── RAW MATERIAL TRADING SECTION ── */
+        .hp-raw-materials {
+            padding: 100px 48px;
+            background: var(--white);
+        }
+        .raw-materials-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        .raw-materials-content h2 {
+            font-size: clamp(32px, 3.5vw, 46px);
+            font-weight: 800;
+            color: var(--navy);
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .raw-materials-content p {
+            font-size: 16px;
+            color: var(--gray-700);
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        .raw-materials-visual {
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+            background-image: url("{{ url_for('static', path='upload/images/raw-materials.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* ── PRIVATE LABEL SECTION ── */
+        .hp-private-label {
+            padding: 100px 48px;
+            background: var(--navy);
+            color: var(--white);
+        }
+        .private-label-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+        .private-label-content h2 {
+            font-size: clamp(32px, 3.5vw, 46px);
+            font-weight: 800;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .private-label-content p {
+            font-size: 16px;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.8;
+            margin-bottom: 32px;
+        }
+        .capabilities-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+        .capability-item {
+            background: rgba(255,255,255,0.08);
+            padding: 28px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all .3s var(--ease);
+        }
+        .capability-item:hover {
+            background: rgba(255,255,255,0.12);
+            transform: translateY(-4px);
+        }
+        .capability-item h4 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .capability-item p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin: 0;
+        }
+        .private-label-visual {
+            height: 480px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .private-label-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .private-label-visual-placeholder {
+            color: rgba(255,255,255,0.25);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* ── GLOBAL EXPORT SECTION ── */
+        .hp-export {
+            padding: 100px 48px;
+            background-image: url("{{ url_for('static', path='upload/images/world-export.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: relative;
+        }
+        .hp-export::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15,23,42,0.88);
+        }
+        .export-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            color: var(--white);
+        }
+        .export-content h2 {
+            font-size: clamp(36px, 4vw, 52px);
+            font-weight: 800;
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .export-content p {
+            font-size: 20px;
+            color: rgba(255,255,255,0.85);
+            max-width: 680px;
+            margin: 0 auto 48px;
+        }
+        .export-stats {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            flex-wrap: wrap;
+        }
+        .export-stat {
+            text-align: center;
+        }
+        .export-stat-number {
+            font-size: 56px;
+            font-weight: 800;
+            color: var(--white);
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+        .export-stat-label {
+            font-size: 16px;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+        }
+
+        /* ── CERTIFICATION SECTION ── */
+        .hp-certification {
+            padding: 100px 48px;
+            background: var(--light-bg);
+        }
+        .certification-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .cert-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+        .cert-card {
+            background: var(--white);
+            padding: 40px 32px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--gray-200);
+            transition: all .3s var(--ease);
+        }
+        .cert-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--metallic);
+        }
+        .cert-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .cert-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 8px;
+        }
+        .cert-card p {
+            font-size: 14px;
+            color: var(--gray-700);
+        }
+
+        /* ── CTA SECTION ── */
+        .hp-cta-section {
+            padding: 100px 48px;
+            background: var(--white);
+            text-align: center;
+        }
+        .hp-cta-inner {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .hp-cta-inner h2 {
+            font-size: clamp(32px, 4vw, 48px);
+            font-weight: 800;
+            color: var(--navy);
+            margin-bottom: 24px;
+            letter-spacing: -0.02em;
+        }
+        .hp-cta-inner p {
+            font-size: 18px;
+            color: var(--gray-700);
+            margin-bottom: 40px;
+        }
+
+        /* ── FOOTER ── */
+        .hp-footer {
+            background-image: url("{{ site.footer_bg_image_url or url_for('static', path='upload/images/footer-factory.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            padding: 100px 48px 40px;
+            color: var(--white);
+        }
+        .hp-footer::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15,23,42,0.92);
+        }
+        .footer-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+        .footer-col h4 {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 24px;
+            color: rgba(255,255,255,0.6);
+        }
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .footer-col ul li a {
+            color: rgba(255,255,255,0.8);
+            font-size: 15px;
+            transition: color .2s;
+        }
+        .footer-col ul li a:hover {
+            color: var(--white);
+        }
+        .footer-col.brand h3 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        .footer-col.brand p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+        .footer-contact {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .footer-contact span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+        }
+        .footer-bottom {
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1200px) {
+            .industries-grid { grid-template-columns: repeat(2, 1fr); }
+            .cert-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+        }
+        
+        @media (max-width: 768px) {
+            .hp-nav { 
+                padding: 0 20px; 
+                gap: 16px;
+                height: 64px;
+            }
+            .hp-nav-links { display: none; }
+            .hp-nav-logo .logo-text { font-size: 18px; }
+            
+            .hp-hero-content { 
+                padding: 80px 24px; 
+            }
+            .hp-hero-content h1 { 
+                font-size: clamp(32px, 8vw, 42px);
+            }
+            .hp-hero-content p {
+                font-size: 16px;
+            }
+            
+            .container { padding: 0 24px; }
+            
+            .industries-grid, 
+            .cert-grid {
+                grid-template-columns: 1fr;
+                padding: 0 24px;
+            }
+            
+            .raw-materials-inner,
+            .private-label-inner {
+                grid-template-columns: 1fr;
+                gap: 48px;
+                padding: 0 24px;
+            }
+            
+            .raw-materials-visual {
+                height: 300px;
+            }
+            
+            .capabilities-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-stats {
+                gap: 40px;
+            }
+            
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            
+            .hp-industries,
+            .hp-raw-materials,
+            .hp-private-label,
+            .hp-export,
+            .hp-certification,
+            .hp-cta-section,
+            .hp-footer {
+                padding: 60px 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hp-hero { min-height: 80vh; }
+            .hp-hero-content { padding: 60px 20px; }
+            .btn-primary, .btn-outline {
+                width: 100%;
+                justify-content: center;
+            }
+            .export-stat-number { font-size: 42px; }
+        }
+    </style>
+    <script src="{{ url_for('static', path='js/homepage.js') }}" defer></script>
+</head>
+
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <!-- ══ HERO ══ -->
+    <section class="hp-hero">
+        {% set _hero_img = hp.get('hero_image_url') or (tr_data.get('hero_image_url') if tr_data is defined else '') %}
+        <div class="hp-hero-bg"{% if _hero_img %} style="background-image: url('{{ _hero_img }}');"{% endif %}></div>
+        <div class="hp-hero-content">
+            <h1>{% if hp.get('hero_title') %}{{ hp.hero_title|safe }}{% else %}Industrial Manufacturing Power for Global Brands{% endif %}</h1>
+            <p>{% if hp.get('hero_subtitle') %}{{ hp.hero_subtitle }}{% else %}Heni Kozmetik provides detergent, cosmetic and perfume manufacturing, global raw material trading, private label production and worldwide logistics.{% endif %}</p>
+            <div class="hp-hero-btns">
+                <a href="{{ hp.get('hero_btn1_url') or '#manufacturing' }}" class="btn-primary">
+                    {{ hp.get('hero_btn1_text') or 'Explore Our Manufacturing →' }}
+                </a>
+                <a href="{{ hp.get('hero_btn2_url') or '#contact' }}" class="btn-outline">
+                    {{ hp.get('hero_btn2_text') or 'Contact Us →' }}
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ PRODUCTION AREAS / OUR INDUSTRIES (Hizmetler) ══ -->
+    <section class="hp-industries" id="manufacturing">
+        <div class="section-title">
+            <h2>{{ hp.get('services_title') or 'Our Production Areas' }}</h2>
+            <p>{{ hp.get('services_subtitle') or 'Comprehensive manufacturing solutions across three industrial sectors' }}</p>
+        </div>
+        <div class="industries-grid">
+            {% if hp.get('services') and hp.services|length > 0 %}
+            {% for svc in hp.services[:4] %}
+            {% if svc.title %}
+            <div class="industry-card">
+                <div class="industry-card-img">
+            <img src="{{ svc.image or ((tr_data.get('services', [])[loop.index0].get('image','') if tr_data is defined and tr_data.get('services') and loop.index0 < tr_data.get('services',[])|length else '') or url_for('static', path='upload/images/detergent.jpg')) }}" alt="{{ svc.title }}">
+                </div>
+                <div class="industry-card-body">
+                    <h3>{{ svc.title }}</h3>
+                        {% if svc.short_description %}
+                        <p>{{ svc.short_description }}</p>
+                        {% endif %}
+                        {% if svc.url %}<p><a href="{{ svc.url }}" style="color:var(--metallic);font-weight:600;">Daha fazla →</a></p>{% endif %}
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <div class="industry-card">
+                <div class="industry-card-img">
+                    <img src="{{ url_for('static', path='upload/images/detergent.jpg') }}" alt="Detergent Manufacturing">
+                </div>
+                <div class="industry-card-body">
+                    <h3>Detergent Manufacturing</h3>
+                    <p>Industrial-grade detergent production with advanced formulation technology. From liquid to powder formats, we deliver high-performance cleaning solutions.</p>
+                </div>
+            </div>
+            <div class="industry-card">
+                <div class="industry-card-img">
+                    <img src="{{ url_for('static', path='upload/images/cosmetics.jpg') }}" alt="Cosmetic Manufacturing">
+                </div>
+                <div class="industry-card-body">
+                    <h3>Cosmetic Manufacturing</h3>
+                    <p>Premium cosmetic production with certified facilities. Skincare, haircare, and personal care products manufactured to international standards.</p>
+                </div>
+            </div>
+            <div class="industry-card">
+                <div class="industry-card-img">
+                    <img src="{{ url_for('static', path='upload/images/perfume.jpg') }}" alt="Perfume Manufacturing">
+                </div>
+                <div class="industry-card-body">
+                    <h3>Perfume Manufacturing</h3>
+                    <p>Fine fragrance production with expert perfumers. Custom scent development and large-scale manufacturing for global brands.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ══ GLOBAL RAW MATERIAL TRADING ══ -->
+    <section class="hp-raw-materials" id="raw-materials">
+        <div class="raw-materials-inner">
+            <div class="raw-materials-content">
+                <h2>{{ hp.get('raw_materials_title') or 'Global Raw Material Trading' }}</h2>
+                <p>{{ hp.get('raw_materials_p1') or 'We source and supply premium chemical raw materials from trusted suppliers worldwide. Our extensive network ensures consistent quality and competitive pricing for your production needs.' }}</p>
+                <p>{{ hp.get('raw_materials_p2') or 'From surfactants and emulsifiers to active ingredients and fragrances, we provide comprehensive chemical trading services with full regulatory compliance and technical support.' }}</p>
+                <a href="{{ hp.get('raw_materials_btn_url') or '#contact' }}" class="btn-primary">{{ hp.get('raw_materials_btn_text') or 'Request Raw Materials →' }}</a>
+            </div>
+            {% set _rm_img = hp.get('raw_materials_image_url') or (tr_data.get('raw_materials_image_url') if tr_data is defined else '') %}
+            <div class="raw-materials-visual"{% if _rm_img %} style="background-image: url('{{ _rm_img }}');"{% endif %}></div>
+        </div>
+    </section>
+
+    <!-- ══ PRIVATE LABEL MANUFACTURING ══ -->
+    <section class="hp-private-label" id="private-label">
+        <div class="private-label-inner">
+            <div class="private-label-content">
+                <h2>{{ hp.get('private_label_title') or 'We Manufacture for Global Brands' }}</h2>
+                <p>{{ hp.get('private_label_text') or 'Complete private label and contract manufacturing services. From concept to delivery, we handle every aspect of your product development.' }}</p>
+                <div class="capabilities-grid">
+                    {% if hp.get('private_label_cards') and hp.private_label_cards|length > 0 %}
+                    {% for cap in hp.private_label_cards[:4] %}
+                    <div class="capability-item">
+                        <h4>{{ cap.get('title') or '—' }}</h4>
+                        <p>{{ cap.get('description') or '' }}</p>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="capability-item">
+                        <h4>Custom Formulation</h4>
+                        <p>Develop unique formulas tailored to your brand requirements</p>
+                    </div>
+                    <div class="capability-item">
+                        <h4>Packaging Solutions</h4>
+                        <p>Complete packaging design and assembly services</p>
+                    </div>
+                    <div class="capability-item">
+                        <h4>Label Design</h4>
+                        <p>Professional label and artwork design support</p>
+                    </div>
+                    <div class="capability-item">
+                        <h4>Global Logistics</h4>
+                        <p>Worldwide shipping and distribution management</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="private-label-visual">
+                {% set _pl_img = hp.get('private_label_image_url') or (tr_data.get('private_label_image_url') if tr_data is defined else '') %}
+                {% if _pl_img %}
+                <img src="{{ _pl_img }}" alt="{{ hp.get('private_label_title') or 'Private Label Manufacturing' }}">
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ GLOBAL EXPORT ══ -->
+    <section class="hp-export" id="export">
+        <div class="export-content">
+            <h2>{{ hp.get('export_title') or 'Exporting to 70+ Countries' }}</h2>
+            <p>{{ hp.get('export_subtitle') or 'Trusted manufacturing partner for international brands across six continents' }}</p>
+            <div class="export-stats">
+                {% if hp.get('export_stats') and hp.export_stats|length > 0 %}
+                {% for stat in hp.export_stats[:3] %}
+                <div class="export-stat">
+                    <div class="export-stat-number">{{ stat.get('value') or '—' }}</div>
+                    <div class="export-stat-label">{{ stat.get('label') or '' }}</div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="export-stat">
+                    <div class="export-stat-number">70+</div>
+                    <div class="export-stat-label">Countries</div>
+                </div>
+                <div class="export-stat">
+                    <div class="export-stat-number">500+</div>
+                    <div class="export-stat-label">Global Clients</div>
+                </div>
+                <div class="export-stat">
+                    <div class="export-stat-number">30+</div>
+                    <div class="export-stat-label">Years Experience</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CERTIFICATION & CONSULTING ══ -->
+    <section class="hp-certification" id="certification">
+        <div class="certification-inner">
+            <div class="section-title">
+                <h2>{{ hp.get('cert_title') or 'Certification & Regulatory Support' }}</h2>
+                <p>{{ hp.get('cert_subtitle') or 'Comprehensive compliance and consulting services for global markets' }}</p>
+            </div>
+            <div class="cert-grid">
+                {% if hp.get('cert_cards') and hp.cert_cards|length > 0 %}
+                {% for card in hp.cert_cards[:4] %}
+                <div class="cert-card">
+                    <div class="cert-icon">{{ card.get('icon') or '✓' }}</div>
+                    <h4>{{ card.get('title') or '—' }}</h4>
+                    <p>{{ card.get('description') or '' }}</p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="cert-card">
+                    <div class="cert-icon">✓</div>
+                    <h4>GMP Certified</h4>
+                    <p>Good Manufacturing Practice compliance</p>
+                </div>
+                <div class="cert-card">
+                    <div class="cert-icon">✓</div>
+                    <h4>ISO Standards</h4>
+                    <p>International quality management systems</p>
+                </div>
+                <div class="cert-card">
+                    <div class="cert-icon">✓</div>
+                    <h4>MSDS & Documentation</h4>
+                    <p>Complete safety data and technical sheets</p>
+                </div>
+                <div class="cert-card">
+                    <div class="cert-icon">✓</div>
+                    <h4>Regulatory Consulting</h4>
+                    <p>Expert guidance on global regulations</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ══ CTA SECTION ══ -->
+    <section class="hp-cta-section" id="contact">
+        <div class="hp-cta-inner">
+            <h2>{{ hp.get('cta_title') or 'Build Your Brand With Our Manufacturing Power' }}</h2>
+            <p>{{ hp.get('cta_subtitle') or hp.get('sticky_sub') or 'Partner with a trusted industrial manufacturer for your next project' }}</p>
+            <a href="{{ hp.get('cta_btn_url') or showroom_url }}" class="btn-primary" style="font-size:18px; padding:18px 42px;">
+                {{ hp.get('cta_btn_text') or 'Start Your Project →' }}
+            </a>
+        </div>
+    </section>
+
+    <!-- ══ FOOTER ══ -->
+    <footer class="hp-footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-col brand">
+                    <h3>{{ site.site_name or 'HENI KOZMETIK' }}</h3>
+                    <p>{{ site.footer_description or 'Global industrial manufacturer specializing in detergent, cosmetic, and perfume production. Serving international brands with premium contract manufacturing and raw material trading.' }}</p>
+                    <div class="footer-contact">
+                        {% if site.contact_email %}<span>✉ {{ site.contact_email }}</span>{% endif %}
+                        {% if site.contact_phone %}<span>📞 {{ site.contact_phone }}</span>{% endif %}
+                        {% if site.contact_address %}<span>📍 {{ site.contact_address }}</span>{% endif %}
+                        {% if not site.contact_email and not site.contact_phone %}<span>📍 Eskişehir, Turkey</span>{% endif %}
+                    </div>
+                </div>
+                {% set footer_cols = site.get_footer_columns() %}
+                {% if footer_cols %}
+                {% for col in footer_cols %}
+                <div class="footer-col">
+                    <h4>{{ col.get('title', '') }}</h4>
+                    <ul>
+                        {% for link in (col.get('links') or []) %}
+                        <li><a href="{{ link.get('url', '#') }}">{{ link.get('label', '') }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#manufacturing">Manufacturing</a></li>
+                        <li><a href="#export">Global Export</a></li>
+                        <li><a href="#certification">Certifications</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Manufacturing</h4>
+                    <ul>
+                        <li><a href="#manufacturing">Detergent Production</a></li>
+                        <li><a href="#manufacturing">Cosmetic Production</a></li>
+                        <li><a href="#manufacturing">Perfume Production</a></li>
+                        <li><a href="#private-label">Private Label</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="#raw-materials">Raw Materials</a></li>
+                        <li><a href="#private-label">Contract Manufacturing</a></li>
+                        <li><a href="{{ showroom_url }}">Products</a></li>
+                        <li><a href="#contact">Get Quote</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <div class="footer-bottom">
+                <p>{{ site.footer_copyright_lead or '© 2024 ' + (site.site_name or 'Heni Kozmetik') + '. All rights reserved.' }}{% if site.footer_copyright %} {{ site.footer_copyright }}{% else %} | Industrial Manufacturing Excellence{% endif %}</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

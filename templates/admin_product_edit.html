@@ -1,0 +1,782 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet">
+
+<style>
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .btn-back:hover {
+        background: var(--surface-3);
+    }
+
+    .edit-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .edit-card-header {
+        padding: 18px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .edit-card-header h2 {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .edit-card-body {
+        padding: 28px;
+    }
+
+    .form-section-title {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 24px 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .form-section-title:first-child {
+        margin-top: 0;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-grid-4 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-group.span-2 {
+        grid-column: span 2;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .form-hint {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 3px;
+    }
+
+    .char-count {
+        text-align: right;
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 3px;
+    }
+
+    .char-count.warn {
+        color: #856404;
+    }
+
+    .char-count.over {
+        color: #c0392b;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        border-color: var(--dark);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 70px;
+    }
+
+    /* Dil sekmeleri */
+    .lang-tabs-wrap {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .lang-tab-nav {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+    }
+
+    .lang-tab-btn {
+        padding: 10px 20px;
+        border: none;
+        background: none;
+        font-family: var(--font);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition);
+        border-bottom: 2px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .lang-tab-btn:hover {
+        color: var(--text-primary);
+    }
+
+    .lang-tab-btn.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--dark);
+        background: var(--surface);
+    }
+
+    .lang-tab-btn .has-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success);
+        display: inline-block;
+    }
+
+    .lang-tab-panel {
+        display: none;
+        padding: 20px;
+        background: var(--surface);
+    }
+
+    .lang-tab-panel.active {
+        display: block;
+    }
+
+    .lang-panel-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    /* Quill */
+    .quill-wrap {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+        background: var(--surface);
+        transition: var(--transition);
+    }
+
+    .quill-wrap:focus-within {
+        border-color: var(--dark);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .quill-wrap .ql-toolbar {
+        border: none;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        font-family: var(--font);
+    }
+
+    .quill-wrap .ql-container {
+        border: none;
+        font-family: var(--font);
+        font-size: 13px;
+    }
+
+    .quill-wrap .ql-editor {
+        min-height: 140px;
+        padding: 12px 14px;
+        line-height: 1.7;
+    }
+
+    /* Slug preview */
+    .slug-preview {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        background: var(--surface-3);
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 5px;
+        font-family: var(--mono);
+    }
+
+    .slug-preview span {
+        color: var(--text-secondary);
+        font-weight: 600;
+    }
+
+    /* Dosya yükleme */
+    .file-upload-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .file-upload-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .file-upload-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 13px;
+        border: 1px dashed var(--border-dark);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .file-upload-wrap:hover {
+        border-color: var(--dark);
+        background: var(--surface);
+    }
+
+    .file-upload-wrap input[type="file"] {
+        display: none;
+    }
+
+    .file-upload-btn {
+        flex-shrink: 0;
+        padding: 5px 12px;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .file-upload-btn:hover {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+    }
+
+    .file-upload-name {
+        font-size: 12px;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .file-existing {
+        font-size: 11px;
+        color: var(--success);
+        font-weight: 600;
+        margin-top: 3px;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .form-actions-right {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-delete-product {
+        padding: 11px 20px;
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, .3);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-delete-product:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+    }
+
+    .btn-cancel {
+        padding: 11px 20px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: var(--transition);
+    }
+
+    .btn-cancel:hover {
+        background: var(--surface-3);
+    }
+
+    .btn-submit {
+        padding: 11px 28px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+        background: var(--dark-3);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width:900px) {
+
+        .form-grid-2,
+        .form-grid-3,
+        .form-grid-4,
+        .lang-panel-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.span-2 {
+            grid-column: span 1;
+        }
+
+        .edit-card-body {
+            padding: 20px 16px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-actions-right {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<!-- BAŞLIK -->
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Ürün Düzenle</h1>
+    <a href="/admin/products" class="btn-back">← Ürün Listesi</a>
+</div>
+
+<div class="edit-card">
+    <div class="edit-card-header">
+        {% set en_trans = product.get_translation('en') %}
+        <h2>{{ en_trans.name if en_trans else product.slug }}</h2>
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">ID #{{ product.id }}</span>
+    </div>
+    <div class="edit-card-body">
+        <form method="post" action="/admin/products/update/{{ product.id }}" enctype="multipart/form-data"
+            id="edit-form">
+
+            <!-- ÜRÜN BİLGİSİ -->
+            <div class="form-section-title">Ürün Bilgisi</div>
+            <div class="form-grid-3">
+                <div class="form-group">
+                    <label class="form-label">SKU / Barkod</label>
+                    <input type="text" name="barcode" class="form-control" value="{{ product.barcode or '' }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Birim Fiyat (USD) *</label>
+                    <div style="position:relative;">
+                        <input type="number" step="0.01" name="unit_price" class="form-control"
+                            value="{{ product.unit_price }}" required style="padding-right:52px;">
+                        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:var(--text-muted);pointer-events:none;">USD</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Stok</label>
+                    <input type="number" name="stock" class="form-control" value="{{ product.stock or 0 }}">
+                </div>
+            </div>
+
+            <!-- URL & KATEGORİ -->
+            <div class="form-section-title">URL & Kategori</div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Kategori *</label>
+                    <select name="category" class="form-control" required>
+                        <option value="">— Seçin —</option>
+                        <option value="Cilt Bakım" {{ 'selected' if product.category == "Cilt Bakım" else '' }}>{{ categories_ui["Cilt Bakım"] if categories_ui is defined and categories_ui else "Cilt Bakım" }}</option>
+                        <option value="Saç Bakım" {{ 'selected' if product.category == "Saç Bakım" else '' }}>{{ categories_ui["Saç Bakım"] if categories_ui is defined and categories_ui else "Saç Bakım" }}</option>
+                        <option value="Kişisel Bakım" {{ 'selected' if product.category == "Kişisel Bakım" else '' }}>{{ categories_ui["Kişisel Bakım"] if categories_ui is defined and categories_ui else "Kişisel Bakım" }}</option>
+                        <option value="Makyaj" {{ 'selected' if product.category == "Makyaj" else '' }}>{{ categories_ui["Makyaj"] if categories_ui is defined and categories_ui else "Makyaj" }}</option>
+                        <option value="Parfüm" {{ 'selected' if product.category == "Parfüm" else '' }}>{{ categories_ui["Parfüm"] if categories_ui is defined and categories_ui else "Parfüm" }}</option>
+                        <option value="Ortam Kokuları" {{ 'selected' if product.category == "Ortam Kokuları" else '' }}>{{ categories_ui["Ortam Kokuları"] if categories_ui is defined and categories_ui else "Ortam Kokuları" }}</option>
+                        <option value="Genel Temizlik" {{ 'selected' if product.category == "Genel Temizlik" else '' }}>{{ categories_ui["Genel Temizlik"] if categories_ui is defined and categories_ui else "Genel Temizlik" }}</option>
+                        <option value="Çamaşır Yıkama" {{ 'selected' if product.category == "Çamaşır Yıkama" else '' }}>{{ categories_ui["Çamaşır Yıkama"] if categories_ui is defined and categories_ui else "Çamaşır Yıkama" }}</option>
+                        <option value="Bulaşık Yıkama" {{ 'selected' if product.category == "Bulaşık Yıkama" else '' }}>{{ categories_ui["Bulaşık Yıkama"] if categories_ui is defined and categories_ui else "Bulaşık Yıkama" }}</option>
+                        <option value="Temizlik Malzemeleri" {{ 'selected' if product.category == "Temizlik Malzemeleri" else '' }}>{{ categories_ui["Temizlik Malzemeleri"] if categories_ui is defined and categories_ui else "Temizlik Malzemeleri" }}</option>
+                        <option value="Ambalaj" {{ 'selected' if product.category == "Ambalaj" else '' }}>{{ categories_ui["Ambalaj"] if categories_ui is defined and categories_ui else "Ambalaj" }}</option>
+                        <option value="Kozmetik Hammadde" {{ 'selected' if product.category == "Kozmetik Hammadde" else '' }}>{{ categories_ui["Kozmetik Hammadde"] if categories_ui is defined and categories_ui else "Kozmetik Hammadde" }}</option>
+                        <option value="Temizlik Hammadde" {{ 'selected' if product.category == "Temizlik Hammadde" else '' }}>{{ categories_ui["Temizlik Hammadde"] if categories_ui is defined and categories_ui else "Temizlik Hammadde" }}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL Slug</label>
+                    <input type="text" name="slug" id="slug-input" class="form-control" value="{{ product.slug or '' }}"
+                        oninput="manualSlug(this.value)">
+                    <div class="slug-preview">🔗 heni.com/product/<span id="slug-display">{{ product.slug or 'slug-yok'
+                            }}</span></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İhracat Ülkeleri</label>
+                    <input type="text" name="export_countries" class="form-control"
+                        value="{{ product.export_countries or '' }}">
+                </div>
+            </div>
+
+            <!-- ÇEVİRİ SEKMELERİ -->
+            <div class="form-section-title">Çeviri Sekmeleri</div>
+            <div class="lang-tabs-wrap">
+                <div class="lang-tab-nav">
+                    {% for lang_code, lang_flag in [('en','🇬🇧'),('tr','🇹🇷'),('de','🇩🇪'),('fr','🇫🇷'),('ar','🇸🇦'),('ru','🇷🇺'),('es','🇪🇸')] %}
+                    {% set t = product.get_translation(lang_code) if loop.first else None %}
+                    {% set has = product.translations | selectattr('lang','equalto',lang_code) | list | length > 0 %}
+                    <button type="button" class="lang-tab-btn {% if lang_code == 'en' %}active{% endif %}"
+                        onclick="switchLangTab('{{ lang_code }}', this)">
+                        {{ lang_flag }} {{ lang_code|upper }}
+                        {% if has %}<span class="has-dot"></span>{% endif %}
+                    </button>
+                    {% endfor %}
+                </div>
+
+                {% for lang_code, lang_flag, lang_label in
+                [('en','🇬🇧','English'),('tr','🇹🇷','Türkçe'),('de','🇩🇪','Deutsch'),('fr','🇫🇷','Français'),('ar','🇸🇦','العربية'),('ru','🇷🇺','Русский'),('es','🇪🇸','Español')] %}
+                {% set t = product.translations | selectattr('lang','equalto',lang_code) | first | default(None) %}
+                <div class="lang-tab-panel {% if lang_code == 'en' %}active{% endif %}" id="lang-panel-{{ lang_code }}">
+                    <div class="lang-panel-grid">
+                        <div class="form-group">
+                            <label class="form-label">Ürün Adı {% if lang_code == 'en' %}*{% endif %}</label>
+                            <input type="text" name="name_{{ lang_code }}" class="form-control"
+                                value="{{ t.name if t else '' }}" placeholder="{{ lang_label }} ürün adı" {% if
+                                lang_code=='en' %}required{% endif %}
+                                oninput="autoLangSlug(this.value, '{{ lang_code }}')">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kısa Açıklama</label>
+                            <input type="text" name="short_description_{{ lang_code }}" class="form-control"
+                                value="{{ t.short_description if t else '' }}"
+                                oninput="updateCharCount(this, 160, 'sd-count-{{ lang_code }}')">
+                            <div class="char-count" id="sd-count-{{ lang_code }}">
+                                {{ (t.short_description or '') | length if t else 0 }} / 160
+                            </div>
+                        </div>
+                        <div class="form-group span-2">
+                            <label class="form-label">
+                                URL Slug ({{ lang_code|upper }})
+                                {% if lang_code == 'en' %}<span style="color:var(--text-muted);font-weight:400;">—
+                                    varsayılan</span>{% endif %}
+                            </label>
+                            <input type="text" name="slug_{{ lang_code }}" id="slug-{{ lang_code }}"
+                                class="form-control" value="{{ t.slug if t and t.slug else '' }}"
+                                placeholder="otomatik-uretilir" oninput="manualLangSlug(this.value, '{{ lang_code }}')">
+                            <div class="slug-preview">
+                                🔗 heni.com/{% if lang_code != 'en' %}{{ lang_code }}/{% endif %}product/<span
+                                    id="slug-display-{{ lang_code }}">{{ t.slug if t and t.slug else (product.slug or
+                                    'otomatik') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top:12px;">
+                        <label class="form-label">Uzun Açıklama</label>
+                        <div class="quill-wrap">
+                            <div id="quill-{{ lang_code }}"></div>
+                        </div>
+                        <input type="hidden" name="long_description_{{ lang_code }}" id="ld-{{ lang_code }}"
+                            value="{{ t.long_description if t else '' }}">
+                    </div>
+
+                    <div class="lang-panel-grid" style="margin-top:12px;">
+                        <div class="form-group">
+                            <label class="form-label">Meta Başlık</label>
+                            <input type="text" name="meta_title_{{ lang_code }}" class="form-control"
+                                value="{{ t.meta_title if t else '' }}"
+                                oninput="updateCharCount(this, 60, 'mt-count-{{ lang_code }}')">
+                            <div class="char-count" id="mt-count-{{ lang_code }}">
+                                {{ (t.meta_title or '') | length if t else 0 }} / 60
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Meta Açıklama</label>
+                            <input type="text" name="meta_description_{{ lang_code }}" class="form-control"
+                                value="{{ t.meta_description if t else '' }}"
+                                oninput="updateCharCount(this, 160, 'md-count-{{ lang_code }}')">
+                            <div class="char-count" id="md-count-{{ lang_code }}">
+                                {{ (t.meta_description or '') | length if t else 0 }} / 160
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- LOJİSTİK -->
+            <div class="form-section-title">Lojistik Bilgileri</div>
+            <div class="form-grid-4">
+                <div class="form-group">
+                    <label class="form-label">Koli İçi Adet</label>
+                    <input type="number" name="pieces_per_box" class="form-control"
+                        value="{{ product.pieces_per_box or 1 }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Palet İçi Koli</label>
+                    <input type="number" name="boxes_per_pallet" class="form-control"
+                        value="{{ product.boxes_per_pallet or 1 }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">20FT (Palet)</label>
+                    <input type="number" name="pallets_20ft" class="form-control"
+                        value="{{ product.pallets_20ft or 10 }}" min="1">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">40FT (Palet)</label>
+                    <input type="number" name="pallets_40ft" class="form-control"
+                        value="{{ product.pallets_40ft or 20 }}" min="1">
+                </div>
+            </div>
+
+            <!-- MEDYA & BELGELER -->
+            <div class="form-section-title">Medya & Belgeler</div>
+            {% if product.image %}
+            <div
+                style="display:flex;align-items:center;gap:14px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:16px;">
+                <img src="{{ product.image }}"
+                    style="width:56px;height:56px;object-fit:contain;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);padding:4px;">
+                <div style="font-size:12px;color:var(--text-muted);">
+                    <strong style="display:block;color:var(--text-secondary);margin-bottom:2px;">Mevcut Görsel</strong>
+                    Yeni dosya seçerseniz değiştirilir.
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="form-grid-2">
+                {% set file_fields = [
+                ('image','Ürün Görseli','image/*',product.image),
+                ('product_video','Ürün Videosu','video/*',product.product_video),
+                ('loading_video','Yükleme Videosu','video/*',product.loading_video),
+                ('msds','MSDS','',product.msds),
+                ('tds','TDS','',product.tds),
+                ('analysis_doc','Analiz Belgesi','',product.analysis_doc),
+                ('quality_doc','Kalite Belgesi','',product.quality_doc),
+                ] %}
+                {% for fname,flabel,faccept,fexisting in file_fields %}
+                <div class="file-upload-group">
+                    <label class="file-upload-label">{{ flabel }}</label>
+                    <div class="file-upload-wrap" onclick="this.querySelector('input').click()">
+                        <input type="file" name="{{ fname }}" {% if faccept %}accept="{{ faccept }}" {% endif %}
+                            onchange="updateFileName(this)">
+                        <span class="file-upload-btn">Değiştir</span>
+                        <span class="file-upload-name">Yeni dosya seçilmedi</span>
+                    </div>
+                    {% if fexisting %}<div class="file-existing">✓ Mevcut dosya var</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="form-actions">
+                <a href="/admin/products/delete/{{ product.id }}" class="btn-delete-product"
+                    onclick="return confirm('Bu ürünü ve tüm çevirilerini silmek istediğinize emin misiniz?')">
+                    🗑 Ürünü Sil
+                </a>
+                <div class="form-actions-right">
+                    <a href="/admin/products" class="btn-cancel">İptal</a>
+                    <button type="submit" class="btn-submit">Değişiklikleri Kaydet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+<script>
+    // ── Quill — mevcut içerikle başlat ──────────────────────
+    const quills = {};
+    ['en', 'tr', 'de', 'fr', 'ar', 'ru', 'es'].forEach(lang => {
+        quills[lang] = new Quill(`#quill-${lang}`, {
+            theme: 'snow',
+            placeholder: `${lang.toUpperCase()} açıklaması...`,
+            modules: {
+                toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    [{ align: [] }], ['link'], ['clean']
+                ]
+            }
+        });
+        // Mevcut içeriği yükle
+        const existing = document.getElementById(`ld-${lang}`).value;
+        if (existing && existing.trim()) {
+            quills[lang].root.innerHTML = existing;
+        }
+    });
+
+    document.getElementById('edit-form').addEventListener('submit', () => {
+        ['en', 'tr', 'de', 'fr', 'ar', 'ru', 'es'].forEach(lang => {
+            document.getElementById(`ld-${lang}`).value = quills[lang].root.innerHTML;
+        });
+    });
+
+    // ── Dil sekme geçişi ─────────────────────────────────────
+    function switchLangTab(lang, btn) {
+        document.querySelectorAll('.lang-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.lang-tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = document.getElementById(`lang-panel-${lang}`);
+        panel.classList.add('active');
+        // Arapça için RTL yönü
+        panel.querySelectorAll('input, textarea').forEach(el => {
+            el.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        });
+        if (quills[lang]) {
+            quills[lang].root.dir = lang === 'ar' ? 'rtl' : 'ltr';
+        }
+    }
+
+    // ── Slug (dil bazlı) ─────────────────────────────────────
+    function slugify(text) {
+        const tr = {
+            'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ö': 'o', 'ş': 's', 'ü': 'u',
+            'Ç': 'c', 'Ğ': 'g', 'İ': 'i', 'Ö': 'o', 'Ş': 's', 'Ü': 'u'
+        };
+        return text.replace(/[çğışöüÇĞİŞÖÜ]/g, c => tr[c] || c).toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')
+            .replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    const slugManuallyEdited = { en: false, tr: false, de: false, fr: false, ar: false, ru: false, es: false };
+
+    function autoLangSlug(name, lang) {
+        if (slugManuallyEdited[lang]) return;
+        const s = slugify(name);
+        const input = document.getElementById(`slug-${lang}`);
+        const display = document.getElementById(`slug-display-${lang}`);
+        if (input) input.value = s;
+        if (display) display.textContent = s || 'otomatik';
+    }
+
+    function manualLangSlug(val, lang) {
+        slugManuallyEdited[lang] = val.length > 0;
+        const s = slugify(val);
+        const input = document.getElementById(`slug-${lang}`);
+        const display = document.getElementById(`slug-display-${lang}`);
+        if (input) input.value = s;
+        if (display) display.textContent = s || 'otomatik';
+    }
+    function updateCharCount(input, max, id) {
+        const len = input.value.length;
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = `${len} / ${max}`;
+        el.className = 'char-count' + (len > max ? ' over' : len > max * 0.85 ? ' warn' : '');
+    }
+    function updateFileName(input) {
+        const el = input.closest('.file-upload-wrap').querySelector('.file-upload-name');
+        el.textContent = input.files[0] ? input.files[0].name : 'Yeni dosya seçilmedi';
+    }
+</script>
+{% endblock %}

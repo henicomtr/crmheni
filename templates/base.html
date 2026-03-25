@@ -1,0 +1,14 @@
+
+<!DOCTYPE html>
+<html lang="{{ active_lang if active_lang is defined else 'en' }}">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{% block title %}HENİ{% endblock %}</title>
+	<link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+	{% block extra_head %}{% endblock %}
+</head>
+<body style="background:#f5f7fb;min-height:100vh;">
+	{% block content %}{% endblock %}
+</body>
+</html>

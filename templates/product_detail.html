@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO META -->
+    {% if site.seo_title_template and '%s' in site.seo_title_template %}{% set _page_title = site.seo_title_template|replace('%s', meta_title) %}{% elif site.seo_title_template %}{% set _page_title = site.seo_title_template %}{% else %}{% set _page_title = meta_title %}{% endif %}
+    <title>{{ _page_title }}</title>
+    <meta name="description" content="{{ meta_description }}">
+    <meta property="og:title" content="{{ _page_title }}">
+    <meta property="og:description" content="{{ meta_description }}">
+    {% if product.image %}
+    <meta property="og:image" content="{{ product.image }}">
+    {% endif %}
+    <meta property="og:type" content="product">
+    <link rel="canonical" href="{{ canonical }}">
+
+    <!-- hreflang — SEO: her dildeki eşdeğer URL -->
+    {% for lc, lurl in lang_urls.items() %}
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    {% endfor %}
+    <link rel="alternate" hreflang="x-default" href="{{ lang_urls.en }}">
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        .detail-page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 36px 48px 80px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 28px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .breadcrumb a:hover {
+            color: var(--text-primary);
+        }
+
+        .breadcrumb span {
+            opacity: .4;
+        }
+
+        .breadcrumb .current {
+            color: var(--text-secondary);
+            font-weight: 600;
+            opacity: 1;
+        }
+
+        .detail-main {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: start;
+            margin-bottom: 48px;
+        }
+
+        .detail-image-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 80px;
+        }
+
+        .detail-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 32px;
+        }
+
+        .detail-image-placeholder {
+            font-size: 64px;
+            opacity: .2;
+        }
+
+        .detail-info {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .detail-category {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color .15s;
+        }
+        a.detail-category:hover {
+            color: var(--text-primary);
+        }
+
+        .detail-title {
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: -.02em;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .detail-short-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+        }
+
+        .detail-price-block {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            padding: 20px;
+            background: var(--surface-2);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        .detail-price {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: var(--mono);
+            letter-spacing: -.03em;
+            color: var(--text-primary);
+        }
+
+        .detail-old-price {
+            font-size: 16px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+            font-family: var(--mono);
+        }
+
+        .detail-per {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: -4px;
+        }
+
+        .detail-in-basket {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--success-bg);
+            color: var(--success);
+            font-size: 13px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(26, 122, 74, .18);
+        }
+
+        .detail-in-basket::before {
+            content: "✓";
+        }
+
+        .logistics-info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .logistics-info-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            text-align: center;
+        }
+
+        .logistics-info-box .val {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: var(--mono);
+            color: var(--text-primary);
+            letter-spacing: -.02em;
+        }
+
+        .logistics-info-box .lbl {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .detail-add-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .detail-add-form .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface);
+        }
+
+        .detail-add-form .quantity-control button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            background: transparent;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .detail-add-form .quantity-control button:hover {
+            background: var(--surface-3);
+            color: var(--text-primary);
+        }
+
+        .detail-add-form .quantity-control input {
+            flex: 1;
+            height: 44px;
+            border: none;
+            outline: none;
+            text-align: center;
+            font-family: var(--mono);
+            font-size: 15px;
+            font-weight: 700;
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        .detail-add-form .add-to-cart-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--dark);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font);
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: -.01em;
+        }
+
+        .detail-add-form .add-to-cart-btn:hover {
+            background: var(--dark-3);
+            transform: translateY(-1px);
+        }
+
+        .detail-add-form .message-box {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-height: 16px;
+        }
+
+        /* Dil seçici */
+        .lang-switcher {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .lang-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--text-muted, #888);
+            transition: all .2s;
+        }
+
+        .lang-btn:hover {
+            background: rgba(0, 0, 0, .06);
+            color: #000;
+        }
+
+        .lang-btn.active {
+            background: #000;
+            color: #fff;
+        }
+
+        /* Tabs */
+        .detail-tabs {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-2);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            padding: 13px 20px;
+            border: none;
+            background: none;
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--surface-3);
+        }
+
+        .tab-btn.active {
+            color: var(--text-primary);
+            background: var(--surface);
+            border-bottom-color: var(--dark);
+        }
+
+        .tab-panel {
+            display: none;
+            padding: 28px;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .ql-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .ql-content h1,
+        .ql-content h2,
+        .ql-content h3 {
+            color: var(--text-primary);
+            margin: 16px 0 8px;
+        }
+
+        .ql-content ul,
+        .ql-content ol {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .ql-content p {
+            margin: 8px 0;
+        }
+
+        .no-data {
+            font-size: 14px;
+            color: var(--text-muted);
+            padding: 20px 0;
+        }
+
+        .discount-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .discount-table th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-2);
+        }
+
+        .discount-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .discount-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .discount-pct {
+            display: inline-block;
+            background: var(--success-bg);
+            color: var(--success);
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .media-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .media-card-label {
+            padding: 12px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            background: var(--surface-2);
+        }
+
+        .media-card-body {
+            padding: 16px;
+        }
+
+        .video-wrap video {
+            width: 100%;
+            border-radius: var(--radius-sm);
+        }
+
+        .doc-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .doc-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            color: inherit;
+            transition: var(--transition);
+            background: var(--surface);
+        }
+
+        .doc-link:hover {
+            border-color: var(--dark);
+            background: var(--surface-2);
+        }
+
+        .doc-link-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .doc-link-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+
+        .doc-link-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: block;
+        }
+
+        .export-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .export-tag {
+            padding: 5px 14px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width:768px) {
+            .detail-page {
+                padding: 20px 16px 60px;
+            }
+
+            .detail-main {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .detail-image-wrap {
+                position: static;
+                aspect-ratio: 4/3;
+            }
+
+            .logistics-info-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .media-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <div class="detail-page">
+
+        <!-- BREADCRUMB -->
+        <div class="breadcrumb">
+            <a href="{{ showroom_url }}">{{ ui.products }}</a>
+            <span>›</span>
+            <span class="current">{{ trans.name if trans else product.slug }}</span>
+        </div>
+
+        <!-- ANA GRID -->
+        <div class="detail-main">
+
+            <!-- GÖRSEL -->
+            <div class="detail-image-wrap">
+                {% if product.image %}
+                <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}">
+                {% else %}
+                <div class="detail-image-placeholder">📦</div>
+                {% endif %}
+            </div>
+
+            <!-- BİLGİ -->
+            <div class="detail-info">
+
+                {% if product.category %}
+                {% if category_url %}
+            <a href="{{ category_url }}" class="detail-category" style="text-decoration:none;">{{ category_label }}</a>
+            {% elif category_label %}
+            <div class="detail-category">{{ category_label }}</div>
+            {% endif %}
+                {% endif %}
+
+                <h1 class="detail-title">{{ trans.name if trans else '—' }}</h1>
+
+                {% if trans and trans.short_description %}
+                <p class="detail-short-desc">{{ trans.short_description }}</p>
+                {% endif %}
+
+                <!-- FİYAT -->
+                <div class="detail-price-block">
+                    {% if cart_info and cart_info.discount_rate > 0 %}
+                    <span class="detail-old-price">{{ price(product.unit_price) }}</span>
+                    <span class="detail-price" data-base-price="{{ product.unit_price }}">{{ price(cart_info.unit_price) }}</span>
+                    {% else %}
+                    <span class="detail-old-price" style="display:none;"></span>
+                    <span class="detail-price" data-base-price="{{ product.unit_price }}">
+                        {{ price(product.unit_price) }}
+                    </span>
+                    {% endif %}
+                    <span class="detail-per">/ {{ ui.qty }}</span>
+                </div>
+
+                {% if qty_in_cart > 0 %}
+                <div class="detail-in-basket">
+                    {{ ui.in_basket }}: {{ qty_in_cart }} {{ ui.qty }}
+                    {% if cart_info and cart_info.discount_rate > 0 %}
+                    · %{{ (cart_info.discount_rate * 100)|int }} {{ ui.discount }}
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- LOJİSTİK KUTUCULARI -->
+                <div class="logistics-info-grid">
+                    <div class="logistics-info-box">
+                        <div class="val">{{ product.pieces_per_box or 1 }}</div>
+                        <div class="lbl">{{ ui.pieces_box }}</div>
+                    </div>
+                    <div class="logistics-info-box">
+                        <div class="val">{{ product.boxes_per_pallet or 1 }}</div>
+                        <div class="lbl">{{ ui.boxes_pallet }}</div>
+                    </div>
+                    <div class="logistics-info-box">
+                        <div class="val">{{ min_qty }}</div>
+                        <div class="lbl">{{ ui.min_order }}</div>
+                    </div>
+                </div>
+
+                <!-- SEPETE EKLE -->
+                <form method="post" action="{{ add_to_cart_url }}" class="detail-add-form">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="quantity-control">
+                        <button type="button" class="minus">−</button>
+                        <input type="number" name="quantity" class="quantity-input" value="{{ min_qty }}"
+                            min="{{ min_qty }}" data-min="{{ min_qty }}" data-increment="{{ increment }}"
+                            data-price="{{ product.unit_price }}" data-box="{{ product.pieces_per_box }}"
+                            data-pallet-box="{{ product.boxes_per_pallet }}">
+                        <button type="button" class="plus">+</button>
+                    </div>
+                    <div class="message-box"></div>
+                    <button type="submit" class="add-to-cart-btn">{{ ui.add_to_cart }}</button>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="detail-tabs">
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="desc">{{ ui.tab_desc }}</button>
+                <button class="tab-btn" data-tab="logistics">{{ ui.tab_logistics }}</button>
+                {% if product.product_video or product.loading_video %}
+                <button class="tab-btn" data-tab="media">{{ ui.tab_media }}</button>
+                {% endif %}
+                {% if product.msds or product.tds or product.analysis_doc or product.quality_doc %}
+                <button class="tab-btn" data-tab="docs">{{ ui.tab_docs }}</button>
+                {% endif %}
+                {% if export_list %}
+                <button class="tab-btn" data-tab="export">{{ ui.tab_export }}</button>
+                {% endif %}
+            </div>
+
+            <!-- Açıklama -->
+            <div class="tab-panel active" id="tab-desc">
+                {% if trans and trans.long_description %}
+                <div class="ql-content">{{ trans.long_description | safe }}</div>
+                {% elif trans and trans.short_description %}
+                <p style="font-size:14px;color:var(--text-secondary);line-height:1.75;">{{ trans.short_description }}
+                </p>
+                {% else %}
+                <p class="no-data">{{ ui.no_desc_long }}</p>
+                {% endif %}
+
+                {% if product.barcode %}
+                <p style="margin-top:16px;font-size:12px;color:var(--text-muted);">
+                    {{ ui.barcode }}: <span style="font-family:var(--mono);font-weight:600;">{{ product.barcode
+                        }}</span>
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Lojistik & İndirim -->
+            <div class="tab-panel" id="tab-logistics">
+                <table class="discount-table">
+                    <thead>
+                        <tr>
+                            <th>{{ ui.amount }}</th>
+                            <th>{{ ui.discount }}</th>
+                            <th>{{ ui.unit_price }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ ui.below_2pal }}</td>
+                            <td>—</td>
+                            <td>{{ price(product.unit_price) }}</td>
+                        </tr>
+                        {% if discount_tiers %}
+                        {% for tier in discount_tiers %}
+                        <tr>
+                            <td>{{ tier.label }}</td>
+                            <td><span class="discount-pct">%{{ (tier.rate * 100)|int }}</span></td>
+                            <td>{{ price(product.unit_price * (1 - tier.rate)) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td>2+ Palet</td>
+                            <td><span class="discount-pct">%5</span></td>
+                            <td>{{ price(product.unit_price * 0.95) }}</td>
+                        </tr>
+                        <tr>
+                            <td>4+ Palet</td>
+                            <td><span class="discount-pct">%7</span></td>
+                            <td>{{ price(product.unit_price * 0.93) }}</td>
+                        </tr>
+                        <tr>
+                            <td>6+ Palet</td>
+                            <td><span class="discount-pct">%9</span></td>
+                            <td>{{ price(product.unit_price * 0.91) }}</td>
+                        </tr>
+                        <tr>
+                            <td>9+ Palet</td>
+                            <td><span class="discount-pct">%12</span></td>
+                            <td>{{ price(product.unit_price * 0.88) }}</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="logistics-info-box">
+                        <div class="val">{{ product.pallets_20ft }}</div>
+                        <div class="lbl">20FT Palet</div>
+                    </div>
+                    <div class="logistics-info-box">
+                        <div class="val">{{ product.pallets_40ft }}</div>
+                        <div class="lbl">40FT Palet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Medya -->
+            {% if product.product_video or product.loading_video %}
+            <div class="tab-panel" id="tab-media">
+                <div class="media-grid">
+                    {% if product.product_video %}
+                    <div class="media-card">
+                        <div class="media-card-label">🎬 {{ ui.video_product }}</div>
+                        <div class="media-card-body">
+                            <div class="video-wrap">
+                                <video controls preload="metadata">
+                                    <source src="{{ product.product_video }}">
+                                    {{ ui.no_video }}
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if product.loading_video %}
+                    <div class="media-card">
+                        <div class="media-card-label">📦 {{ ui.video_loading }}</div>
+                        <div class="media-card-body">
+                            <div class="video-wrap">
+                                <video controls preload="metadata">
+                                    <source src="{{ product.loading_video }}">
+                                    {{ ui.no_video }}
+                                </video>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Belgeler -->
+            {% if product.msds or product.tds or product.analysis_doc or product.quality_doc %}
+            <div class="tab-panel" id="tab-docs">
+                <div class="doc-links">
+                    {% if product.msds %}
+                    <a href="{{ product.msds }}" target="_blank" class="doc-link">
+                        <span class="doc-link-icon">⚗️</span>
+                        <div class="doc-link-info">
+                            <span class="doc-link-name">MSDS</span>
+                            <span class="doc-link-desc">{{ ui.msds }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% if product.tds %}
+                    <a href="{{ product.tds }}" target="_blank" class="doc-link">
+                        <span class="doc-link-icon">📋</span>
+                        <div class="doc-link-info">
+                            <span class="doc-link-name">TDS</span>
+                            <span class="doc-link-desc">{{ ui.tds }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% if product.analysis_doc %}
+                    <a href="{{ product.analysis_doc }}" target="_blank" class="doc-link">
+                        <span class="doc-link-icon">🔬</span>
+                        <div class="doc-link-info">
+                            <span class="doc-link-name">{{ ui.analysis }}</span>
+                            <span class="doc-link-desc">{{ ui.analysis }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% if product.quality_doc %}
+                    <a href="{{ product.quality_doc }}" target="_blank" class="doc-link">
+                        <span class="doc-link-icon">✅</span>
+                        <div class="doc-link-info">
+                            <span class="doc-link-name">{{ ui.quality }}</span>
+                            <span class="doc-link-desc">{{ ui.quality }}</span>
+                        </div>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- İhracat -->
+            {% if export_list %}
+            <div class="tab-panel" id="tab-export">
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">{{ ui.export_text }}</p>
+                <div class="export-tags">
+                    {% for country in export_list %}
+                    <span class="export-tag">{{ country }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div><!-- /detail-tabs -->
+
+    </div><!-- /detail-page -->
+
+    <script>
+    window.SHOWROOM_UI = {
+        lang: "{{ lang }}",
+        rates: {
+            USD_TRY: {{ rates.USD_TRY }},
+            EUR_TRY: {{ rates.EUR_TRY }},
+            EUR_USD: {{ rates.EUR_USD }},
+            source:  "{{ rates.source }}",
+            updated: "{{ rates.updated }}",
+        }
+    };
+    </script>
+    <script src="{{ url_for('static', path='js/showroom.js') }}"></script>
+    <script>
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + target).classList.add('active');
+            });
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,612 @@
+/* ======================================================
+   ORTAK SİTE STİLLERİ — Anasayfa tarzı, tüm sayfalarda
+   Header sabit, dil seçici: dünya ikonu + aktif dil + dropdown
+====================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --navy:       #0f172a;
+    --navy-dark:  #0a0f1e;
+    --metallic:   #1e3a8a;
+    --white:      #ffffff;
+    --light-bg:   #f5f7fb;
+    --gray-100:   #f8fafc;
+    --gray-200:   #e2e8f0;
+    --gray-700:   #334155;
+    --gray-900:   #0f172a;
+    --font-body:  'Inter', -apple-system, sans-serif;
+    --ease:       cubic-bezier(.4, 0, .2, 1);
+    --shadow-sm:  0 1px 3px rgba(15, 23, 42, 0.08);
+    --shadow-md:  0 4px 12px rgba(15, 23, 42, 0.12);
+    --shadow-lg:  0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+/* Tüm site sayfalarında aynı font ve arka plan */
+body.site-page {
+    font-family: var(--font-body);
+    background: var(--white);
+    color: var(--navy);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+}
+
+/* ========================
+   SITE HEADER — Sabit, tüm sayfalarda aynı
+======================= */
+
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 48px;
+    gap: 40px;
+    border-bottom: 1px solid var(--gray-200);
+    transition: all 0.3s var(--ease);
+}
+
+.site-header.scrolled {
+    background: rgba(15, 23, 42, 0.98);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.site-header.scrolled .site-header-links a,
+.site-header.scrolled .site-header-logo-text,
+.site-header.scrolled .site-header-lang-trigger .site-header-lang-current,
+.site-header.scrolled .site-header-globe,
+.site-header.scrolled .site-header-chevron {
+    color: var(--white);
+}
+
+/* Scrolled: dil butonu arka planı koyu header ile uyumlu */
+.site-header.scrolled .site-header-lang-trigger {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--white);
+}
+
+.site-header.scrolled .site-header-lang-trigger:hover {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.45);
+    color: var(--white);
+}
+
+.site-header.scrolled .site-header-lang-dropdown a {
+    color: var(--navy);
+}
+
+.site-header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-right: auto;
+    margin-left: max(0px, (100vw - 1200px) / 2); /* Hero metni hizası (max-width 1200px ile aynı) */
+    text-decoration: none;
+    color: inherit;
+}
+
+.site-header-logo-img {
+    height: 64px;
+    max-width: 230px;
+    object-fit: contain;
+    transition: opacity 0.25s var(--ease);
+}
+
+/* Scroll'da koyu header: beyaz logo varsa onu göster, yoksa normal logo kalır */
+.site-header-logo-img-white {
+    display: none;
+}
+.site-header.scrolled.has-white-logo .site-header-logo-img-default {
+    display: none;
+}
+.site-header.scrolled.has-white-logo .site-header-logo-img-white {
+    display: block;
+}
+.site-header-logo {
+    position: relative;
+}
+.site-header-logo .site-header-logo-img {
+    position: relative;
+}
+
+.site-header-logo-icon {
+    width: 42px;
+    height: 42px;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--white);
+    border-radius: 6px;
+}
+
+.site-header-logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    transition: color 0.3s var(--ease);
+}
+
+.site-header-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+    align-items: center;
+}
+
+.site-header-links a {
+    color: var(--gray-700);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: color 0.2s;
+    position: relative;
+    text-decoration: none;
+}
+
+.site-header-links a:hover {
+    color: var(--metallic);
+}
+
+.site-header-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--metallic);
+    transition: width 0.3s var(--ease);
+}
+
+.site-header-links a:hover::after,
+.site-header-links a.active::after {
+    width: 100%;
+}
+
+.site-header-links a.active {
+    color: var(--metallic);
+}
+
+.site-header-basket {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.site-header-badge {
+    background: var(--metallic);
+    color: var(--white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Dil seçici: dünya ikonu + aktif dil + dropdown */
+.site-header-lang {
+    position: relative;
+}
+
+.site-header-lang-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+}
+
+.site-header-lang-trigger:hover {
+    background: var(--gray-200);
+    border-color: var(--gray-700);
+    color: var(--navy);
+}
+
+.site-header-globe {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: inherit;
+}
+
+.site-header-lang-current {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.site-header-chevron {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: inherit;
+    transition: transform 0.2s;
+}
+
+.site-header-lang.open .site-header-chevron {
+    transform: rotate(180deg);
+}
+
+.site-header-lang-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    min-width: 140px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    padding: 6px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    z-index: 300;
+}
+
+.site-header-lang-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.site-header-lang-dropdown a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.site-header-lang-dropdown a:hover {
+    background: var(--gray-100);
+}
+
+.site-header-lang-dropdown a.active {
+    background: var(--metallic);
+    color: var(--white);
+}
+
+.site-header-cta {
+    background: var(--metallic);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 28px;
+    border-radius: 8px;      /* btn-primary ile aynı */
+    letter-spacing: 0.02em;
+    transition: all 0.2s;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.site-header-cta:hover {
+    background: var(--white);   /* btn-primary hover ile aynı */
+    color: var(--navy);          /* btn-primary hover ile aynı */
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Scrolled (koyu) header'da hover: beyaz yerine navy-dark */
+.site-header.scrolled .site-header-cta:hover {
+    background: var(--navy-dark);
+    color: var(--white);
+}
+
+/* Mobil hamburger butonu — masaüstünde gizli */
+.site-header-mobile-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.site-header-mobile-toggle:hover {
+    background: var(--gray-100);
+}
+
+.site-header.scrolled .site-header-mobile-toggle:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+.mobile-toggle-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--navy);
+    border-radius: 2px;
+    transition: transform 0.3s var(--ease), opacity 0.3s var(--ease), background 0.3s var(--ease);
+    transform-origin: center;
+}
+
+.site-header.scrolled .mobile-toggle-bar {
+    background: var(--white);
+}
+
+/* X animasyonu: menü açıkken çizgiler X'e döner */
+.site-header-mobile-toggle.active .mobile-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.site-header-mobile-toggle.active .mobile-toggle-bar:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+}
+.site-header-mobile-toggle.active .mobile-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ========================
+   MOBİL MENÜ PANELİ
+======================== */
+.site-header-mobile-menu {
+    display: none; /* Masaüstünde tamamen yok */
+    position: fixed;
+    top: 64px; /* Mobil header yüksekliği */
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    box-shadow: var(--shadow-lg);
+    z-index: 199;
+    padding: 16px 20px 24px;
+    transform: translateY(-12px);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.25s var(--ease), opacity 0.25s var(--ease), visibility 0.25s;
+}
+
+.site-header-mobile-menu.open {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mobile-menu-links a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+}
+
+.mobile-menu-links a:hover {
+    background: var(--gray-100);
+    color: var(--navy);
+}
+
+.mobile-menu-links a.active {
+    color: var(--metallic);
+}
+
+.mobile-menu-divider {
+    height: 1px;
+    background: var(--gray-200);
+    margin: 12px 0;
+}
+
+/* Dil listesi — yatay kaydırmalı çipler */
+.mobile-menu-lang {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mobile-menu-lang-label {
+    flex-shrink: 0;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+}
+
+.mobile-menu-lang-label svg {
+    width: 18px;
+    height: 18px;
+}
+
+.mobile-menu-lang-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.mobile-menu-lang-list a {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    color: var(--gray-700);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    transition: background 0.15s, color 0.15s;
+}
+
+.mobile-menu-lang-list a:hover {
+    background: var(--gray-200);
+    color: var(--navy);
+}
+
+.mobile-menu-lang-list a.active {
+    background: var(--metallic);
+    color: var(--white);
+    border-color: var(--metallic);
+}
+
+.mobile-menu-cta {
+    display: block;
+    text-align: center;
+    background: var(--metallic);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 15px;
+    padding: 14px 24px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.mobile-menu-cta:hover {
+    background: var(--navy);
+    transform: translateY(-1px);
+}
+
+/* Header scroll class için JS gerekebilir — homepage.js'te var */
+@media (max-width: 1024px) {
+    .site-header {
+        padding: 0 24px;
+        gap: 20px;
+    }
+    .site-header-links {
+        gap: 16px;
+    }
+    .site-header-links a {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    .site-header {
+        padding: 0 16px;
+        gap: 0;
+        height: 64px;
+    }
+    /* Logo sola, aradaki boşluğu flex ile it */
+    .site-header-logo {
+        margin-left: 0;
+        margin-right: auto;
+    }
+    /* Masaüstü nav linkleri, dil ve CTA header'da gizlenir */
+    .site-header-links {
+        display: none;
+    }
+    .site-header-lang {
+        display: none;
+    }
+    .site-header-cta {
+        display: none;
+    }
+    /* Hamburger butonu göster */
+    .site-header-mobile-toggle {
+        display: flex;
+    }
+    /* Mobil menü paneli görünür hale gelir (open class ile açılır) */
+    .site-header-mobile-menu {
+        display: block;
+    }
+}
+
+/* ========================
+   SHOWROOM / DİĞER SAYFALAR — Anasayfa ile aynı tarz
+======================= */
+
+.hero-site {
+    /* main.css'teki max-width: 680px'i geçersiz kıl — hero tam genişlikte olmalı */
+    width: 100%;
+    max-width: none;
+    background: var(--light-bg);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.hero-site h1 {
+    color: var(--navy);
+    font-family: var(--font-body);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.hero-site p,
+.hero-site .cat-intro-text {
+    color: var(--gray-700);
+    font-family: var(--font-body);
+}
+
+.site-page .product-grid {
+    padding: 48px 48px 80px;
+    gap: 24px;
+}
+
+.site-page .product-card {
+    border-radius: 12px;
+    border-color: var(--gray-200);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+    background: #ffffff;
+}
+
+/* Ürün görseli arka planı — beyaz ürün fotoğraflarının sorunsuz görünmesi için */
+.site-page .product-image {
+    background: #ffffff;
+}
+
+.site-page .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--metallic);
+}
+
+.site-page .product-body h3 a {
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.site-page .add-to-cart-btn {
+    background: var(--metallic);
+    font-weight: 700;
+}
+
+.site-page .add-to-cart-btn:hover {
+    background: var(--navy);
+}
+
+.site-page .breadcrumb,
+.site-page .detail-page {
+    font-family: var(--font-body);
+}
+
+.site-page .breadcrumb a:hover {
+    color: var(--metallic);
+}

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ meta_title }}</title>
+    <meta name="description" content="{{ meta_description }}">
+    <link rel="canonical" href="{{ request.url._url }}">
+
+    {% set base_url = request.url.scheme ~ '://' ~ request.url.hostname ~ (':' ~ request.url.port if request.url.port and request.url.port not in [80, 443] else '') %}
+    {% for lc in langs %}
+        {% if lc == 'en' %}
+            <link rel="alternate" hreflang="en" href="{{ base_url }}/{{ page.slug }}">
+        {% else %}
+            {% set trans_lc = page.get_translation(lc) %}
+            {% if trans_lc and trans_lc.slug %}
+                <link rel="alternate" hreflang="{{ lc }}" href="{{ base_url }}/{{ lc }}/{{ trans_lc.slug }}">
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    <link rel="alternate" hreflang="x-default" href="{{ base_url }}/{{ page.slug }}">
+
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* ── HERO ── */
+        .page-hero {
+            background: var(--navy);
+            padding: 72px 48px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(30,58,138,0.4) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .page-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 20px;
+        }
+        .page-breadcrumb a {
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .page-breadcrumb a:hover { color: rgba(255,255,255,0.9); }
+        .page-breadcrumb svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .page-hero h1 {
+            font-size: clamp(28px, 4vw, 46px);
+            font-weight: 800;
+            color: var(--white);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+
+        /* ── MAIN / İÇERİK ── */
+        .page-main {
+            background: var(--white);
+            padding: 64px 48px 80px;
+        }
+        .page-content-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* TinyMCE çıktısı — zengin metin tipografisi */
+        .page-prose {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--gray-700);
+        }
+        .page-prose h1,
+        .page-prose h2,
+        .page-prose h3,
+        .page-prose h4,
+        .page-prose h5,
+        .page-prose h6 {
+            color: var(--navy);
+            font-weight: 700;
+            line-height: 1.25;
+            margin: 2em 0 0.6em;
+        }
+        .page-prose h1 { font-size: 2em; }
+        .page-prose h2 { font-size: 1.55em; padding-bottom: 0.3em; border-bottom: 1px solid var(--gray-200); }
+        .page-prose h3 { font-size: 1.25em; }
+        .page-prose h4 { font-size: 1.05em; }
+        .page-prose p  { margin: 0 0 1.2em; }
+        .page-prose ul,
+        .page-prose ol { padding-left: 1.6em; margin: 0 0 1.2em; }
+        .page-prose li { margin-bottom: 0.4em; }
+        .page-prose a  { color: var(--metallic); text-decoration: underline; text-underline-offset: 3px; }
+        .page-prose a:hover { color: var(--navy); }
+        .page-prose blockquote {
+            border-left: 4px solid var(--metallic);
+            padding: 12px 20px;
+            margin: 1.5em 0;
+            background: var(--gray-100);
+            border-radius: 0 8px 8px 0;
+            color: #4b5563;
+            font-style: italic;
+        }
+        .page-prose code {
+            background: var(--gray-100);
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.88em;
+        }
+        .page-prose pre {
+            background: var(--navy);
+            color: #e2e8f0;
+            padding: 20px 24px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 1.5em 0;
+        }
+        .page-prose pre code { background: none; border: none; padding: 0; color: inherit; font-size: 0.92em; }
+        .page-prose img {
+            max-width: 100%;
+            border-radius: 10px;
+            margin: 1.5em 0;
+            box-shadow: var(--shadow-sm);
+        }
+        .page-prose table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 15px;
+        }
+        .page-prose th {
+            background: var(--navy);
+            color: var(--white);
+            font-weight: 600;
+            padding: 12px 16px;
+            text-align: left;
+        }
+        .page-prose td {
+            padding: 11px 16px;
+            border-bottom: 1px solid var(--gray-200);
+            color: var(--gray-700);
+        }
+        .page-prose tr:nth-child(even) td { background: var(--gray-100); }
+        .page-prose hr {
+            border: none;
+            border-top: 1px solid var(--gray-200);
+            margin: 2.5em 0;
+        }
+
+        /* ── SSS ── */
+        .page-faq {
+            background: var(--light-bg);
+            padding: 64px 48px 80px;
+            border-top: 1px solid var(--gray-200);
+        }
+        .page-faq-inner {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .page-faq-heading {
+            font-size: 1.6em;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.02em;
+            margin: 0 0 32px;
+        }
+        .faq-list { display: flex; flex-direction: column; gap: 12px; }
+        .faq-item {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+            transition: box-shadow 0.2s var(--ease);
+        }
+        .faq-item[open] { box-shadow: var(--shadow-md); border-color: var(--metallic); }
+        .faq-q {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 22px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--navy);
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+        }
+        .faq-q::-webkit-details-marker { display: none; }
+        .faq-q::after {
+            content: '+';
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--metallic);
+            flex-shrink: 0;
+            transition: transform 0.25s var(--ease);
+        }
+        .faq-item[open] .faq-q::after { content: '−'; }
+        .faq-a {
+            padding: 0 22px 18px;
+            font-size: 15px;
+            line-height: 1.75;
+            color: var(--gray-700);
+        }
+        .faq-a p { margin: 0 0 0.8em; }
+        .faq-a p:last-child { margin-bottom: 0; }
+
+        /* ── FOOTER ── */
+        .hp-footer {
+            background-image: url("{{ site.footer_bg_image_url or url_for('static', path='upload/images/footer-factory.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            padding: 80px 48px 40px;
+            color: var(--white);
+        }
+        .hp-footer::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(15,23,42,0.92);
+        }
+        .footer-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 60px;
+            margin-bottom: 60px;
+        }
+        .footer-col h4 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.55);
+        }
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .footer-col ul li a {
+            color: rgba(255,255,255,0.75);
+            font-size: 14px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .footer-col ul li a:hover { color: var(--white); }
+        .footer-col.brand h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 14px;
+        }
+        .footer-col.brand p {
+            font-size: 14px;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.75;
+            margin-bottom: 20px;
+        }
+        .footer-contact { display: flex; flex-direction: column; gap: 10px; }
+        .footer-contact span {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.75);
+        }
+        .footer-bottom {
+            padding-top: 36px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+        }
+        @media (max-width: 768px) {
+            .page-hero   { padding: 56px 24px 48px; }
+            .page-main   { padding: 48px 24px 64px; }
+            .page-faq    { padding: 48px 24px 64px; }
+            .hp-footer   { padding: 60px 24px 36px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+        }
+    </style>
+</head>
+
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <!-- ═══ HERO ═══ -->
+    <section class="page-hero">
+        <div class="page-hero-inner">
+            <nav class="page-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ home_url }}">{{ ui.home }}</a>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                <span>{{ trans.title if trans else page.slug }}</span>
+            </nav>
+            <h1>{{ trans.title if trans else page.slug }}</h1>
+        </div>
+    </section>
+
+    <!-- ═══ İÇERİK ═══ -->
+    <main class="page-main">
+        <div class="page-content-wrap">
+            <article class="page-prose">
+                {% if trans and trans.body %}
+                    {{ trans.body | safe }}
+                {% else %}
+                    <em style="color:#9ca3af;">Bu sayfa için henüz içerik eklenmemiş.</em>
+                {% endif %}
+            </article>
+        </div>
+    </main>
+
+    <!-- ═══ SSS ═══ -->
+    {% if faqs and faqs|length > 0 %}
+    <section class="page-faq">
+        <div class="page-faq-inner">
+            <h2 class="page-faq-heading">Sık Sorulan Sorular</h2>
+            <div class="faq-list">
+                {% for faq in faqs %}
+                <details class="faq-item">
+                    <summary class="faq-q">{{ faq.question }}</summary>
+                    <div class="faq-a">{{ faq.answer | safe }}</div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- ═══ FOOTER ═══ -->
+    <footer class="hp-footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-col brand">
+                    <h3>{{ site.site_name or 'HENI KOZMETIK' }}</h3>
+                    <p>{{ site.footer_description or 'Global industrial manufacturer specializing in detergent, cosmetic, and perfume production. Serving international brands with premium contract manufacturing and raw material trading.' }}</p>
+                    <div class="footer-contact">
+                        {% if site.contact_email %}<span>✉ {{ site.contact_email }}</span>{% endif %}
+                        {% if site.contact_phone %}<span>📞 {{ site.contact_phone }}</span>{% endif %}
+                        {% if site.contact_address %}<span>📍 {{ site.contact_address }}</span>{% endif %}
+                        {% if not site.contact_email and not site.contact_phone %}<span>📍 Eskişehir, Turkey</span>{% endif %}
+                    </div>
+                </div>
+                {% set footer_cols = site.get_footer_columns() %}
+                {% if footer_cols %}
+                    {% for col in footer_cols %}
+                    <div class="footer-col">
+                        <h4>{{ col.get('title', '') }}</h4>
+                        <ul>
+                            {% for link in (col.get('links') or []) %}
+                            <li><a href="{{ link.get('url', '#') }}">{{ link.get('label', '') }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="{{ home_url }}#about">About Us</a></li>
+                        <li><a href="{{ home_url }}#manufacturing">Manufacturing</a></li>
+                        <li><a href="{{ home_url }}#export">Global Export</a></li>
+                        <li><a href="{{ home_url }}#certification">Certifications</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Products</h4>
+                    <ul>
+                        <li><a href="{{ showroom_url }}">All Products</a></li>
+                        <li><a href="{{ home_url }}#manufacturing">Detergent</a></li>
+                        <li><a href="{{ home_url }}#manufacturing">Cosmetics</a></li>
+                        <li><a href="{{ home_url }}#private-label">Private Label</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="{{ home_url }}#raw-materials">Raw Materials</a></li>
+                        <li><a href="{{ home_url }}#private-label">Contract Mfg</a></li>
+                        <li><a href="{{ basket_url }}">{{ ui.basket }}</a></li>
+                        <li><a href="{{ home_url }}#contact">Get Quote</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            <div class="footer-bottom">
+                <p>{{ site.footer_copyright_lead or ('© 2024 ' + (site.site_name or 'Heni Kozmetik') + '. All rights reserved.') }}{% if site.footer_copyright %} {{ site.footer_copyright }}{% else %} | Industrial Manufacturing Excellence{% endif %}</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

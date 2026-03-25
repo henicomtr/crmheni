@@ -1,0 +1,455 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .btn-back:hover {
+        background: var(--surface-3);
+        color: var(--text-primary);
+    }
+
+    .edit-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .edit-card-header {
+        padding: 18px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .edit-card-header h2 {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .edit-card-body {
+        padding: 28px;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-group.span-2 {
+        grid-column: span 2;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 13px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+    }
+
+    .form-control:focus {
+        border-color: var(--dark);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .form-actions-right {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-delete-customer {
+        padding: 11px 20px;
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid rgba(192, 57, 43, .3);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-delete-customer:hover {
+        background: #c0392b;
+        color: #fff;
+        border-color: #c0392b;
+    }
+
+    .btn-cancel {
+        padding: 11px 20px;
+        background: transparent;
+        color: var(--text-secondary);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--surface-3);
+    }
+
+    .btn-submit {
+        padding: 11px 28px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-submit:hover {
+        background: var(--dark-3);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group.span-2 {
+            grid-column: span 1;
+        }
+
+        .edit-card-body {
+            padding: 20px 16px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .form-actions-right {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Müşteri Düzenle</h1>
+    <a href="/admin/customers" class="btn-back">← Müşteri Listesi</a>
+</div>
+
+<div class="edit-card">
+    <div class="edit-card-header">
+        <h2>{{ customer.name }}</h2>
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">ID #{{ customer.id }}</span>
+    </div>
+    <div class="edit-card-body">
+        <form method="POST" action="/admin/customers/update/{{ customer.id }}">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label">Firma / Ad *</label>
+                    <input type="text" name="name" class="form-control" value="{{ customer.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Ülke</label>
+                    <input type="text" name="country" class="form-control" value="{{ customer.country or '' }}"
+                        placeholder="Türkiye">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-posta</label>
+                    <input type="email" name="email" class="form-control" value="{{ customer.email or '' }}"
+                        placeholder="ornek@firma.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon / WhatsApp</label>
+                    <input type="text" name="phone" class="form-control" value="{{ customer.phone or '' }}"
+                        placeholder="+90 500 000 00 00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İletişim Kişisi</label>
+                    <input type="text" name="contact_person" class="form-control"
+                        value="{{ customer.contact_person or '' }}" placeholder="Ad Soyad">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Not</label>
+                    <input type="text" name="notes" class="form-control" value="{{ customer.notes or '' }}"
+                        placeholder="Kısa not...">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <form method="POST" action="/admin/customers/delete/{{ customer.id }}" style="margin:0;"
+                    onsubmit="return confirm('{{ customer.name }} silinsin mi?')">
+                    <button type="submit" class="btn-delete-customer">🗑 Müşteriyi Sil</button>
+                </form>
+                <div class="form-actions-right">
+                    <a href="/admin/customers" class="btn-cancel">İptal</a>
+                    <button type="submit" class="btn-submit">Değişiklikleri Kaydet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CARİ HESAP BİLGİLERİ -->
+<div class="edit-card" style="margin-top:20px;">
+    <div class="edit-card-header">
+        <h2>Cari Hesap Bilgileri</h2>
+                {% set dom = dominant_currency if dominant_currency else 'USD' %}
+        {% set sym = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(dom, dom) %}
+        {% set dom_bal = native_balances[dom] if native_balances and dom in native_balances else 0 %}
+        <span style="font-size:13px;font-family:var(--mono);font-weight:700;
+            color:{% if dom_bal >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};">
+            Bakiye: {{ sym }}{{ "{:,.2f}".format(dom_bal|abs) }} {{ dom }}
+        </span>
+    </div>
+    <div class="edit-card-body">
+        
+        <!-- Bakiye Özeti -->
+        {% set dom = dominant_currency if dominant_currency else 'USD' %}
+        {% set sym = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(dom, dom) %}
+        {% set dom_debit  = native_totals[dom]['debit']  if dom in native_totals else 0 %}
+        {% set dom_credit = native_totals[dom]['credit'] if dom in native_totals else 0 %}
+        {% set dom_bal    = native_balances[dom] if dom in native_balances else 0 %}
+
+        <!-- Çoklu para birimi varsa tüm birimler için satır göster -->
+        {% if native_totals|length > 1 %}
+        <div style="margin-bottom:12px;padding:10px 14px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-muted);">
+            <strong style="color:var(--text-secondary);">Para Birimleri:</strong>
+            {% for cur, vals in native_totals.items() %}
+            {% set s = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(cur, cur) %}
+            {% set nb = native_balances[cur] if cur in native_balances else 0 %}
+            <span style="margin-left:12px;font-family:var(--mono);font-weight:700;color:{% if nb > 0 %}#c0392b{% elif nb < 0 %}#1a7a4a{% else %}var(--text-muted){% endif %};">
+                {{ cur }}: {{ s }}{{ "{:,.2f}".format(nb|abs) }}{% if nb > 0 %} borç{% elif nb < 0 %} alacak{% else %} denkleşti{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:28px;">
+            <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-md);border:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">
+                    Toplam Borç
+                </div>
+                <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:#c0392b;">
+                    {{ sym }}{{ "{:,.2f}".format(dom_debit) }}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Müşteri bize borçlu</div>
+            </div>
+            <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-md);border:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">
+                    Toplam Tahsilat
+                </div>
+                <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:#1a7a4a;">
+                    {{ sym }}{{ "{:,.2f}".format(dom_credit) }}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Müşteriden tahsil edildi</div>
+            </div>
+            <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-md);border:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">
+                    Net Bakiye
+                </div>
+                <div style="font-size:20px;font-weight:700;font-family:var(--mono);
+                    color:{% if dom_bal > 0 %}#c0392b{% elif dom_bal < 0 %}#1a7a4a{% else %}#000{% endif %};">
+                    {{ sym }}{{ "{:,.2f}".format(dom_bal|abs) }}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                    {% if dom_bal > 0 %}Müşteri bize borçlu{% elif dom_bal < 0 %}Biz müşteriye borçluyuz{% else %}Denkleşti{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- İşlem Ekle Formu -->
+        <div style="background:var(--surface-2);padding:20px;border-radius:var(--radius-md);margin-bottom:20px;">
+            <h3 style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Yeni Cari Hesap İşlemi Ekle</h3>
+            <form method="POST" action="/admin/customers/{{ customer.id }}/account/add">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label class="form-label">İşlem Türü *</label>
+                        <select name="type" class="form-control" required>
+                            <option value="debit">Borç (Müşteri bize borçlandı)</option>
+                            <option value="credit">Tahsilat (Müşteriden ödeme aldık)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tutar *</label>
+                        <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Para Birimi</label>
+                        <select name="currency" class="form-control">
+                            <option value="USD">$ USD</option>
+                            <option value="TRY">₺ TRY</option>
+                            <option value="EUR">€ EUR</option>
+                            <option value="GBP">£ GBP</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">İşlem Tarihi</label>
+                        <input type="datetime-local" name="transaction_date" class="form-control" id="transaction-date-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Açıklama</label>
+                        <input type="text" name="description" class="form-control" placeholder="Ürün/hizmet açıklaması">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fatura No</label>
+                        <input type="text" name="reference_no" class="form-control" placeholder="INV-2024-001">
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" style="margin-top:16px;">+ İşlem Ekle</button>
+            </form>
+        </div>
+
+        <!-- İşlem Listesi -->
+        {% if account_transactions %}
+        <h3 style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">İşlem Geçmişi</h3>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr style="background:var(--surface-2);">
+                        <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);">Tarih</th>
+                        <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);">Tür</th>
+                        <th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);">Açıklama</th>
+                        <th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);">Tutar</th>
+                        <th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in account_transactions %}
+                    <tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:12px 16px;">
+                            <div style="font-size:12px;font-family:var(--mono);color:var(--text-secondary);">
+                                {{ tx.transaction_date.strftime('%d.%m.%Y %H:%M') }}
+                            </div>
+                        </td>
+                        <td style="padding:12px 16px;">
+                            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;
+                                background:{% if tx.type == 'debit' %}rgba(192, 57, 43, .1){% else %}rgba(26, 122, 74, .1){% endif %};
+                                color:{% if tx.type == 'debit' %}#c0392b{% else %}#1a7a4a{% endif %};">
+                                {% if tx.type == 'debit' %}Borç{% else %}Tahsilat{% endif %}
+                            </span>
+                        </td>
+                        <td style="padding:12px 16px;">
+                            <div style="font-size:13px;color:var(--text-primary);">{{ tx.description or '—' }}</div>
+                            {% if tx.reference_no %}
+                            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--mono);">{{ tx.reference_no }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding:12px 16px;text-align:right;">
+                            <div style="font-size:15px;font-weight:700;font-family:var(--mono);
+                                color:{% if tx.type == 'debit' %}#c0392b{% else %}#1a7a4a{% endif %};">
+                                {% if tx.type == 'debit' %}+{% else %}−{% endif %}{{ "{:,.2f}".format(tx.amount) }} {{ tx.currency }}
+                            </div>
+                        </td>
+                        <td style="padding:12px 16px;text-align:center;">
+                            <form method="POST" action="/admin/customers/account/delete/{{ tx.id }}" style="margin:0;" onsubmit="return confirm('Bu işlem silinsin mi?')">
+                                <button type="submit" style="padding:4px 8px;background:transparent;color:var(--text-muted);border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:12px;">🗑</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="padding:40px;text-align:center;color:var(--text-muted);">
+            <div style="font-size:32px;opacity:.2;margin-bottom:12px;">📊</div>
+            <p style="font-size:14px;">Henüz cari hesap hareketi yok.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+// Tarih input'una güncel tarih ve saati set et
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('transaction-date-input');
+    if (dateInput) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+});
+</script>
+{% endblock %}

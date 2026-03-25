@@ -1,0 +1,99 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+.cat-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+}
+.cat-list-header h1 { font-size: 1.6rem; font-weight: 700; }
+.cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+.cat-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 22px;
+    background: #fff;
+    transition: box-shadow .2s;
+}
+.cat-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,.08); }
+.cat-card-title { font-size: 1rem; font-weight: 700; color: #111; margin-bottom: 6px; }
+.cat-card-slug {
+    font-size: 0.78rem;
+    color: #6b7280;
+    font-family: monospace;
+    margin-bottom: 12px;
+}
+.cat-card-langs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 14px;
+}
+.lang-dot {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: #f3f4f6;
+    color: #374151;
+}
+.lang-dot.has-content { background: #d1fae5; color: #065f46; }
+.cat-card-actions { display: flex; gap: 8px; }
+.btn-edit {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    background: #111; color: #fff; text-decoration: none; border: none; cursor: pointer;
+    transition: opacity .2s;
+}
+.btn-edit:hover { opacity: .8; }
+.btn-preview {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+    background: #f3f4f6; color: #374151; text-decoration: none;
+    transition: background .2s;
+}
+.btn-preview:hover { background: #e5e7eb; }
+</style>
+
+<div class="cat-list-header">
+    <div>
+        <h1>Kategoriler</h1>
+        <p style="color:#6b7280;font-size:.9rem;margin-top:4px;">
+            Her kategori sayfası için metin, SEO ve SSS içeriği yönetin.
+        </p>
+    </div>
+</div>
+
+<div class="cat-grid">
+    {% for cat in cats %}
+    {% set tr_langs = cat.translations | map(attribute='lang') | list %}
+    <div class="cat-card">
+        <div class="cat-card-title">
+            {{ cat_labels.get(cat.category_key, {}).get('tr', cat.category_key) }}
+        </div>
+        <div class="cat-card-slug">/tr/kategori/{{ cat.category_slug }}</div>
+        <div class="cat-card-langs">
+            {% for lc in supported_langs %}
+            <span class="lang-dot {% if lc in tr_langs %}has-content{% endif %}">{{ lc|upper }}</span>
+            {% endfor %}
+        </div>
+        <div class="cat-card-actions">
+            <a href="/admin/categories/{{ cat.id }}/edit?lang=tr" class="btn-edit">
+                ✏️ Düzenle
+            </a>
+            <a href="/tr/kategori/{{ cat.category_slug }}" target="_blank" class="btn-preview">
+                🔗 Önizle
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set _base_title = meta_title if (is_category_page and meta_title) else (site.site_name or 'Heni') ~ ' — ' ~ ui.hero_title %}
+    <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
+    {% if is_category_page and meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Hreflang — SEO için diğer dil versiyonları -->
+    {% for lc, lurl in lang_urls.items() %}
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    {% endfor %}
+    <link rel="alternate" hreflang="x-default" href="/">
+</head>
+
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <section class="hero hero-site">
+        {% if is_category_page %}
+        <div style="font-size:12px;margin-bottom:8px;">
+            <a href="{{ showroom_url }}" style="color:var(--text-muted);text-decoration:none;">← {{ ui.all_products }}</a>
+        </div>
+        <h1>{% if cat_trans and cat_trans.title %}{{ cat_trans.title }}{% else %}{{ page_title }}{% endif %}</h1>
+        {% if cat_trans and cat_trans.intro %}
+        <p class="cat-intro-text">{{ cat_trans.intro }}</p>
+        {% endif %}
+        {% else %}
+        <h1>{{ ui.hero_title }}</h1>
+        <p>{{ ui.hero_sub }}</p>
+        {% endif %}
+    </section>
+
+    <section class="product-grid">
+
+        {% for pc in products_ctx %}
+        {% set product = pc.product %}
+        {% set trans = pc.trans %}
+        {% set min_qty = pc.min_qty %}
+        {% set increment = pc.increment %}
+        {% set pid = product.id|string %}
+        {% set qty_in_cart = pc.qty_in_cart %}
+        {% set cart_info = pc.cart_info %}
+
+        <div class="product-card">
+
+            <a href="{{ pc.product_url }}">
+                <div class="product-image">
+                    {% if product.image %}
+                    <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="lazy">
+                    {% else %}
+                    <div class="no-image">Görsel Yok</div>
+                    {% endif %}
+                </div>
+            </a>
+
+            <div class="product-body">
+
+                {% if pc.category_url %}
+                <a href="{{ pc.category_url }}" class="product-category-tag">{{ pc.category_label }}</a>
+                {% elif pc.category_label %}
+                <span class="product-category-tag">{{ pc.category_label }}</span>
+                {% endif %}
+
+                <h3>
+                    <a href="{{ pc.product_url }}" style="text-decoration:none;color:inherit;">
+                        {{ trans.name if trans else '—' }}
+                    </a>
+                </h3>
+
+                {% if trans and trans.short_description %}
+                <p class="short-desc">{{ trans.short_description }}</p>
+                {% endif %}
+
+                <div class="price-area">
+                    {% if cart_info and cart_info.discount_rate > 0 %}
+                    <span class="old-price">{{ price(product.unit_price) }}</span>
+                    <span class="new-price">{{ price(cart_info.unit_price) }}</span>
+                    {% else %}
+                    <span class="new-price" data-base-price="{{ product.unit_price }}">
+                        {{ price(product.unit_price) }}
+                    </span>
+                    <span class="old-price" style="display:none;"></span>
+                    {% endif %}
+                </div>
+
+                {% if qty_in_cart > 0 %}
+                <div class="in-basket-info">
+                    {{ ui.in_basket }} {{ qty_in_cart }} {{ ui.qty }}
+                    {% if cart_info and cart_info.discount_rate > 0 %}
+                    · %{{ (cart_info.discount_rate * 100)|int }} {{ ui.discount }}
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <form method="post" action="{{ pc.add_to_cart_url }}">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <div class="quantity-control">
+                        <button type="button" class="minus">−</button>
+                        <input type="number" name="quantity" class="quantity-input" value="{{ min_qty }}"
+                            min="{{ min_qty }}" data-min="{{ min_qty }}" data-increment="{{ increment }}"
+                            data-price="{{ product.unit_price }}" data-box="{{ product.pieces_per_box }}"
+                            data-pallet-box="{{ product.boxes_per_pallet }}">
+                        <button type="button" class="plus">+</button>
+                    </div>
+                    <div class="message-box"></div>
+                    <button type="submit" class="add-to-cart-btn">{{ ui.add_to_cart }}</button>
+                </form>
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </section>
+
+    {# ── Kategori SEO içerik bloku ── #}
+    {% if is_category_page %}
+
+    {% if cat_trans and cat_trans.body %}
+    <section class="cat-seo-body">
+        <div class="cat-seo-inner">
+            {{ cat_trans.body | safe }}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if cat_faqs %}
+    <section class="cat-faq">
+        <div class="cat-faq-inner">
+            <h2 class="cat-faq-heading">{{ ui.faq_heading | default('Sık Sorulan Sorular') }}</h2>
+            <div class="faq-list">
+                {% for faq in cat_faqs %}
+                <details class="faq-item">
+                    <summary class="faq-q">{{ faq.question }}</summary>
+                    <div class="faq-a">{{ faq.answer | safe }}</div>
+                </details>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {% endif %}
+
+    <script>
+    window.SHOWROOM_UI = {
+        discount_active: "{{ ui.discount_active | default('') }}",
+        discount_next:   "{{ ui.discount_next   | default('') }}",
+        discount_max:    "{{ ui.discount_max    | default('') }}",
+        lang:            "{{ lang }}",
+        // Döviz kurları — JS tarafında anlık hesap için
+        rates: {
+            USD_TRY: {{ rates.USD_TRY }},
+            EUR_TRY: {{ rates.EUR_TRY }},
+            EUR_USD: {{ rates.EUR_USD }},
+            source:  "{{ rates.source }}",
+            updated: "{{ rates.updated }}",
+        }
+    };
+    </script>
+    <script src="{{ url_for('static', path='js/showroom.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,1154 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    /* ── Genel Layout ─────────────────────────────── */
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -.02em;
+    }
+
+    /* ── Periyot Seçici ───────────────────────────── */
+    .period-tabs {
+        display: flex;
+        gap: 4px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 4px;
+    }
+
+    .period-btn {
+        padding: 6px 14px;
+        border: none;
+        background: transparent;
+        border-radius: 4px;
+        font-family: var(--font);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .period-btn.active,
+    .period-btn:hover {
+        background: var(--surface);
+        color: var(--text-primary);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .period-btn.active {
+        color: var(--dark);
+    }
+
+    /* ── KPI Kartları ─────────────────────────────── */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 22px 22px 18px;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+    }
+
+    .kpi-card.income::before {
+        background: var(--success, #1a7a4a);
+    }
+
+    .kpi-card.expense::before {
+        background: #c0392b;
+    }
+
+    .kpi-card.balance::before {
+        background: var(--dark);
+    }
+
+    .kpi-card.pending::before {
+        background: #e67e22;
+    }
+
+    .kpi-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+    }
+
+    .kpi-value {
+        font-size: 26px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: -.03em;
+        color: var(--text-primary);
+    }
+
+    .kpi-value.positive {
+        color: var(--success, #1a7a4a);
+    }
+
+    .kpi-value.negative {
+        color: #c0392b;
+    }
+
+    .kpi-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    /* ── İçerik Izgara ────────────────────────────── */
+    .finance-grid {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    /* ── İşlem Tablosu ────────────────────────────── */
+    .transactions-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .transactions-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .transactions-card-header h2 {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .tx-filter {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .tx-filter-btn {
+        padding: 5px 12px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: transparent;
+        font-family: var(--font);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .tx-filter-btn:hover {
+        background: var(--surface-2);
+        color: var(--text-primary);
+    }
+
+    .tx-filter-btn.active {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+    }
+
+    .tx-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .tx-table th {
+        text-align: left;
+        padding: 10px 16px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        background: var(--surface-2);
+        white-space: nowrap;
+    }
+
+    .tx-table td {
+        padding: 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .tx-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .tx-table tr:hover td {
+        background: var(--surface-2);
+    }
+
+    .td-inner {
+        padding: 13px 16px;
+    }
+
+    .tx-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .tx-type-badge.income {
+        background: rgba(26, 122, 74, .1);
+        color: var(--success, #1a7a4a);
+    }
+
+    .tx-type-badge.expense {
+        background: rgba(192, 57, 43, .1);
+        color: #c0392b;
+    }
+
+    .tx-amount.income {
+        color: var(--success, #1a7a4a);
+        font-weight: 700;
+        font-family: var(--mono);
+    }
+
+    .tx-amount.expense {
+        color: #c0392b;
+        font-weight: 700;
+        font-family: var(--mono);
+    }
+
+    .tx-party {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .tx-party-type {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .tx-desc {
+        font-size: 13px;
+        color: var(--text-primary);
+    }
+
+    .tx-ref {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: var(--mono);
+        margin-top: 2px;
+    }
+
+    .tx-date {
+        font-size: 12px;
+        font-family: var(--mono);
+        color: var(--text-secondary);
+    }
+
+    .tx-date-day {
+        font-weight: 700;
+        font-size: 13px;
+        color: var(--text-primary);
+    }
+
+    .btn-tx-delete {
+        padding: 4px 10px;
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: var(--font);
+    }
+
+    .btn-tx-delete:hover {
+        color: #c0392b;
+        border-color: rgba(192, 57, 43, .3);
+        background: rgba(192, 57, 43, .06);
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+
+    /* ── Sağ Panel ────────────────────────────────── */
+    .add-form-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        position: sticky;
+        top: 80px;
+    }
+
+    .add-form-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .add-form-card-header h2 {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .add-form-card-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface-2);
+        font-family: var(--font);
+        font-size: 13px;
+        color: var(--text-primary);
+        outline: none;
+        transition: var(--transition);
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        border-color: var(--dark);
+        background: var(--surface);
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, .06);
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted);
+    }
+
+    select.form-control {
+        cursor: pointer;
+    }
+
+    /* Gelir/Gider toggle */
+    .type-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        overflow: hidden;
+    }
+
+    .type-toggle input[type="radio"] {
+        display: none;
+    }
+
+    .type-toggle label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 9px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+        background: var(--surface-2);
+        color: var(--text-muted);
+    }
+
+    .type-toggle input[value="income"]:checked+label {
+        background: rgba(26, 122, 74, .12);
+        color: var(--success, #1a7a4a);
+    }
+
+    .type-toggle input[value="expense"]:checked+label {
+        background: rgba(192, 57, 43, .12);
+        color: #c0392b;
+    }
+
+    /* Hesap kaynağı toggle — belirgin aktif stiller */
+    .type-toggle input[value="official"]:checked+label {
+        background: rgba(30, 90, 200, .13);
+        color: #1e5ac8;
+        box-shadow: inset 0 0 0 1.5px rgba(30, 90, 200, .25);
+    }
+
+    .type-toggle input[value="personal"]:checked+label {
+        background: rgba(230, 126, 34, .14);
+        color: #c96b0a;
+        box-shadow: inset 0 0 0 1.5px rgba(230, 126, 34, .30);
+    }
+
+    .type-toggle label:hover {
+        background: var(--surface-3, #e8e8e8);
+        color: var(--text-primary);
+    }
+
+    .form-row-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .btn-add-tx {
+        width: 100%;
+        padding: 12px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-add-tx:hover {
+        background: var(--dark-3);
+        transform: translateY(-1px);
+    }
+
+    /* ── Aylık Grafik Özeti ───────────────────────── */
+    .monthly-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        padding: 20px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .monthly-card h2 {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+    }
+
+    .bar-chart {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        height: 100px;
+    }
+
+    .bar-group {
+        display: flex;
+        gap: 2px;
+        align-items: flex-end;
+        flex: 1;
+    }
+
+    .bar-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+
+    .bar {
+        width: 100%;
+        border-radius: 3px 3px 0 0;
+        min-height: 2px;
+        transition: opacity .2s;
+    }
+
+    .bar.income-bar {
+        background: var(--success, #1a7a4a);
+        opacity: .8;
+    }
+
+    .bar.expense-bar {
+        background: #c0392b;
+        opacity: .7;
+    }
+
+    .bar:hover {
+        opacity: 1;
+    }
+
+    .bar-label {
+        font-size: 9px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 1100px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .finance-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .add-form-card {
+            position: static;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .kpi-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+</style>
+
+<!-- Kur widget JS değişkeni -->
+<script>
+window._RATES = {
+    USD_TRY: {{ rates.USD_TRY }},
+    EUR_TRY: {{ rates.EUR_TRY }},
+    EUR_USD: {{ rates.EUR_USD }},
+    source:  "{{ rates.source }}",
+    updated: "{{ rates.updated }}"
+};
+window._DISPLAY_CUR = "TRY";  // varsayılan
+
+// Para birimi formatla
+function fmtAmount(usd, cur) {
+    cur = cur || window._DISPLAY_CUR;
+    const r = window._RATES;
+    let val, sym;
+    if (cur === "TRY")      { val = usd * r.USD_TRY; sym = "₺"; }
+    else if (cur === "EUR") { val = usd / r.EUR_USD; sym = "€"; }
+    else                    { val = usd; sym = "$"; }
+    return sym + val.toLocaleString("tr-TR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function setCurrency(cur, btn) {
+    window._DISPLAY_CUR = cur;
+    document.querySelectorAll(".cur-btn").forEach(b => b.classList.remove("cur-active"));
+    btn.classList.add("cur-active");
+    document.querySelectorAll("[data-usd]").forEach(el => {
+        el.textContent = fmtAmount(parseFloat(el.dataset.usd), cur);
+    });
+}
+</script>
+
+<!-- BAŞLIK -->
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Finans</h1>
+    <div class="period-tabs">
+        <a href="?period=month" class="period-btn {% if period == 'month'   %}active{% endif %}">Bu Ay</a>
+        <a href="?period=quarter" class="period-btn {% if period == 'quarter' %}active{% endif %}">3 Ay</a>
+        <a href="?period=year" class="period-btn {% if period == 'year'    %}active{% endif %}">Bu Yıl</a>
+        <a href="?period=all" class="period-btn {% if period == 'all'     %}active{% endif %}">Tümü</a>
+    </div>
+</div>
+
+<!-- Kur Bilgisi + Para Birimi Seçici -->
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
+
+    <!-- Kur bilgisi -->
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Güncel Kurlar</span>
+        <span style="font-size:12px;font-family:var(--mono);font-weight:600;color:var(--text-secondary);">
+            💵 1 USD = <strong>{{ "{:,.2f}".format(rates.USD_TRY) }} ₺</strong>
+        </span>
+        <span style="font-size:12px;font-family:var(--mono);font-weight:600;color:var(--text-secondary);">
+            💶 1 EUR = <strong>{{ "{:,.2f}".format(rates.EUR_TRY) }} ₺</strong>
+        </span>
+        <span style="font-size:11px;color:var(--text-muted);">
+            {% if rates.source == "tcmb" %}
+            ✓ TCMB · {{ rates.updated }}
+            {% else %}
+            ⚠ Tahmini kur
+            {% endif %}
+        </span>
+    </div>
+
+    <!-- Para birimi seçici -->
+    <div style="display:flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;">
+        <style>
+            .cur-btn { padding:5px 14px;border:none;background:transparent;border-radius:4px;font-family:var(--font);font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;transition:var(--transition); }
+            .cur-btn:hover { background:var(--surface);color:var(--text-primary); }
+            .cur-btn.cur-active { background:var(--surface);color:var(--text-primary);box-shadow:var(--shadow-sm); }
+        </style>
+        <button class="cur-btn cur-active" onclick="setCurrency('TRY',this)">₺ TRY</button>
+        <button class="cur-btn" onclick="setCurrency('USD',this)">$ USD</button>
+        <button class="cur-btn" onclick="setCurrency('EUR',this)">€ EUR</button>
+    </div>
+
+</div>
+
+<!-- KPI KARTI — TOPLAM -->
+<div style="font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Genel Özet</div>
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+    <div class="kpi-card income">
+        <div class="kpi-label">💰 Toplam Gelir</div>
+        <div class="kpi-value positive" data-usd="{{ total_income }}" id="kpi-income">${{ "{:,.2f}".format(total_income) }}</div>
+        <div class="kpi-sub">{{ income_count }} işlem</div>
+    </div>
+    <div class="kpi-card expense">
+        <div class="kpi-label">💸 Toplam Gider</div>
+        <div class="kpi-value negative" data-usd="{{ total_expense }}" id="kpi-expense">${{ "{:,.2f}".format(total_expense) }}</div>
+        <div class="kpi-sub">{{ expense_count }} işlem</div>
+    </div>
+    <div class="kpi-card balance">
+        <div class="kpi-label">🏦 Net Bakiye</div>
+        <div class="kpi-value {% if net_balance >= 0 %}positive{% else %}negative{% endif %}" data-usd="{{ net_balance }}" id="kpi-net">
+            ${{ "{:,.2f}".format(net_balance) }}
+        </div>
+        <div class="kpi-sub">Seçilen periyot</div>
+    </div>
+</div>
+
+<!-- KPI — RESMİ / ŞAHSİ -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+
+    <!-- Resmi -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;">🏢</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Resmi Hesap</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+            <div style="padding:16px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gelir</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ official_income }}">${{ "{:,.0f}".format(official_income) }}</div>
+            </div>
+            <div style="padding:16px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gider</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ official_expense }}">${{ "{:,.0f}".format(official_expense) }}</div>
+            </div>
+            <div style="padding:16px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Net</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:{% if official_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ official_net }}">${{ "{:,.0f}".format(official_net) }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Şahsi -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;">👤</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Şahsi Hesap / Elden</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+            <div style="padding:16px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gelir</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ personal_income }}">${{ "{:,.0f}".format(personal_income) }}</div>
+            </div>
+            <div style="padding:16px;border-right:1px solid var(--border);">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gider</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ personal_expense }}">${{ "{:,.0f}".format(personal_expense) }}</div>
+            </div>
+            <div style="padding:16px;">
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Net</div>
+                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:{% if personal_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ personal_net }}">${{ "{:,.0f}".format(personal_net) }}</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- AYLIK BAR GRAFİK -->
+{% if monthly_data %}
+<div class="monthly-card">
+    <h2>Aylık Gelir / Gider</h2>
+    <div class="bar-chart" id="bar-chart">
+        {% set max_val = monthly_data | map(attribute='income') | list + monthly_data | map(attribute='expense') | list
+        %}
+        {% set chart_max = max_val | max if max_val | max > 0 else 1 %}
+        {% for row in monthly_data %}
+        <div class="bar-wrap">
+            <div class="bar-group">
+                <div class="bar income-bar" title="Gelir: ${{ '{:,.0f}'.format(row.income) }}"
+                    style="height: {{ [((row.income / chart_max) * 90)|int, 2]|max }}px;"></div>
+                <div class="bar expense-bar" title="Gider: ${{ '{:,.0f}'.format(row.expense) }}"
+                    style="height: {{ [((row.expense / chart_max) * 90)|int, 2]|max }}px;"></div>
+            </div>
+            <div class="bar-label">{{ row.month }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--text-muted);">
+        <span style="display:flex;align-items:center;gap:5px;"><span
+                style="width:10px;height:10px;background:var(--success,#1a7a4a);border-radius:2px;display:inline-block;"></span>Gelir</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span
+                style="width:10px;height:10px;background:#c0392b;border-radius:2px;display:inline-block;"></span>Gider</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- ANA İÇERİK -->
+<div class="finance-grid">
+
+    <!-- SOL: İşlem Tablosu -->
+    <div>
+        <div class="transactions-card">
+            <div class="transactions-card-header">
+                <h2>İşlemler <span style="font-weight:400;opacity:.5;">— {{ transactions|length }} kayıt{% if transfer_count %} · <span style="color:#e67e22;">{{ transfer_count }} transfer</span>{% endif %}</span></h2>
+                <div class="tx-filter">
+                    <button class="tx-filter-btn active" onclick="filterTx('all','all',this)" data-type="all" data-src="all">Tümü</button>
+                    <button class="tx-filter-btn" onclick="filterTx('income','all',this)" data-type="income" data-src="all">Gelir</button>
+                    <button class="tx-filter-btn" onclick="filterTx('expense','all',this)" data-type="expense" data-src="all">Gider</button>
+                    <span style="width:1px;background:var(--border);margin:0 4px;align-self:stretch;display:inline-block;"></span>
+                    <button class="tx-filter-btn" onclick="filterTx('all','official',this)" data-type="all" data-src="official">🏢 Resmi</button>
+                    <button class="tx-filter-btn" onclick="filterTx('all','personal',this)" data-type="all" data-src="personal">👤 Şahsi</button>
+                    <button class="tx-filter-btn" onclick="filterTx('transfer','all',this)" data-type="transfer" data-src="all">⇄ Transfer</button>
+                </div>
+            </div>
+
+            {% if transactions %}
+            <table class="tx-table" id="tx-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür / Kategori</th>
+                        <th>Açıklama / Taraf</th>
+                        <th>Hesap</th>
+                        <th>Tutar</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                    <tr class="tx-row" data-type="{{ tx.type }}" data-source="{{ tx.account_source if tx.account_source else 'official' }}" data-transfer="{{ '1' if tx.is_transfer else '0' }}">
+                        <td>
+                            <div class="td-inner">
+                                <div class="tx-date-day">{{ tx.transaction_date | tr_datetime | replace((tx.transaction_date | tr_datetime)[11:], '') }}</div>
+                                <div class="tx-date">{{ (tx.transaction_date | tr_datetime)[11:] }}</div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="td-inner">
+                                {% if tx.is_transfer %}
+                                <span class="tx-type-badge" style="background:rgba(230,126,34,.12);color:#e67e22;">
+                                    {% if tx.type == 'income' %}⇄ Transfer Girişi{% else %}⇄ Transfer Çıkışı{% endif %}
+                                </span>
+                                {% else %}
+                                <span class="tx-type-badge {{ tx.type }}">
+                                    {% if tx.type == 'income' %}↑ Gelir{% else %}↓ Gider{% endif %}
+                                </span>
+                                {% endif %}
+                                {% if tx.category and not tx.is_transfer %}
+                                <div style="font-size:11px;color:var(--text-muted);margin-top:5px;">{{ tx.category }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="td-inner">
+                                {% if tx.description %}
+                                <div class="tx-desc">{{ tx.description }}</div>
+                                {% endif %}
+                                {% if tx.customer %}
+                                <div class="tx-party">👤 {{ tx.customer.name }}</div>
+                                <div class="tx-party-type">Müşteri</div>
+                                {% elif tx.supplier %}
+                                <div class="tx-party">🏭 {{ tx.supplier.name }}</div>
+                                <div class="tx-party-type">Tedarikçi</div>
+                                {% endif %}
+                                {% if tx.reference_no %}
+                                <div class="tx-ref">📋 {{ tx.reference_no }}</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="td-inner">
+                                {% set src = tx.account_source if tx.account_source else 'official' %}
+                                {% if src == 'personal' %}
+                                <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(230,126,34,.1);color:#e67e22;border:1px solid rgba(230,126,34,.2);">👤 Şahsi</span>
+                                {% else %}
+                                <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:var(--surface-3);color:var(--text-muted);border:1px solid var(--border);">🏢 Resmi</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="td-inner">
+                                <div class="tx-amount {{ tx.type }}">
+                                    {% if tx.type == 'income' %}+{% else %}−{% endif %}
+                                    {{ "{:,.2f}".format(tx.amount) }} {{ tx.currency or '₺' }}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="td-inner">
+                                <form method="POST" action="/admin/finance/delete/{{ tx.id }}"
+                                    onsubmit="return confirm('Bu kayıt silinsin mi?')">
+                                    <button type="submit" class="btn-tx-delete">🗑</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div style="font-size:40px;opacity:.2;margin-bottom:12px;">💳</div>
+                <p>Bu periyotta henüz kayıt yok.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SAĞ: Kayıt Ekle Formu -->
+    <div>
+        <div class="add-form-card">
+            <div class="add-form-card-header" style="padding:0;">
+                <!-- Sekme başlıkları -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;">
+                    <button type="button" id="tab-tx" onclick="switchTab('tx')"
+                        style="padding:14px 10px;border:none;background:var(--surface);border-bottom:2px solid var(--dark);font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-primary);cursor:pointer;">
+                        + İşlem Ekle
+                    </button>
+                    <button type="button" id="tab-transfer" onclick="switchTab('transfer')"
+                        style="padding:14px 10px;border:none;background:var(--surface-2);border-bottom:2px solid transparent;font-family:var(--font);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);cursor:pointer;border-left:1px solid var(--border);">
+                        ⇄ Transfer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Transfer formu -->
+            <div id="panel-transfer" style="display:none;">
+            <div class="add-form-card-body">
+                <form method="POST" action="/admin/finance/transfer">
+
+                    <!-- Transfer yönü -->
+                    <div class="form-group">
+                        <label class="form-label">Transfer Yönü *</label>
+                        <select name="from_source" id="transfer-from" class="form-control" onchange="updateTransferLabel()">
+                            <option value="official">🏢 Resmi Hesap → 👤 Şahsi Hesap</option>
+                            <option value="personal">👤 Şahsi Hesap → 🏢 Resmi Hesap</option>
+                        </select>
+                        <input type="hidden" name="to_source" id="transfer-to" value="personal">
+                        <div id="transfer-label" style="margin-top:8px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-secondary);text-align:center;">
+                            🏢 Resmi Hesap <strong>→</strong> 👤 Şahsi Hesap
+                        </div>
+                    </div>
+
+                    <!-- Tutar + Para Birimi -->
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label">Tutar *</label>
+                            <input type="number" step="0.01" min="0.01" name="amount" class="form-control" placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Para Birimi</label>
+                            <select name="currency" class="form-control">
+                                <option value="TRY">₺ TRY</option>
+                                <option value="USD">$ USD</option>
+                                <option value="EUR">€ EUR</option>
+                                <option value="GBP">£ GBP</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Tarih -->
+                    <div class="form-group">
+                        <label class="form-label">Tarih</label>
+                        <input type="datetime-local" name="transaction_date" class="form-control" value="{{ now_str }}">
+                    </div>
+
+                    <!-- Açıklama -->
+                    <div class="form-group">
+                        <label class="form-label">Açıklama</label>
+                        <input type="text" name="description" class="form-control" placeholder="Neden transfer yapıldı...">
+                    </div>
+
+                    <div style="padding:12px;background:rgba(230,126,34,.08);border:1px solid rgba(230,126,34,.2);border-radius:var(--radius-sm);font-size:11px;color:#e67e22;line-height:1.6;">
+                        ℹ️ Transfer işlemleri gelir/gider toplamlarını <strong>etkilemez</strong>. Yalnızca hangi hesapta ne kadar para olduğunu izler.
+                    </div>
+
+                    <button type="submit" class="btn-add-tx" style="background:#e67e22;">⇄ Transferi Kaydet</button>
+                </form>
+            </div>
+            </div>
+
+            <!-- Normal işlem formu -->
+            <div id="panel-tx">
+            <div class="add-form-card-body">
+                <form method="POST" action="/admin/finance/create">
+
+                    <!-- Gelir / Gider toggle -->
+                    <div class="form-group">
+                        <label class="form-label">İşlem Türü *</label>
+                        <div class="type-toggle">
+                            <input type="radio" name="type" id="type-income" value="income" checked>
+                            <label for="type-income">↑ Gelir</label>
+                            <input type="radio" name="type" id="type-expense" value="expense">
+                            <label for="type-expense">↓ Gider</label>
+                        </div>
+                    </div>
+
+                    <!-- Tutar + Para Birimi -->
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label class="form-label">Tutar *</label>
+                            <input type="number" step="0.01" min="0.01" name="amount" class="form-control"
+                                placeholder="0.00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Para Birimi</label>
+                            <select name="currency" class="form-control">
+                                <option value="TRY">₺ TRY</option>
+                                <option value="USD">$ USD</option>
+                                <option value="EUR">€ EUR</option>
+                                <option value="GBP">£ GBP</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Kategori -->
+                    <div class="form-group">
+                        <label class="form-label">Kategori</label>
+                        <select name="category" id="category-select" class="form-control">
+                            <option value="">— Seçin —</option>
+                        </select>
+                    </div>
+
+                    <!-- Tarih -->
+                    <div class="form-group">
+                        <label class="form-label">İşlem Tarihi</label>
+                        <input type="datetime-local" name="transaction_date" class="form-control" value="{{ now_str }}">
+                    </div>
+
+                    <!-- Açıklama -->
+                    <div class="form-group">
+                        <label class="form-label">Açıklama</label>
+                        <input type="text" name="description" class="form-control" placeholder="Fatura açıklaması...">
+                    </div>
+
+                    <!-- Referans No -->
+                    <div class="form-group">
+                        <label class="form-label">Fatura / Fiş No</label>
+                        <input type="text" name="reference_no" class="form-control" placeholder="INV-2024-001">
+                    </div>
+
+                    <!-- Hesap Kaynağı -->
+                    <div class="form-group">
+                        <label class="form-label">Hesap Kaynağı *</label>
+                        <div class="type-toggle" style="grid-template-columns:1fr 1fr;">
+                            <input type="radio" name="account_source" id="src-official" value="official" checked>
+                            <label for="src-official" style="font-size:11px;">🏢 Resmi Hesap</label>
+                            <input type="radio" name="account_source" id="src-personal" value="personal">
+                            <label for="src-personal" style="font-size:11px;">👤 Şahsi / Elden</label>
+                        </div>
+                    </div>
+
+                    <!-- İlişkili Taraf -->
+                    <div class="form-group" id="party-group">
+                        <label class="form-label">İlişkili Taraf</label>
+                        <select name="party_type" id="party-type-sel" class="form-control"
+                            onchange="toggleParty(this.value)">
+                            <option value="">— Seçin —</option>
+                            <option value="customer">👤 Müşteri</option>
+                            <option value="supplier">🏭 Tedarikçi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customer-group" style="display:none;">
+                        <label class="form-label">Müşteri</label>
+                        <select name="customer_id" class="form-control">
+                            <option value="">— Seçin —</option>
+                            {% for c in customers %}
+                            <option value="{{ c.id }}">{{ c.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="supplier-group" style="display:none;">
+                        <label class="form-label">Tedarikçi</label>
+                        <select name="supplier_id" class="form-control">
+                            <option value="">— Seçin —</option>
+                            {% for s in suppliers %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-add-tx">+ Kaydet</button>
+                </form>
+            </div>
+            </div><!-- /panel-tx -->
+        </div>
+    </div>
+
+</div><!-- /finance-grid -->
+
+<script>
+    // Dile özgü kategori listeleri
+    const CATEGORIES = {
+        income: [
+            { value: "Numune Ücreti",               label: "Numune Ücreti" },
+            { value: "Ön Ödeme",                    label: "Ön Ödeme" },
+            { value: "Ara Ödeme",                   label: "Ara Ödeme" },
+            { value: "Son Ödeme",                   label: "Son Ödeme" },
+            { value: "Satış",                       label: "Satış" },
+            { value: "Diğer",                       label: "Diğer (açıklamada belirtiniz)" },
+        ],
+        expense: [
+            { value: "Üretim Malzemesi",            label: "Üretim Malzemesi" },
+            { value: "Fason Üretim",                label: "Fason Üretim" },
+            { value: "Kira",                        label: "Kira" },
+            { value: "Fatura",                      label: "Fatura" },
+            { value: "Maaş",                        label: "Maaş" },
+            { value: "Borç",                        label: "Borç" },
+            { value: "Yakıt",                       label: "Yakıt" },
+            { value: "Lojistik",                    label: "Lojistik" },
+            { value: "Vergi/Ceza",                  label: "Vergi/Ceza" },
+            { value: "Reklam",                      label: "Reklam" },
+            { value: "Diğer",                       label: "Diğer (açıklamada belirtiniz)" },
+        ]
+    };
+
+    function updateCategories(type) {
+        const sel = document.getElementById('category-select');
+        const prev = sel.value;
+        sel.innerHTML = '<option value="">— Seçin —</option>';
+        (CATEGORIES[type] || []).forEach(function(cat) {
+            const opt = document.createElement('option');
+            opt.value = cat.value;
+            opt.textContent = cat.label;
+            if (cat.value === prev) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    // Gelir seçilince otomatik müşteri, gider seçilince tedarikçi öner
+    document.querySelectorAll('input[name="type"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            updateCategories(this.value);
+            const partySel = document.getElementById('party-type-sel');
+            if (!partySel.value) {
+                partySel.value = this.value === 'income' ? 'customer' : 'supplier';
+                toggleParty(partySel.value);
+            }
+        });
+    });
+
+    function toggleParty(val) {
+        document.getElementById('customer-group').style.display = val === 'customer' ? 'flex' : 'none';
+        document.getElementById('supplier-group').style.display = val === 'supplier' ? 'flex' : 'none';
+    }
+
+    // İşlem filtresi (type + source + transfer)
+    function filterTx(type, src, btn) {
+        document.querySelectorAll('.tx-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tx-row').forEach(row => {
+            const isTransfer = row.dataset.transfer === '1';
+            if (type === 'transfer') {
+                row.style.display = isTransfer ? '' : 'none';
+                return;
+            }
+            if (isTransfer) { row.style.display = 'none'; return; }
+            const matchType = (type === 'all' || row.dataset.type === type);
+            const matchSrc  = (src  === 'all' || row.dataset.source === src);
+            row.style.display = (matchType && matchSrc) ? '' : 'none';
+        });
+    }
+
+    // Sayfa yüklenince TRY'ye çevir ve kategori listesini başlat
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll("[data-usd]").forEach(el => {
+            el.textContent = fmtAmount(parseFloat(el.dataset.usd), "TRY");
+        });
+        // Başlangıçta gelir seçili → gelir kategorilerini yükle
+        updateCategories('income');
+    });
+
+    // Sekme değiştirme
+    function switchTab(tab) {
+        const isPanelTx = tab === 'tx';
+        document.getElementById('panel-tx').style.display       = isPanelTx ? 'block' : 'none';
+        document.getElementById('panel-transfer').style.display = isPanelTx ? 'none'  : 'block';
+
+        const tabTx  = document.getElementById('tab-tx');
+        const tabTr  = document.getElementById('tab-transfer');
+        tabTx.style.borderBottom  = isPanelTx ? '2px solid var(--dark)' : '2px solid transparent';
+        tabTx.style.background    = isPanelTx ? 'var(--surface)' : 'var(--surface-2)';
+        tabTx.style.color         = isPanelTx ? 'var(--text-primary)' : 'var(--text-muted)';
+        tabTr.style.borderBottom  = isPanelTx ? '2px solid transparent' : '2px solid #e67e22';
+        tabTr.style.background    = isPanelTx ? 'var(--surface-2)' : 'var(--surface)';
+        tabTr.style.color         = isPanelTx ? 'var(--text-muted)' : '#e67e22';
+    }
+
+    // Transfer yön etiketi güncelle
+    function updateTransferLabel() {
+        const from = document.getElementById('transfer-from').value;
+        const toInput = document.getElementById('transfer-to');
+        const label = document.getElementById('transfer-label');
+        if (from === 'official') {
+            toInput.value = 'personal';
+            label.innerHTML = '🏢 Resmi Hesap <strong>→</strong> 👤 Şahsi Hesap';
+        } else {
+            toInput.value = 'official';
+            label.innerHTML = '👤 Şahsi Hesap <strong>→</strong> 🏢 Resmi Hesap';
+        }
+    }
+</script>
+{% endblock %}

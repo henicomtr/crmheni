@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ ui.order_request }} — {{ site.site_name or 'Heni' }}</title>
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="site-page">
+
+    {% include 'partials/site_header.html' %}
+
+    <div style="max-width:640px;margin:80px auto;padding:0 24px;text-align:center;">
+        <div style="font-size:64px;margin-bottom:24px;">✅</div>
+        <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(24px,3vw,36px);font-weight:700;color:#0d1b3e;margin-bottom:16px;">
+            Talebiniz Alındı!
+        </h1>
+        <p style="font-size:16px;color:#666;margin-bottom:32px;line-height:1.7;">
+            {{ ui.order_request }} — Talebiniz başarıyla iletildi. En kısa sürede sizinle iletişime geçeceğiz.
+        </p>
+
+        <div style="background:#f8f9fb;border:1px solid #e8eaf0;border-radius:12px;padding:24px;margin-bottom:32px;text-align:left;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:14px;">
+                <div>
+                    <span style="color:#999;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Talep No</span>
+                    <div style="font-size:18px;font-weight:700;color:#0d1b3e;margin-top:4px;">#{{ quote_id }}</div>
+                </div>
+                <div>
+                    <span style="color:#999;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">Toplam Tutar</span>
+                    <div style="font-size:18px;font-weight:700;color:#0d1b3e;margin-top:4px;">{{ price_formatted }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+            <a href="{{ showroom_url }}"
+               style="display:inline-flex;align-items:center;gap:8px;background:#0d1b3e;color:#fff;padding:13px 28px;border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;transition:background .2s;">
+                ← {{ ui.back_to_products }}
+            </a>
+            <a href="{{ home_url }}"
+               style="display:inline-flex;align-items:center;gap:8px;background:#f3f4f6;color:#333;padding:13px 28px;border-radius:8px;font-weight:600;font-size:15px;text-decoration:none;">
+                {{ ui.home }}
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

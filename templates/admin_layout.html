@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <title>HENİ CRM</title>
+    <style>
+        .sidebar {
+            width: 220px;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            background: white;
+            padding: 30px 20px;
+            border-right: 1px solid #e5e5e7;
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+
+        .sidebar a:hover {
+            background: #f5f5f7;
+        }
+
+        .content {
+            margin-left: 240px;
+            padding: 60px;
+        }
+
+        .power {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid #e5e5e7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .power:hover {
+            background: #f5f5f7;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h3>HENİ CRM</h3>
+        <a href="/admin">Durum</a>
+        <a href="/admin/homepage">Anasayfa</a>
+        <a href="/admin/products">Ürünler</a>
+        <a href="/admin/pages">Sayfalar</a>
+        <a href="/admin/categories">Kategoriler</a>
+        <a href="/admin/requests">Talepler</a>
+        <a href="/admin/customers">Müşteriler</a>
+        <a href="/admin/suppliers">Tedarikçiler</a>
+        <a href="/admin/finance">Finans</a>
+        <a href="/admin/settings">Site Ayarları</a>
+        <a href="/admin/logout">Çıkış Yap</a>
+
+    </div>
+
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 19336 & taskkill /F /PID 18588\")",
+      "Bash(cmd.exe /c \"netstat -ano | findstr :8000\")",
+      "WebFetch(domain:daglarkozmetik.com)",
+      "Bash(source venv/Scripts/activate)",
+      "Bash(python -c \"from app.main import app; print\\(''OK''\\)\")",
+      "Bash(python -c \"import reportlab; print\\(''ok''\\)\")",
+      "Bash(python generate_pdf.py)"
+    ]
+  }
+}

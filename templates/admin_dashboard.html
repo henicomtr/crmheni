@@ -1,0 +1,497 @@
+﻿{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    /* ========================
+   DASHBOARD — STYLES
+======================== */
+
+    .dashboard-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 28px;
+    }
+
+    /* ── KPI Kartları ── */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 22px 24px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: var(--transition);
+    }
+
+    .kpi-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+    .kpi-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kpi-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.10em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .kpi-icon {
+        font-size: 18px;
+        opacity: 0.5;
+    }
+
+    .kpi-value {
+        font-size: 28px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+        line-height: 1;
+    }
+
+    .kpi-sub {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .kpi-sub-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: var(--text-muted);
+    }
+
+    .kpi-sub-row span:last-child {
+        font-family: var(--mono);
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    /* ── Alt satır: Finans + Grafik ── */
+    .dashboard-bottom {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 20px;
+    }
+
+    /* Finans kartı */
+    .finance-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .finance-card-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .finance-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .finance-card-body {
+        padding: 24px;
+    }
+
+    .finance-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .finance-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .finance-row-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .finance-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .finance-dot.income {
+        background: #1a7a4a;
+    }
+
+    .finance-dot.expense {
+        background: #c0392b;
+    }
+
+    .finance-dot.net {
+        background: var(--dark);
+    }
+
+    .finance-row-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .finance-row-sub {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 1px;
+    }
+
+    .finance-row-amount {
+        font-size: 15px;
+        font-weight: 700;
+        font-family: var(--mono);
+        letter-spacing: -0.02em;
+    }
+
+    .finance-row-amount.income {
+        color: #1a7a4a;
+    }
+
+    .finance-row-amount.expense {
+        color: #c0392b;
+    }
+
+    .finance-row-amount.net {
+        color: var(--text-primary);
+    }
+
+    /* Net bar */
+    .net-bar-wrap {
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    .net-bar-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+    }
+
+    .net-bar-track {
+        height: 6px;
+        background: var(--surface-3);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .net-bar-fill {
+        height: 100%;
+        border-radius: 20px;
+        transition: width 0.8s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .net-bar-fill.positive {
+        background: #1a7a4a;
+    }
+
+    .net-bar-fill.negative {
+        background: #c0392b;
+    }
+
+    /* Grafik kartı */
+    .chart-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .chart-card-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .chart-card-title {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .chart-card-body {
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+    }
+
+    canvas#financeChart {
+        max-width: 220px;
+        max-height: 220px;
+    }
+
+    /* ========================
+   MOBİL
+======================== */
+
+    @media (max-width: 1100px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .dashboard-bottom {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .kpi-value {
+            font-size: 22px;
+        }
+    }
+</style>
+
+<h1 class="dashboard-title">Güncel Durum</h1>
+
+<!-- KPI KARTLARI -->
+<div class="kpi-grid">
+
+    <!-- Ürünler -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-label">Ürünler</span>
+            <span class="kpi-icon">📦</span>
+        </div>
+        <div class="kpi-value">{{ total_products }}</div>
+        <div class="kpi-sub">
+            <div class="kpi-sub-row">
+                <span>Toplam Stok</span>
+                <span>{{ "{:,}".format(total_stock) }}</span>
+            </div>
+            <div class="kpi-sub-row">
+                <span>Satılan</span>
+                <span>{{ "{:,}".format(sold_products) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Müşteriler -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-label">Müşteriler</span>
+            <span class="kpi-icon">🤝</span>
+        </div>
+        <div class="kpi-value">{{ total_customers }}</div>
+        <div class="kpi-sub">
+            <div class="kpi-sub-row">
+                <span>Bu Hafta</span>
+                <span>{{ weekly_customers }}</span>
+            </div>
+            <div class="kpi-sub-row">
+                <span>Bu Yıl</span>
+                <span>{{ yearly_customers }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Talepler -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-label">Talepler</span>
+            <span class="kpi-icon">📋</span>
+        </div>
+        <div class="kpi-value">{{ total_requests }}</div>
+        <div class="kpi-sub">
+            <div class="kpi-sub-row">
+                <span>Tedarikçiler</span>
+                <span>{{ total_suppliers }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Kâr -->
+    <div class="kpi-card">
+        <div class="kpi-card-header">
+            <span class="kpi-label">Net Kâr</span>
+            <span class="kpi-icon">💰</span>
+        </div>
+        {% set net = total_income - total_expense %}
+        <div class="kpi-value" style="color: {% if net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};">
+            ${{ "{:,.0f}".format(net) }}
+        </div>
+        <div class="kpi-sub">
+            <div class="kpi-sub-row">
+                <span>Gelir</span>
+                <span style="color:#1a7a4a;">${{ "{:,.0f}".format(total_income) }}</span>
+            </div>
+            <div class="kpi-sub-row">
+                <span>Gider</span>
+                <span style="color:#c0392b;">${{ "{:,.0f}".format(total_expense) }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ALT SATIR: Finans Detay + Grafik -->
+<div class="dashboard-bottom">
+
+    <!-- Finans Detay -->
+    <div class="finance-card">
+        <div class="finance-card-header">
+            <span class="finance-card-title">Finansal Özet</span>
+        </div>
+        <div class="finance-card-body">
+
+            <div class="finance-row">
+                <div class="finance-row-left">
+                    <div class="finance-dot income"></div>
+                    <div>
+                        <div class="finance-row-label">Toplam Gelir</div>
+                        <div class="finance-row-sub">Tüm zamanlar</div>
+                    </div>
+                </div>
+                <div class="finance-row-amount income">${{ "{:,.2f}".format(total_income) }}</div>
+            </div>
+
+            <div class="finance-row">
+                <div class="finance-row-left">
+                    <div class="finance-dot expense"></div>
+                    <div>
+                        <div class="finance-row-label">Toplam Gider</div>
+                        <div class="finance-row-sub">Tüm zamanlar</div>
+                    </div>
+                </div>
+                <div class="finance-row-amount expense">${{ "{:,.2f}".format(total_expense) }}</div>
+            </div>
+
+            <div class="finance-row">
+                <div class="finance-row-left">
+                    <div class="finance-dot net"></div>
+                    <div>
+                        <div class="finance-row-label">Net Kâr / Zarar</div>
+                        <div class="finance-row-sub">Gelir − Gider</div>
+                    </div>
+                </div>
+                {% set net = total_income - total_expense %}
+                <div class="finance-row-amount net">${{ "{:,.2f}".format(net) }}</div>
+            </div>
+
+            <!-- Net bar -->
+            {% if total_income > 0 %}
+            {% set bar_pct = [((total_income - total_expense) / total_income * 100), 100] | min %}
+            {% set bar_pct = [bar_pct, 0] | max %}
+            <div class="net-bar-wrap">
+                <div class="net-bar-label">
+                    <span>Kâr Marjı</span>
+                    <span>%{{ "{:.1f}".format(bar_pct) }}</span>
+                </div>
+                <div class="net-bar-track">
+                    <div class="net-bar-fill {% if net >= 0 %}positive{% else %}negative{% endif %}"
+                        style="width: {{ bar_pct }}%;"></div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Grafik -->
+    <div class="chart-card">
+        <div class="chart-card-header">
+            <span class="chart-card-title">Gelir / Gider</span>
+        </div>
+        <div class="chart-card-body">
+            <canvas id="financeChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    const ctx = document.getElementById('financeChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Gelir', 'Gider'],
+            datasets: [{
+                data: [{{ total_income }}, {{ total_expense }}],
+        backgroundColor: ['#1a7a4a', '#c0392b'],
+        borderColor: ['#fff', '#fff'],
+        borderWidth: 3,
+        hoverOffset: 6,
+    }]
+    },
+        options: {
+        cutout: '72%',
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: { family: 'DM Sans', size: 12, weight: '600' },
+                    color: '#5a5a5a',
+                    padding: 16,
+                    usePointStyle: true,
+                    pointStyleWidth: 8,
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` $${ctx.parsed.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                }
+            }
+        },
+        animation: {
+            animateRotate: true,
+            duration: 800,
+            easing: 'easeInOutQuart'
+        }
+    }
+});
+</script>
+{% endblock %}

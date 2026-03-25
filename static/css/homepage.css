@@ -1,0 +1,764 @@
+/* ======================================================
+   HENI KOZMETIK — PREMIUM B2B MANUFACTURING HOMEPAGE
+   Global Industrial Manufacturing Website
+====================================================== */
+
+/* ── RESET & BASE ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --navy:       #0f172a;
+    --navy-dark:  #0a0f1e;
+    --metallic:   #1e3a8a;
+    --white:      #ffffff;
+    --light-bg:   #f5f7fb;
+    --gray-100:   #f8fafc;
+    --gray-200:   #e2e8f0;
+    --gray-700:   #334155;
+    --gray-900:   #0f172a;
+    --font-body:  'Inter', -apple-system, sans-serif;
+    --ease: cubic-bezier(.4,0,.2,1);
+    --shadow-sm: 0 1px 3px rgba(15,23,42,0.08);
+    --shadow-md: 0 4px 12px rgba(15,23,42,0.12);
+    --shadow-lg: 0 12px 32px rgba(15,23,42,0.18);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-body);
+    background: var(--white);
+    color: var(--navy);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+}
+
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; display: block; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+section { position: relative; }
+
+/* ── NAVBAR ── */
+.hp-nav {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    height: 72px;
+    display: flex;
+    align-items: center;
+    padding: 0 48px;
+    gap: 40px;
+    border-bottom: 1px solid var(--gray-200);
+    transition: all 0.3s var(--ease);
+}
+
+.hp-nav.scrolled {
+    background: rgba(15, 23, 42, 0.98);
+    border-bottom-color: rgba(255,255,255,0.1);
+}
+
+.hp-nav.scrolled .hp-nav-links a,
+.hp-nav.scrolled .hp-nav-logo .logo-text {
+    color: var(--white);
+}
+
+.hp-nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-right: auto;
+}
+
+.hp-nav-logo .logo-icon {
+    width: 42px;
+    height: 42px;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--white);
+    border-radius: 6px;
+}
+
+.hp-nav-logo .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    transition: color 0.3s var(--ease);
+}
+
+.hp-nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+}
+
+.hp-nav-links a {
+    color: var(--gray-700);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: color .2s;
+    position: relative;
+}
+
+.hp-nav-links a:hover { color: var(--metallic); }
+
+.hp-nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--metallic);
+    transition: width 0.3s var(--ease);
+}
+
+.hp-nav-links a:hover::after { width: 100%; }
+
+.hp-nav-lang {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.lang-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-700);
+    transition: all .2s;
+    border: 1px solid transparent;
+}
+
+.lang-btn:hover { 
+    color: var(--navy); 
+    background: var(--gray-100);
+}
+
+.lang-btn.active { 
+    background: var(--metallic); 
+    color: var(--white); 
+    border-color: var(--metallic); 
+}
+
+.hp-nav-cta {
+    background: var(--metallic);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px 28px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    transition: all .2s;
+}
+
+.hp-nav-cta:hover { 
+    background: var(--navy);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* ── HERO ── */
+.hp-hero {
+    position: relative;
+    min-height: 100vh;
+    background: var(--navy);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.hp-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('/static/upload/images/hero-industrial.jpg');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.35;
+}
+
+.hp-hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.5) 100%);
+}
+
+.hp-hero-content {
+    position: relative;
+    z-index: 2;
+    padding: 120px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.hp-hero-content h1 {
+    font-size: clamp(42px, 5.5vw, 68px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: 28px;
+    letter-spacing: -0.02em;
+    max-width: 900px;
+}
+
+.hp-hero-content p {
+    font-size: 18px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 40px;
+    max-width: 620px;
+    line-height: 1.7;
+}
+
+.hp-hero-btns { 
+    display: flex; 
+    gap: 16px; 
+    flex-wrap: wrap; 
+}
+
+.btn-primary {
+    background: var(--metallic);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 16px;
+    padding: 16px 36px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .3s var(--ease);
+    border: 2px solid var(--metallic);
+}
+
+.btn-primary:hover { 
+    background: var(--white);
+    color: var(--navy);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 16px;
+    padding: 14px 36px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.5);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .3s var(--ease);
+}
+
+.btn-outline:hover { 
+    border-color: var(--white); 
+    background: rgba(255,255,255,0.1);
+}
+
+/* ── SECTION TITLES ── */
+.section-title {
+    text-align: center;
+    margin-bottom: 64px;
+}
+
+.section-title h2 {
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+}
+
+.section-title p {
+    font-size: 18px;
+    color: var(--gray-700);
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+/* ── PRODUCTION AREAS / INDUSTRIES SECTION ── */
+.hp-industries {
+    padding: 100px 0;
+    background: var(--light-bg);
+}
+
+.industries-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 48px;
+}
+
+.industry-card {
+    background: var(--white);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+    border: 1px solid var(--gray-200);
+}
+
+.industry-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.industry-card-img {
+    height: 260px;
+    overflow: hidden;
+    background: var(--gray-200);
+}
+
+.industry-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .5s var(--ease);
+}
+
+.industry-card:hover .industry-card-img img { transform: scale(1.08); }
+
+.industry-card-body {
+    padding: 32px;
+}
+
+.industry-card-body h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 12px;
+}
+
+.industry-card-body p {
+    font-size: 15px;
+    color: var(--gray-700);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* ── RAW MATERIAL TRADING SECTION ── */
+.hp-raw-materials {
+    padding: 100px 48px;
+    background: var(--white);
+}
+
+.raw-materials-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+}
+
+.raw-materials-content h2 {
+    font-size: clamp(32px, 3.5vw, 46px);
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+}
+
+.raw-materials-content p {
+    font-size: 16px;
+    color: var(--gray-700);
+    line-height: 1.8;
+    margin-bottom: 20px;
+}
+
+.raw-materials-visual {
+    height: 500px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-image: url('/static/upload/images/raw-materials.jpg');
+    background-size: cover;
+    background-position: center;
+    box-shadow: var(--shadow-lg);
+}
+
+/* ── PRIVATE LABEL SECTION ── */
+.hp-private-label {
+    padding: 100px 48px;
+    background: var(--navy);
+    color: var(--white);
+}
+
+.private-label-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+}
+
+.private-label-content h2 {
+    font-size: clamp(32px, 3.5vw, 46px);
+    font-weight: 800;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+}
+
+.private-label-content p {
+    font-size: 16px;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.8;
+    margin-bottom: 32px;
+}
+
+.capabilities-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.capability-item {
+    background: rgba(255,255,255,0.08);
+    padding: 28px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all .3s var(--ease);
+}
+
+.capability-item:hover {
+    background: rgba(255,255,255,0.12);
+    transform: translateY(-4px);
+}
+
+.capability-item h4 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.capability-item p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin: 0;
+}
+
+/* ── GLOBAL EXPORT SECTION ── */
+.hp-export {
+    padding: 100px 48px;
+    background-image: url('/static/upload/images/world-export.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    position: relative;
+}
+
+.hp-export::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(15,23,42,0.88);
+}
+
+.export-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--white);
+}
+
+.export-content h2 {
+    font-size: clamp(36px, 4vw, 52px);
+    font-weight: 800;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+}
+
+.export-content p {
+    font-size: 20px;
+    color: rgba(255,255,255,0.85);
+    max-width: 680px;
+    margin: 0 auto 48px;
+}
+
+.export-stats {
+    display: flex;
+    justify-content: center;
+    gap: 80px;
+    flex-wrap: wrap;
+}
+
+.export-stat {
+    text-align: center;
+}
+
+.export-stat-number {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.export-stat-label {
+    font-size: 16px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+}
+
+/* ── CERTIFICATION SECTION ── */
+.hp-certification {
+    padding: 100px 48px;
+    background: var(--light-bg);
+}
+
+.certification-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.cert-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+}
+
+.cert-card {
+    background: var(--white);
+    padding: 40px 32px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid var(--gray-200);
+    transition: all .3s var(--ease);
+}
+
+.cert-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--metallic);
+}
+
+.cert-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+.cert-card h4 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+}
+
+.cert-card p {
+    font-size: 14px;
+    color: var(--gray-700);
+}
+
+/* ── CTA SECTION ── */
+.hp-cta-section {
+    padding: 100px 48px;
+    background: var(--white);
+    text-align: center;
+}
+
+.hp-cta-inner {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hp-cta-inner h2 {
+    font-size: clamp(32px, 4vw, 48px);
+    font-weight: 800;
+    color: var(--navy);
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+}
+
+.hp-cta-inner p {
+    font-size: 18px;
+    color: var(--gray-700);
+    margin-bottom: 40px;
+}
+
+/* ── FOOTER ── */
+.hp-footer {
+    background-image: url('/static/upload/images/footer-factory.jpg');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    padding: 100px 48px 40px;
+    color: var(--white);
+}
+
+.hp-footer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(15,23,42,0.92);
+}
+
+.footer-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 60px;
+}
+
+.footer-col h4 {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+    color: rgba(255,255,255,0.6);
+}
+
+.footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-col ul li a {
+    color: rgba(255,255,255,0.8);
+    font-size: 15px;
+    transition: color .2s;
+}
+
+.footer-col ul li a:hover {
+    color: var(--white);
+}
+
+.footer-col.brand h3 {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 16px;
+}
+
+.footer-col.brand p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.footer-contact {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-contact span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.8);
+}
+
+.footer-bottom {
+    padding-top: 40px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+    .industries-grid { grid-template-columns: repeat(2, 1fr); }
+    .cert-grid { grid-template-columns: repeat(2, 1fr); }
+    .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+}
+
+@media (max-width: 768px) {
+    .hp-nav { 
+        padding: 0 20px; 
+        gap: 16px;
+        height: 64px;
+    }
+    .hp-nav-links { display: none; }
+    .hp-nav-logo .logo-text { font-size: 18px; }
+    
+    .hp-hero-content { 
+        padding: 80px 24px; 
+    }
+    .hp-hero-content h1 { 
+        font-size: clamp(32px, 8vw, 42px);
+    }
+    .hp-hero-content p {
+        font-size: 16px;
+    }
+    
+    .container { padding: 0 24px; }
+    
+    .industries-grid, 
+    .cert-grid {
+        grid-template-columns: 1fr;
+        padding: 0 24px;
+    }
+    
+    .raw-materials-inner,
+    .private-label-inner {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        padding: 0 24px;
+    }
+    
+    .raw-materials-visual {
+        height: 300px;
+    }
+    
+    .capabilities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .export-stats {
+        gap: 40px;
+    }
+    
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+    }
+    
+    .hp-industries,
+    .hp-raw-materials,
+    .hp-private-label,
+    .hp-export,
+    .hp-certification,
+    .hp-cta-section,
+    .hp-footer {
+        padding: 60px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hp-hero { min-height: 80vh; }
+    .hp-hero-content { padding: 60px 20px; }
+    .btn-primary, .btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+    .export-stat-number { font-size: 42px; }
+}
