@@ -9,186 +9,926 @@
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.css" />
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js"></script>
+
+    <style>
+        /* ════════════════════════════════════════
+           RESET & TOKENS
+        ════════════════════════════════════════ */
+        *, *::before, *::after {
+            margin: 0; padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy:        #0f172a;
+            --navy-mid:    #1e293b;
+            --metallic:    #1e3a8a;
+            --accent:      #3b82f6;
+            --white:       #ffffff;
+            --page-bg:     #f1f5f9;
+            --gray-50:     #f8fafc;
+            --gray-100:    #f1f5f9;
+            --gray-200:    #e2e8f0;
+            --gray-300:    #cbd5e1;
+            --gray-400:    #94a3b8;
+            --gray-500:    #64748b;
+            --gray-700:    #334155;
+            --green:       #059669;
+            --green-bg:    #ecfdf5;
+            --green-border:#a7f3d0;
+            --red:         #dc2626;
+            --red-bg:      #fef2f2;
+            --red-border:  #fecaca;
+
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --ease: cubic-bezier(.4, 0, .2, 1);
+
+            --sh-sm: 0 1px 3px rgba(15,23,42,.08);
+            --sh-md: 0 4px 16px rgba(15,23,42,.10);
+            --sh-lg: 0 12px 32px rgba(15,23,42,.14);
+
+            --r-sm: 6px;
+            --r:    10px;
+            --r-lg: 14px;
+            --r-xl: 18px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font);
+            background: var(--page-bg);
+            color: var(--navy);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        img { max-width: 100%; display: block; }
+        input, textarea, button, select { font-family: var(--font); }
+
+        /* ════════════════════════════════════════
+           BREADCRUMB
+        ════════════════════════════════════════ */
+        .bc-bar {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0 20px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-400);
+        }
+        .bc-bar a {
+            color: var(--gray-500);
+            transition: color .15s;
+        }
+        .bc-bar a:hover { color: var(--metallic); }
+        .bc-sep { font-size: 9px; }
+        .bc-cur { color: var(--navy); font-weight: 600; }
+
+        /* ════════════════════════════════════════
+           PAGE HEADER
+        ════════════════════════════════════════ */
+        .page-hd {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 24px 20px 20px;
+        }
+        .page-hd-inner {
+            max-width: 1160px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .page-hd h1 {
+            font-size: clamp(20px, 4vw, 26px);
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.025em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .count-badge {
+            width: 26px; height: 26px;
+            background: var(--metallic);
+            color: var(--white);
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .page-hd-meta {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-500);
+            white-space: nowrap;
+        }
+
+        /* ════════════════════════════════════════
+           LAYOUT
+        ════════════════════════════════════════ */
+        .basket-layout {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 24px 20px 80px;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+            align-items: start;
+        }
+
+        /* ════════════════════════════════════════
+           ITEM CARD
+           ┌──────────────────────────────────────┐
+           │ [thumb] Name              $total      │
+           │         $unit / qty       TOTAL       │
+           ├──────────────────────────────────────┤
+           │ QTY [__] BOXES [__] PALLETS [__] [Rm]│
+           └──────────────────────────────────────┘
+        ════════════════════════════════════════ */
+        .basket-items { display: flex; flex-direction: column; gap: 10px; }
+
+        .basket-item {
+            display: block; /* main.css'deki grid override'ını sıfırla */
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            transition: box-shadow .2s var(--ease);
+        }
+        .basket-item:hover { box-shadow: var(--sh-md); }
+
+        /* Top row: thumb | info | total-block */
+        .item-body {
+            padding: 16px 18px 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .item-thumb {
+            width: 72px;
+            height: 72px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--gray-200);
+            background: var(--gray-50);
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+        .item-thumb-placeholder {
+            width: 72px;
+            height: 72px;
+            border-radius: var(--r-sm);
+            border: 1px solid var(--gray-200);
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            flex-shrink: 0;
+        }
+
+        /* flex: 1 ile ortayı doldurur, min-width:0 taşmayı önler */
+        .item-info { display: block; flex: 1; min-width: 0; }
+        .item-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--navy);
+            line-height: 1.3;
+            margin-bottom: 4px;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .item-price-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .price-old {
+            font-size: 11px;
+            color: var(--gray-400);
+            text-decoration: line-through;
+            font-weight: 500;
+        }
+        .price-unit {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-500);
+        }
+        .disc-badge {
+            background: var(--green-bg);
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            border: 1px solid var(--green-border);
+        }
+
+        /* Total block: her zaman sağda sabit kalır */
+        .item-total-block {
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: auto;
+        }
+        .item-total-val {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+        .item-total-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--gray-400);
+            margin-top: 1px;
+        }
+
+        /* Bottom row: qty inputs + remove */
+        .item-qty-bar {
+            border-top: 1px solid var(--gray-100);
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gray-50);
+        }
+
+        .qty-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .qty-label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: var(--gray-400);
+        }
+        .qty-group.is-pallet .qty-label {
+            color: var(--metallic);
+            font-weight: 800;
+        }
+        .qty-input {
+            width: 68px;
+            height: 34px;
+            border: 1.5px solid var(--gray-300);
+            border-radius: var(--r-sm);
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--navy);
+            background: var(--white);
+            font-family: var(--font);
+            transition: border-color .15s, box-shadow .15s;
+            -moz-appearance: textfield;
+        }
+        .qty-input::-webkit-inner-spin-button,
+        .qty-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .qty-input[readonly] {
+            background: var(--gray-100);
+            color: var(--gray-500);
+            border-color: var(--gray-200);
+            cursor: default;
+        }
+        .qty-input:not([readonly]):focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+        }
+        .qty-group.is-pallet .qty-input {
+            background: var(--navy);
+            color: var(--white);
+            border-color: var(--navy);
+            font-weight: 800;
+        }
+        .qty-group.is-pallet .qty-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.2);
+        }
+
+        /* Spacer pushes remove to the right */
+        .qty-spacer { flex: 1; }
+
+        .btn-del {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 7px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r-sm);
+            background: var(--white);
+            color: var(--gray-500);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: all .15s var(--ease);
+            white-space: nowrap;
+            height: 34px;
+        }
+        .btn-del:hover {
+            background: var(--red-bg);
+            border-color: var(--red-border);
+            color: var(--red);
+        }
+        .btn-del svg { flex-shrink: 0; }
+
+        .inline-form { display: contents; }
+
+        /* ════════════════════════════════════════
+           TOTAL BAR
+        ════════════════════════════════════════ */
+        .total-bar {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--r-lg);
+            padding: 16px 20px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+        .total-bar-lbl {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--gray-400);
+        }
+        .total-bar-amt {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--navy);
+            letter-spacing: -0.03em;
+        }
+
+        /* ════════════════════════════════════════
+           EMPTY STATE
+        ════════════════════════════════════════ */
+        .empty-state {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--r-xl);
+            padding: 72px 32px;
+            text-align: center;
+        }
+        .empty-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: var(--gray-100);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+        }
+        .empty-state p { font-size: 15px; color: var(--gray-500); margin-bottom: 24px; }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--metallic);
+            color: var(--white);
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 12px 24px;
+            border-radius: var(--r);
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+            transition: all .2s var(--ease);
+        }
+        .btn-primary:hover { background: var(--navy); transform: translateY(-1px); box-shadow: var(--sh-md); }
+
+        /* ════════════════════════════════════════
+           SIDEBAR
+        ════════════════════════════════════════ */
+        .basket-sidebar { position: sticky; top: 84px; }
+
+        /* Logistics */
+        .logistics-card {
+            background: var(--navy);
+            border-radius: var(--r-xl);
+            padding: 24px;
+            color: var(--white);
+            margin-bottom: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+        .logistics-card::before {
+            content: '';
+            position: absolute;
+            top: -80px; right: -80px;
+            width: 220px; height: 220px;
+            background: radial-gradient(circle, rgba(59,130,246,.14) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .lc-head {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 20px;
+            position: relative; z-index: 1;
+        }
+        .lc-icon {
+            width: 34px; height: 34px;
+            background: rgba(255,255,255,.1);
+            border-radius: var(--r-sm);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .lc-title {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: rgba(255,255,255,.55);
+        }
+        .lc-stats {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            margin-bottom: 20px; position: relative; z-index: 1;
+        }
+        .lc-stat {
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: var(--r); padding: 12px 14px;
+        }
+        .lc-stat-lbl {
+            font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.09em;
+            color: rgba(255,255,255,.4); margin-bottom: 5px;
+        }
+        .lc-stat-val {
+            font-size: 22px; font-weight: 800;
+            color: var(--white); letter-spacing: -0.02em;
+        }
+        .lc-divider {
+            border: none; border-top: 1px solid rgba(255,255,255,.08);
+            margin: 0 0 18px; position: relative; z-index: 1;
+        }
+        .lc-ctnr { position: relative; z-index: 1; margin-bottom: 14px; }
+        .lc-ctnr-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .lc-ctnr-lbl { font-size: 12px; font-weight: 600; color: rgba(255,255,255,.7); }
+        .lc-ctnr-lbl em {
+            font-style: normal; font-size: 10px;
+            color: rgba(255,255,255,.3); margin-left: 4px;
+        }
+        .lc-ctnr-pct { font-size: 13px; font-weight: 800; color: var(--white); }
+        .prog-track {
+            height: 5px; background: rgba(255,255,255,.1);
+            border-radius: 99px; overflow: hidden;
+        }
+        .prog-fill {
+            height: 100%; border-radius: 99px;
+            background: linear-gradient(90deg, var(--accent), #60a5fa);
+            transition: width .6s var(--ease);
+        }
+        .lc-rec {
+            position: relative; z-index: 1;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(59,130,246,.15);
+            border: 1px solid rgba(59,130,246,.28);
+            border-radius: var(--r); padding: 11px 15px; margin-top: 18px;
+        }
+        .lc-rec-lbl {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.07em;
+            color: rgba(255,255,255,.5);
+        }
+        .lc-rec-val { font-size: 16px; font-weight: 800; color: var(--white); letter-spacing: 0.04em; }
+        .lc-remain { position: relative; z-index: 1; margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .lc-remain-row { display: flex; justify-content: space-between; }
+        .lc-remain-row span:first-child { font-size: 10px; color: rgba(255,255,255,.35); }
+        .lc-remain-row span:last-child { font-size: 11px; font-weight: 600; color: rgba(255,255,255,.5); }
+
+        /* Order Card */
+        .order-card {
+            background: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: var(--r-xl); overflow: hidden;
+        }
+        .oc-head { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); }
+        .oc-head h3 {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500);
+        }
+        .oc-body { padding: 18px 20px 20px; }
+
+        #order-request-form {
+            display: flex; flex-direction: column; gap: 9px;
+        }
+        #order-request-form input,
+        #order-request-form textarea {
+            width: 100%;
+            padding: 10px 13px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r);
+            font-size: 13px; font-weight: 500; color: var(--navy);
+            background: var(--gray-50);
+            font-family: var(--font); line-height: 1.5;
+            transition: border-color .15s, background .15s, box-shadow .15s;
+        }
+        #order-request-form input::placeholder,
+        #order-request-form textarea::placeholder { color: var(--gray-400); font-weight: 400; }
+        #order-request-form input:focus,
+        #order-request-form textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+        }
+        #order-request-form textarea { resize: vertical; min-height: 80px; }
+        .iti { width: 100% !important; }
+        #order-request-form button[type="submit"] {
+            width: 100%; margin-top: 4px;
+            padding: 13px 18px;
+            background: var(--navy); color: var(--white);
+            border: none; border-radius: var(--r);
+            font-size: 13px; font-weight: 700; letter-spacing: 0.03em;
+            cursor: pointer; font-family: var(--font);
+            transition: all .2s var(--ease);
+            display: flex; align-items: center; justify-content: center; gap: 7px;
+        }
+        #order-request-form button[type="submit"]:hover {
+            background: var(--metallic);
+            transform: translateY(-1px);
+            box-shadow: var(--sh-md);
+        }
+        .trust-strip { display: flex; gap: 12px; flex-wrap: wrap; padding-top: 12px; }
+        .trust-item {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 600; color: var(--gray-400);
+        }
+        .trust-item svg { color: var(--green); flex-shrink: 0; }
+
+        /* ════════════════════════════════════════
+           RESPONSIVE
+        ════════════════════════════════════════ */
+        @media (max-width: 960px) {
+            .basket-layout {
+                grid-template-columns: 1fr;
+                padding: 16px 16px 60px;
+                gap: 16px;
+            }
+            .basket-sidebar { position: static; }
+        }
+
+        @media (max-width: 540px) {
+            .bc-bar, .page-hd { padding-left: 14px; padding-right: 14px; }
+            .basket-layout { padding: 12px 12px 50px; gap: 12px; }
+
+            .item-body {
+                padding: 12px 14px 10px;
+                gap: 10px;
+            }
+            .item-thumb { width: 60px; height: 60px; }
+            .item-thumb-placeholder { width: 60px; height: 60px; font-size: 22px; }
+
+            /* Uzun ürün isimleri mobilde sarılabilsin */
+            .item-name { font-size: 13px; white-space: normal; }
+            .item-total-val { font-size: 15px; }
+            .item-total-lbl { font-size: 9px; }
+
+            /* Qty bar: flex-wrap ile taşma önlenir */
+            .item-qty-bar {
+                padding: 9px 12px;
+                gap: 6px;
+                flex-wrap: wrap;
+                row-gap: 0;
+            }
+
+            /* Gruplar sabit genişlikte kalsın, küçülmesin */
+            .qty-group { flex-shrink: 0; }
+
+            /* Spacer gizle, Remove butonu margin-left ile sağa yaslanır */
+            .qty-spacer { display: none; }
+
+            .qty-input { width: 58px; height: 32px; font-size: 13px; }
+            .qty-label { font-size: 8px; }
+
+            /* Remove butonu sağa yasla ve taşmasın */
+            .btn-del {
+                height: 32px;
+                padding: 5px 11px;
+                font-size: 11px;
+                margin-left: auto;
+                flex-shrink: 0;
+            }
+
+            .total-bar { padding: 12px 14px; }
+            .total-bar-amt { font-size: 22px; }
+
+            .logistics-card { padding: 18px; border-radius: var(--r-lg); }
+            .lc-stats { gap: 8px; }
+            .lc-stat-val { font-size: 20px; }
+
+            .oc-body { padding: 14px 14px 16px; }
+        }
+
+        @media (max-width: 400px) {
+            /* Çok dar ekranlarda total price, ürün adının altına taşır */
+            .item-body {
+                grid-template-columns: 44px 1fr;
+                grid-template-rows: auto auto;
+                grid-template-areas:
+                    "thumb info"
+                    "thumb total";
+                padding: 12px 12px 10px;
+                gap: 3px 10px;
+            }
+            .item-thumb {
+                grid-area: thumb;
+                align-self: start;
+                width: 52px; height: 52px;
+            }
+            .item-thumb-placeholder {
+                grid-area: thumb;
+                align-self: start;
+                width: 52px; height: 52px;
+                font-size: 20px;
+            }
+            .item-info { grid-area: info; }
+            .item-name { white-space: normal; font-size: 12px; }
+
+            /* Total sol tarafta yatay gösterim */
+            .item-total-block {
+                grid-area: total;
+                text-align: left;
+                display: flex;
+                align-items: baseline;
+                gap: 5px;
+            }
+            .item-total-val { font-size: 14px; }
+            .item-total-lbl { margin-top: 0; font-size: 9px; }
+
+            /* Input'lar ve buton daha kompakt */
+            .item-qty-bar { padding: 8px 12px; gap: 5px; }
+            .qty-input { width: 50px; height: 30px; font-size: 12px; }
+            .btn-del { height: 30px; padding: 4px 9px; font-size: 11px; }
+        }
+    </style>
 </head>
 
 <body class="site-page">
 
     {% include 'partials/site_header.html' %}
 
-    <div class="basket-page-container">
+    <!-- Breadcrumb -->
+    <div class="bc-bar">
+        <a href="{{ home_url | default('/') }}">{{ ui.home | default('Home') }}</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-cur">{{ ui.basket }}</span>
+    </div>
 
-        <!-- SOL — ÜRÜNLER -->
-        <div class="basket-section">
-
-            <h2>{{ ui.basket }}
+    <!-- Page Header -->
+    <div class="page-hd">
+        <div class="page-hd-inner">
+            <h1>
+                {{ ui.basket }}
                 {% if basket_items %}
-                <span class="item-count">{{ basket_items|length }}</span>
+                <span class="count-badge">{{ basket_items|length }}</span>
                 {% endif %}
-            </h2>
+            </h1>
+            {% if basket_items %}
+            <span class="page-hd-meta">{{ basket_items|length }} {{ ui.product | default('items') }} &middot; {{ price(total_price) }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="basket-layout">
+
+        <!-- ══ LEFT: Products ══ -->
+        <div class="basket-main">
 
             {% if basket_items %}
             <div class="basket-items">
 
                 {% for item in basket_items %}
                 {% set t = item.trans %}
-                <div class="basket-item" data-product-id="{{ item.product.id }}" data-unit-price="{{ item.unit_price }}"
-                    data-original-price="{{ item.original_price }}" data-discount-rate="{{ item.discount_rate }}"
-                    data-pieces-per-box="{{ item.product.pieces_per_box }}"
-                    data-boxes-per-pallet="{{ item.product.boxes_per_pallet }}">
+                <div class="basket-item"
+                     data-product-id="{{ item.product.id }}"
+                     data-unit-price="{{ item.unit_price }}"
+                     data-original-price="{{ item.original_price }}"
+                     data-discount-rate="{{ item.discount_rate }}"
+                     data-pieces-per-box="{{ item.product.pieces_per_box }}"
+                     data-boxes-per-pallet="{{ item.product.boxes_per_pallet }}">
 
-                    <!-- Görsel + Bilgi -->
-                    <div class="item-info">
+                    <!-- Body: [thumb] [name + price] [total] -->
+                    <div class="item-body">
+
                         {% if item.product.image %}
-                        <img src="{{ item.product.image }}" class="basket-thumb" alt="{{ t.name if t else '' }}">
+                        <img src="{{ item.product.image }}" class="item-thumb" alt="{{ t.name if t else '' }}">
                         {% else %}
-                        <div class="basket-thumb placeholder">📦</div>
+                        <div class="item-thumb-placeholder">📦</div>
                         {% endif %}
 
-                        <div class="item-meta">
-                            <h3>{{ t.name if t else '—' }}</h3>
+                        <div class="item-info">
+                            <div class="item-name">{{ t.name if t else '—' }}</div>
                             <div class="item-price-row">
                                 {% if item.discount_rate > 0 %}
-                                <span class="item-old-price">{{ price(item.original_price) }}</span>
+                                <span class="price-old">{{ price(item.original_price) }}</span>
                                 {% endif %}
-                                <span class="item-unit-price">{{ price(item.unit_price) }} / {{ ui.qty }}</span>
+                                <span class="price-unit">{{ price(item.unit_price) }} / {{ ui.qty }}</span>
                                 {% if item.discount_rate > 0 %}
-                                <span class="discount-tag">−%{{ (item.discount_rate * 100)|int }}</span>
+                                <span class="disc-badge">−%{{ (item.discount_rate * 100)|int }}</span>
                                 {% endif %}
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Miktar Kontrolleri -->
-                    <div class="quantity-grid">
-                        <div class="control-group">
-                            <label>{{ ui.qty }}</label>
-                            <input type="number" class="qty-input" data-type="quantity" value="{{ item.quantity }}"
-                                min="1" step="1">
+                        <div class="item-total-block">
+                            <div class="item-total-val">{{ price(item.total_price) }}</div>
+                            <div class="item-total-lbl">{{ ui.total }}</div>
                         </div>
-                        <div class="control-group">
-                            <label>{{ ui.boxes }}</label>
-                            <input type="number" class="qty-input" data-type="boxes" value="{{ item.boxes }}" readonly>
-                        </div>
-                        <div class="control-group">
-                            <label>{{ ui.pallets }}</label>
-                            <input type="number" class="qty-input" data-type="pallets" value="{{ item.pallets }}"
-                                readonly>
-                        </div>
-                    </div>
 
-                    <!-- Satır Toplamı -->
-                    <div class="item-total">
-                        <div class="item-total-price">{{ price(item.total_price) }}</div>
-                        <div class="item-total-label">{{ ui.total }}</div>
-                    </div>
+                    </div><!-- /item-body -->
 
-                    <!-- Güncelle / Sil -->
-                    <div class="item-actions">
+                    <!-- Qty bar: QTY | BOXES | PALLETS ··· [Remove] -->
+                    <div class="item-qty-bar">
+                        <div class="qty-group">
+                            <div class="qty-label">{{ ui.qty }}</div>
+                            <input type="number" class="qty-input" data-type="quantity"
+                                   value="{{ item.quantity }}" min="1" step="1" readonly>
+                        </div>
+                        <div class="qty-group">
+                            <div class="qty-label">{{ ui.boxes }}</div>
+                            <input type="number" class="qty-input" data-type="boxes"
+                                   value="{{ item.boxes }}" readonly>
+                        </div>
+                        <div class="qty-group is-pallet">
+                            <div class="qty-label">{{ ui.pallets }}</div>
+                            <input type="number" class="qty-input" data-type="pallets"
+                                   value="{{ item.pallets | int }}" min="1" step="1">
+                        </div>
+
+                        <div class="qty-spacer"></div>
+
+                        <form method="POST" action="{{ remove_cart_url }}" class="inline-form">
+                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
+                            <button type="submit" class="btn-del">{{ ui.remove }}</button>
+                        </form>
+
                         <form method="POST" action="{{ update_cart_url }}" class="inline-form update-form">
                             <input type="hidden" name="product_id" value="{{ item.product.id }}">
                             <input type="hidden" name="quantity" class="update-qty-hidden" value="{{ item.quantity }}">
                         </form>
-                        <form method="POST" action="{{ remove_cart_url }}" class="inline-form">
-                            <input type="hidden" name="product_id" value="{{ item.product.id }}">
-                            <button type="submit" class="btn-remove">{{ ui.remove }}</button>
-                        </form>
                     </div>
 
-                </div>
+                </div><!-- /basket-item -->
                 {% endfor %}
 
-            </div>
+            </div><!-- /basket-items -->
 
-            <div class="basket-footer">
-                <div class="total-label">{{ ui.basket_total }}</div>
-                <div class="total-amount" id="basket-total">{{ price(total_price) }}</div>
+            <div class="total-bar">
+                <div class="total-bar-lbl">{{ ui.basket_total }}</div>
+                <div class="total-bar-amt" id="basket-total">{{ price(total_price) }}</div>
             </div>
 
             {% else %}
-            <div class="empty-basket">
+            <div class="empty-state">
                 <div class="empty-icon">📦</div>
                 <p>{{ ui.empty_basket }}</p>
                 <a href="{{ showroom_url }}" class="btn-primary">{{ ui.back_to_products }}</a>
             </div>
             {% endif %}
 
-        </div><!-- /basket-section -->
+        </div><!-- /basket-main -->
 
 
-        <!-- SAĞ — SIDEBAR -->
-        <div class="sidebar-section">
+        <!-- ══ RIGHT: Sidebar ══ -->
+        <div class="basket-sidebar">
 
-            <div class="summary-card">
-                <h3>{{ ui.logistics_sim }}</h3>
-
-                <div class="logistics-row">
-                    <span>{{ ui.total_boxes }}</span>
-                    <span id="total-boxes">{{ total_boxes }}</span>
-                </div>
-                <div class="logistics-row">
-                    <span>{{ ui.total_pallets }}</span>
-                    <span id="total-pallets">{{ total_pallets }}</span>
-                </div>
-
-                <hr>
-
-                <div class="logistics-row highlight">
-                    <span>20FT <em style="opacity:.4;font-style:normal;font-size:11px;">(13 palet)</em></span>
-                    <span id="percent-20">{{ percent_20 }}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill-20" style="width:{{ percent_20 }}%;"></div>
+            <div class="logistics-card">
+                <div class="lc-head">
+                    <div class="lc-icon">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                             stroke="rgba(255,255,255,.75)" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="1" y="3" width="15" height="13" rx="1"/>
+                            <path d="M16 8h4l3 3v5h-7V8z"/>
+                            <circle cx="5.5" cy="18.5" r="2.5"/>
+                            <circle cx="18.5" cy="18.5" r="2.5"/>
+                        </svg>
+                    </div>
+                    <div class="lc-title">{{ ui.logistics_sim }}</div>
                 </div>
 
-                <div class="logistics-row highlight">
-                    <span>40FT <em style="opacity:.4;font-style:normal;font-size:11px;">(24 palet)</em></span>
-                    <span id="percent-40">{{ percent_40 }}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill-40" style="width:{{ percent_40 }}%;"></div>
+                <div class="lc-stats">
+                    <div class="lc-stat">
+                        <div class="lc-stat-lbl">{{ ui.total_boxes }}</div>
+                        <div class="lc-stat-val" id="total-boxes">{{ total_boxes }}</div>
+                    </div>
+                    <div class="lc-stat">
+                        <div class="lc-stat-lbl">{{ ui.total_pallets }}</div>
+                        <div class="lc-stat-val" id="total-pallets">{{ total_pallets }}</div>
+                    </div>
                 </div>
 
-                <hr>
+                <hr class="lc-divider">
 
-                <div class="logistics-row">
-                    <span>{{ ui.recommended }}</span>
-                    <span id="recommended-container" style="font-weight:800;letter-spacing:.04em;">
-                        {{ recommended_container }}
-                    </span>
+                <div class="lc-ctnr">
+                    <div class="lc-ctnr-head">
+                        <span class="lc-ctnr-lbl">20FT <em>(13 {{ ui.pallet | default('palet') }})</em></span>
+                        <span class="lc-ctnr-pct" id="percent-20">{{ percent_20 }}%</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" id="progress-fill-20" style="width:{{ percent_20 }}%;"></div>
+                    </div>
                 </div>
-                <div class="logistics-row" style="opacity:.55;margin-top:4px;">
-                    <span style="font-size:11px;">{{ ui.remaining_20 }}</span>
-                    <span style="font-size:12px;">{{ remaining_pallets_20 }}</span>
+
+                <div class="lc-ctnr">
+                    <div class="lc-ctnr-head">
+                        <span class="lc-ctnr-lbl">40FT <em>(24 {{ ui.pallet | default('palet') }})</em></span>
+                        <span class="lc-ctnr-pct" id="percent-40">{{ percent_40 }}%</span>
+                    </div>
+                    <div class="prog-track">
+                        <div class="prog-fill" id="progress-fill-40" style="width:{{ percent_40 }}%;"></div>
+                    </div>
                 </div>
-                <div class="logistics-row" style="opacity:.55;">
-                    <span style="font-size:11px;">{{ ui.remaining_40 }}</span>
-                    <span style="font-size:12px;">{{ remaining_pallets_40 }}</span>
+
+                <div class="lc-rec">
+                    <span class="lc-rec-lbl">{{ ui.recommended }}</span>
+                    <span class="lc-rec-val" id="recommended-container">{{ recommended_container }}</span>
+                </div>
+
+                <div class="lc-remain">
+                    <div class="lc-remain-row">
+                        <span>{{ ui.remaining_20 }}</span>
+                        <span>{{ remaining_pallets_20 }}</span>
+                    </div>
+                    <div class="lc-remain-row">
+                        <span>{{ ui.remaining_40 }}</span>
+                        <span>{{ remaining_pallets_40 }}</span>
+                    </div>
                 </div>
             </div>
 
-            <form id="order-request-form" method="POST" action="{{ quote_url }}">
+            <div class="order-card">
+                <div class="oc-head">
+                    <h3>{{ ui.order_request }}</h3>
+                </div>
+                <div class="oc-body">
+                    <form id="order-request-form" method="POST" action="{{ quote_url }}">
+                        <input type="text"  name="company_name"   placeholder="{{ ui.company }} *"  required>
+                        <input type="text"  name="contact_person" placeholder="{{ ui.contact }} *"  required>
+                        <input type="tel"   id="phone" name="phone" placeholder="{{ ui.phone }} *"  required>
+                        <input type="hidden" name="country" id="country">
+                        <input type="email" name="email"           placeholder="{{ ui.email }} *"   required>
+                        <textarea           name="notes"           placeholder="{{ ui.notes }}"></textarea>
+                        <button type="submit">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                            {{ ui.order_request }}
+                        </button>
+                    </form>
+                    <div class="trust-strip">
+                        <div class="trust-item">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            SSL Secured
+                        </div>
+                        <div class="trust-item">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            No Commitment
+                        </div>
+                        <div class="trust-item">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            24h Response
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <input type="text" name="company_name" placeholder="{{ ui.company }}" required>
+        </div><!-- /basket-sidebar -->
 
-                <input type="text" name="contact_person" placeholder="{{ ui.contact }}" required>
-
-                <input type="tel" id="phone" name="phone" placeholder="{{ ui.phone }}" required>
-
-                <input type="hidden" name="country" id="country">
-
-                <input type="email" name="email" placeholder="{{ ui.email }}" required>
-
-                <textarea name="notes" placeholder="{{ ui.notes }}"></textarea>
-
-                <button type="submit">{{ ui.order_request }}</button>
-            </form>
-
-        </div><!-- /sidebar-section -->
-
-    </div>
+    </div><!-- /basket-layout -->
 
     <script>
     window.BASKET_UI = {
@@ -205,19 +945,16 @@
     </script>
     <script src="{{ url_for('static', path='js/basket.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const phoneInput = document.querySelector("#phone");
             const countryInput = document.querySelector("#country");
-
             const iti = window.intlTelInput(phoneInput, {
                 initialCountry: "auto",
                 separateDialCode: true,
                 preferredCountries: ["tr", "de", "us", "gb", "fr"],
                 utilsScript: "https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"
             });
-
             document.querySelector("#order-request-form").addEventListener("submit", function () {
                 phoneInput.value = iti.getNumber();
                 countryInput.value = iti.getSelectedCountryData().name;
@@ -226,5 +963,4 @@
     </script>
 
 </body>
-
 </html>

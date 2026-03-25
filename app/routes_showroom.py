@@ -827,7 +827,7 @@ def compute_basket_item(product, qty):
     ppb = product.pieces_per_box  or 1
     bpp = product.boxes_per_pallet or 1
     min_qty   = ppb * bpp
-    increment = 10 * ppb
+    increment = ppb * bpp  # 1 palet artış birimi
     if qty < min_qty:
         return None
     remainder = (qty - min_qty) % increment
@@ -970,7 +970,7 @@ def _showroom(request: Request, lang: str, db: Session):
             "cart_info":       cart_info,
             "qty_in_cart":     cart.get(pid_str, 0),
             "min_qty":         (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "increment":       10 * (p.pieces_per_box or 1),
+            "increment":       (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
             "add_to_cart_url": add_to_cart_url(lang),
             "product_url":     product_url(lang, lang_slug) if lang_slug else "#",
             "category_label":  get_category_label(p.category or "", lang),
@@ -1077,7 +1077,7 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
             cart_info = {"unit_price": item["unit_price"], "discount_rate": item["discount_rate"]}
 
     min_qty   = (product.pieces_per_box or 1) * (product.boxes_per_pallet or 1)
-    increment = 10 * (product.pieces_per_box or 1)
+    increment = (product.pieces_per_box or 1) * (product.boxes_per_pallet or 1)  # 1 palet artış birimi
     canonical = product_url(lang, product.get_slug_for(lang))
 
     ctx = common_ctx(request, lang, product=product, db=db)
@@ -1163,7 +1163,7 @@ def _category(request: Request, lang: str, cat_slug: str, db: Session):
             "cart_info":       cart_info,
             "qty_in_cart":     cart.get(pid_str, 0),
             "min_qty":         (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "increment":       10 * (p.pieces_per_box or 1),
+            "increment":       (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
             "add_to_cart_url": add_to_cart_url(lang),
             "product_url":     product_url(lang, lang_slug) if lang_slug else "#",
             "category_label":  get_category_label(p.category or "", lang),
@@ -1312,7 +1312,7 @@ def _add_to_cart(request, lang, product_id, quantity, db):
     ppb = product.pieces_per_box  or 1
     bpp = product.boxes_per_pallet or 1
     min_qty   = ppb * bpp
-    increment = 10 * ppb
+    increment = ppb * bpp  # 1 palet artış birimi
     if quantity < min_qty:
         quantity = min_qty
     remainder = (quantity - min_qty) % increment
@@ -1365,7 +1365,7 @@ def _update_cart(request, lang, product_id, quantity, db):
     ppb = product.pieces_per_box  or 1
     bpp = product.boxes_per_pallet or 1
     min_qty   = ppb * bpp
-    increment = 10 * ppb
+    increment = ppb * bpp  # 1 palet artış birimi
     cart = request.session.get("cart", {})
     key  = str(product_id)
     if quantity <= 0:

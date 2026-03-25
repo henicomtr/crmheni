@@ -52,6 +52,19 @@
 
     <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="site-header-cta">{{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →</a>
 
+    {# Mobil sepet ikonu — sadece ≤768px'de görünür #}
+    <a href="{{ basket_url }}" class="site-header-mobile-basket" aria-label="{{ ui.basket }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        {% set cart_count = cart|length %}
+        {% if cart_count > 0 %}
+        <span class="site-header-mobile-basket-badge">{{ cart_count }}</span>
+        {% endif %}
+    </a>
+
     {# Mobil hamburger butonu — sadece ≤768px'de görünür #}
     <button type="button" class="site-header-mobile-toggle" id="mobile-menu-toggle" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-menu">
         <span class="mobile-toggle-bar"></span>
@@ -62,47 +75,38 @@
 
 {# Mobil menü paneli — header'ın hemen altına açılır #}
 <div class="site-header-mobile-menu" id="mobile-menu" aria-hidden="true">
-    <nav class="mobile-menu-links">
+    <nav class="mobile-menu-nav">
         {% if hp and hp.get('nav_links') %}
         {% for item in hp.nav_links %}
-        <a href="{{ item.url or '#' }}">{{ item.label }}</a>
+        <a href="{{ item.url or '#' }}" class="mobile-menu-item">{{ item.label }}</a>
         {% endfor %}
         {% else %}
-        <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
-        <a href="{{ showroom_url }}" class="{% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
+        <a href="{{ home_url }}" class="mobile-menu-item {% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
+        <a href="{{ showroom_url }}" class="mobile-menu-item {% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
         {% endif %}
-        <a href="{{ basket_url }}" class="{% if active_page == 'basket' %}active{% endif %}">
-            {{ ui.basket }}
-            {% set cart_count = cart|length %}
-            {% if cart_count > 0 %}
-            <span class="site-header-badge">{{ cart_count }}</span>
-            {% endif %}
-        </a>
-    </nav>
 
-    <div class="mobile-menu-divider"></div>
-
-    {# Dil seçimi — her dil doğrudan liste olarak #}
-    <div class="mobile-menu-lang">
-        <span class="mobile-menu-lang-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        {# Dil seçimi — accordion #}
+        <button type="button" class="mobile-menu-item mobile-menu-lang-trigger" id="mobile-lang-trigger" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:18px;height:18px;flex-shrink:0;">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
             </svg>
-        </span>
-        <div class="mobile-menu-lang-list">
+            <span>{{ lang_labels.get(lang, lang) }}</span>
+            <svg class="mobile-lang-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" style="width:16px;height:16px;margin-left:auto;transition:transform 0.2s;">
+                <path d="M6 9l6 6 6-6"/>
+            </svg>
+        </button>
+        <div class="mobile-menu-lang-options" id="mobile-lang-options" aria-hidden="true">
             {% for lc, lurl in lang_urls.items() %}
-            <a href="{{ lurl }}" class="{% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
+            <a href="{{ lurl }}" class="mobile-menu-lang-option {% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
             {% endfor %}
         </div>
-    </div>
 
-    <div class="mobile-menu-divider"></div>
-
-    {# CTA butonu #}
-    <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="mobile-menu-cta">
-        {{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →
-    </a>
+        {# CTA butonu #}
+        <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="mobile-menu-item mobile-menu-item-cta">
+            {{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →
+        </a>
+    </nav>
 </div>
 
 <script>
@@ -139,6 +143,19 @@
         trigger.addEventListener('click', function(e) {
             e.stopPropagation();
             if (dropdown.classList.contains('open')) closeLang(); else openLang();
+        });
+    }
+
+    // Mobil dil accordion
+    var langTrigger = document.getElementById('mobile-lang-trigger');
+    var langOptions = document.getElementById('mobile-lang-options');
+    if (langTrigger && langOptions) {
+        langTrigger.addEventListener('click', function() {
+            var isOpen = langOptions.classList.toggle('open');
+            langTrigger.setAttribute('aria-expanded', isOpen);
+            langOptions.setAttribute('aria-hidden', !isOpen);
+            var chevron = langTrigger.querySelector('.mobile-lang-chevron');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
         });
     }
 

@@ -181,9 +181,9 @@ body {
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-    gap: 20px;
-    padding: 0 48px 80px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 24px 32px 80px;
 }
 
 /* ========================
@@ -300,16 +300,57 @@ body {
 }
 
 .message-box {
-    font-size: 11.5px;
-    color: var(--text-secondary);
-    background: var(--surface-3);
+    font-size: 12px;
+    font-weight: 600;
     border-radius: var(--radius-sm);
-    padding: 8px 12px;
+    padding: 9px 12px;
     line-height: 1.5;
-    min-height: 36px;
-    border: 1px solid var(--border);
-    font-weight: 500;
-    transition: var(--transition);
+    min-height: 38px;
+    border: 1.5px solid var(--border);
+    transition: background 0.25s, border-color 0.25s, color 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+/* Henüz indirim yok — kullanıcıyı daha fazla eklemeye teşvik et */
+.message-box.discount-hint {
+    background: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.message-box.discount-hint::before {
+    content: "🏷️";
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* İndirim aktif ama daha yükseği mümkün */
+.message-box.discount-active {
+    background: #f0fdf4;
+    border-color: #22c55e;
+    color: #14532d;
+}
+
+.message-box.discount-active::before {
+    content: "✅";
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* Maksimum indirime ulaşıldı */
+.message-box.discount-max {
+    background: #dcfce7;
+    border-color: #16a34a;
+    color: #14532d;
+    font-weight: 700;
+}
+
+.message-box.discount-max::before {
+    content: "🎉";
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 /* ========================
@@ -861,9 +902,9 @@ body {
 
     /* ---------- Product Grid ---------- */
     .product-grid {
-        padding: 0 16px 60px;
+        padding: 16px 14px 60px;
         gap: 12px;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 
     /* ---------- Basket Page Container ---------- */

@@ -145,6 +145,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (msgBox) {
                 msgBox.textContent = getDiscountMessage(pallets, piecesPerBox, boxesPerPallet);
+                // İndirim durumuna göre CSS class güncelle
+                msgBox.classList.remove('discount-hint', 'discount-active', 'discount-max');
+                if (pallets >= 9) {
+                    msgBox.classList.add('discount-max');
+                } else if (pallets >= 2) {
+                    msgBox.classList.add('discount-active');
+                } else {
+                    msgBox.classList.add('discount-hint');
+                }
             }
         }
 
