@@ -216,6 +216,34 @@
         </div>
         <div class="card">
             <div class="card-title">📄 Footer (seçili dil)</div>
+
+            <!-- Footer arka plan görseli — tüm dillere global uygulanır -->
+            <div class="form-group" style="padding:16px;background:#f8f9fb;border:1px solid #e8eaf0;border-radius:10px;margin-bottom:20px;">
+                <label class="form-label" style="margin-bottom:10px;">Footer arka plan görseli <span style="font-weight:400;color:#aaa;font-size:11px;text-transform:none;letter-spacing:0;">(tüm dillere uygulanır)</span></label>
+                {% if s.footer_bg_image_url %}
+                <div class="current-asset" style="margin-bottom:12px;">
+                    <img src="{{ s.footer_bg_image_url }}" alt="Footer arka plan" style="height:56px;width:100px;object-fit:cover;border-radius:4px;">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:#333;">Mevcut Görsel</div>
+                        <small>{{ s.footer_bg_image_url }}</small>
+                        <div style="margin-top:4px;"><span class="live-preview-badge">✓ Sitede aktif</span></div>
+                    </div>
+                </div>
+                {% endif %}
+                <label class="upload-zone" for="footer-bg-input" id="footer-bg-drop" style="min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <div style="font-size:28px;margin-bottom:8px;">🌆</div>
+                    <div style="font-size:14px;font-weight:600;color:#333;">{{ 'Görseli Değiştir' if s.footer_bg_image_url else 'Görsel Yükle' }}</div>
+                    <div style="font-size:12px;color:#aaa;margin-top:4px;">JPG, PNG, WEBP — max 5MB</div>
+                    <input id="footer-bg-input" type="file" name="footer_bg_image" accept="image/*"
+                        onchange="previewFile(this,'footer-bg-prev','footer-bg-preview-wrap')">
+                </label>
+                <div id="footer-bg-preview-wrap" style="display:none;margin-top:12px;padding:12px;background:#f0f0f0;border-radius:8px;border:1px solid #e0e0e0;">
+                    <div style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;">YENİ GÖRSEL ÖNİZLEME</div>
+                    <img id="footer-bg-prev" style="max-height:100px;max-width:100%;object-fit:cover;border-radius:4px;">
+                </div>
+                <p class="hint" style="margin-top:8px;">Footer'ın arka planında görünür. Tüm dil versiyonlarında aynı görsel kullanılır.</p>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">Footer açıklama metni</label>
                 <textarea id="i18n_footer_description" class="form-input" rows="3" placeholder="Global industrial manufacturer..."></textarea>
@@ -287,10 +315,6 @@
     <div id="settings-advanced" style="display:none;">
         <div class="card">
             <div class="card-title">⚙️ Gelişmiş Ayarlar</div>
-            <div class="form-group">
-                <label class="form-label">Footer arka plan görseli URL (tüm diller)</label>
-                <input name="footer_bg_image_url" class="form-input" value="{{ s.footer_bg_image_url or '' if s.footer_bg_image_url is defined else '' }}" placeholder="/static/upload/images/footer-factory.jpg">
-            </div>
             <div class="form-group">
                 <label class="form-label">Google Analytics / Tag Manager</label>
                 <textarea name="analytics_code" class="form-input" style="font-family:monospace;font-size:12px;min-height:80px;"

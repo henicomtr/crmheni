@@ -361,66 +361,7 @@
     {% endif %}
 
     <!-- ═══ FOOTER ═══ -->
-    <footer class="hp-footer">
-        <div class="footer-content">
-            <div class="footer-grid">
-                <div class="footer-col brand">
-                    <h3>{{ site.site_name or 'HENI KOZMETIK' }}</h3>
-                    <p>{{ site.footer_description or 'Global industrial manufacturer specializing in detergent, cosmetic, and perfume production. Serving international brands with premium contract manufacturing and raw material trading.' }}</p>
-                    <div class="footer-contact">
-                        {% if site.contact_email %}<span>✉ {{ site.contact_email }}</span>{% endif %}
-                        {% if site.contact_phone %}<span>📞 {{ site.contact_phone }}</span>{% endif %}
-                        {% if site.contact_address %}<span>📍 {{ site.contact_address }}</span>{% endif %}
-                        {% if not site.contact_email and not site.contact_phone %}<span>📍 Eskişehir, Turkey</span>{% endif %}
-                    </div>
-                </div>
-                {% set footer_cols = site.get_footer_columns() %}
-                {% if footer_cols %}
-                    {% for col in footer_cols %}
-                    <div class="footer-col">
-                        <h4>{{ col.get('title', '') }}</h4>
-                        <ul>
-                            {% for link in (col.get('links') or []) %}
-                            <li><a href="{{ link.get('url', '#') }}">{{ link.get('label', '') }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="footer-col">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="{{ home_url }}#about">About Us</a></li>
-                        <li><a href="{{ home_url }}#manufacturing">Manufacturing</a></li>
-                        <li><a href="{{ home_url }}#export">Global Export</a></li>
-                        <li><a href="{{ home_url }}#certification">Certifications</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Products</h4>
-                    <ul>
-                        <li><a href="{{ showroom_url }}">All Products</a></li>
-                        <li><a href="{{ home_url }}#manufacturing">Detergent</a></li>
-                        <li><a href="{{ home_url }}#manufacturing">Cosmetics</a></li>
-                        <li><a href="{{ home_url }}#private-label">Private Label</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Services</h4>
-                    <ul>
-                        <li><a href="{{ home_url }}#raw-materials">Raw Materials</a></li>
-                        <li><a href="{{ home_url }}#private-label">Contract Mfg</a></li>
-                        <li><a href="{{ basket_url }}">{{ ui.basket }}</a></li>
-                        <li><a href="{{ home_url }}#contact">Get Quote</a></li>
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-            <div class="footer-bottom">
-                <p>{{ site.footer_copyright_lead or ('© 2024 ' + (site.site_name or 'Heni Kozmetik') + '. All rights reserved.') }}{% if site.footer_copyright %} {{ site.footer_copyright }}{% else %} | Industrial Manufacturing Excellence{% endif %}</p>
-            </div>
-        </div>
-    </footer>
+    {% include 'partials/site_footer.html' %}
 
 </body>
 </html>

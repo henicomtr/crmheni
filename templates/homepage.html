@@ -565,91 +565,13 @@
             margin-bottom: 40px;
         }
 
-        /* ── FOOTER ── */
-        .hp-footer {
-            background-image: url("{{ site.footer_bg_image_url or url_for('static', path='upload/images/footer-factory.jpg') }}");
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            padding: 100px 48px 40px;
-            color: var(--white);
-        }
-        .hp-footer::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: rgba(15,23,42,0.92);
-        }
-        .footer-content {
-            position: relative;
-            z-index: 2;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 60px;
-            margin-bottom: 60px;
-        }
-        .footer-col h4 {
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 24px;
-            color: rgba(255,255,255,0.6);
-        }
-        .footer-col ul {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .footer-col ul li a {
-            color: rgba(255,255,255,0.8);
-            font-size: 15px;
-            transition: color .2s;
-        }
-        .footer-col ul li a:hover {
-            color: var(--white);
-        }
-        .footer-col.brand h3 {
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 16px;
-        }
-        .footer-col.brand p {
-            font-size: 14px;
-            color: rgba(255,255,255,0.7);
-            line-height: 1.7;
-            margin-bottom: 24px;
-        }
-        .footer-contact {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .footer-contact span {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: rgba(255,255,255,0.8);
-        }
-        .footer-bottom {
-            padding-top: 40px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            text-align: center;
-            font-size: 14px;
-            color: rgba(255,255,255,0.6);
-        }
+        /* ── FOOTER — partials/site_footer.html partial'ı ile sağlanır ── */
 
         /* ── RESPONSIVE ── */
         @media (max-width: 1200px) {
             .industries-grid { grid-template-columns: repeat(2, 1fr); }
             .cert-grid { grid-template-columns: repeat(2, 1fr); }
-            .footer-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
+            /* footer artık site.css'te yönetiliyor */
         }
         
         @media (max-width: 768px) {
@@ -946,67 +868,7 @@
         </div>
     </section>
 
-    <!-- ══ FOOTER ══ -->
-    <footer class="hp-footer">
-        <div class="footer-content">
-            <div class="footer-grid">
-                <div class="footer-col brand">
-                    <h3>{{ site.site_name or 'HENI KOZMETIK' }}</h3>
-                    <p>{{ site.footer_description or 'Global industrial manufacturer specializing in detergent, cosmetic, and perfume production. Serving international brands with premium contract manufacturing and raw material trading.' }}</p>
-                    <div class="footer-contact">
-                        {% if site.contact_email %}<span>✉ {{ site.contact_email }}</span>{% endif %}
-                        {% if site.contact_phone %}<span>📞 {{ site.contact_phone }}</span>{% endif %}
-                        {% if site.contact_address %}<span>📍 {{ site.contact_address }}</span>{% endif %}
-                        {% if not site.contact_email and not site.contact_phone %}<span>📍 Eskişehir, Turkey</span>{% endif %}
-                    </div>
-                </div>
-                {% set footer_cols = site.get_footer_columns() %}
-                {% if footer_cols %}
-                {% for col in footer_cols %}
-                <div class="footer-col">
-                    <h4>{{ col.get('title', '') }}</h4>
-                    <ul>
-                        {% for link in (col.get('links') or []) %}
-                        <li><a href="{{ link.get('url', '#') }}">{{ link.get('label', '') }}</a></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endfor %}
-                {% else %}
-                <div class="footer-col">
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="#about">About Us</a></li>
-                        <li><a href="#manufacturing">Manufacturing</a></li>
-                        <li><a href="#export">Global Export</a></li>
-                        <li><a href="#certification">Certifications</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Manufacturing</h4>
-                    <ul>
-                        <li><a href="#manufacturing">Detergent Production</a></li>
-                        <li><a href="#manufacturing">Cosmetic Production</a></li>
-                        <li><a href="#manufacturing">Perfume Production</a></li>
-                        <li><a href="#private-label">Private Label</a></li>
-                    </ul>
-                </div>
-                <div class="footer-col">
-                    <h4>Services</h4>
-                    <ul>
-                        <li><a href="#raw-materials">Raw Materials</a></li>
-                        <li><a href="#private-label">Contract Manufacturing</a></li>
-                        <li><a href="{{ showroom_url }}">Products</a></li>
-                        <li><a href="#contact">Get Quote</a></li>
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-            <div class="footer-bottom">
-                <p>{{ site.footer_copyright_lead or '© 2024 ' + (site.site_name or 'Heni Kozmetik') + '. All rights reserved.' }}{% if site.footer_copyright %} {{ site.footer_copyright }}{% else %} | Industrial Manufacturing Excellence{% endif %}</p>
-            </div>
-        </div>
-    </footer>
+    {% include 'partials/site_footer.html' %}
 
 </body>
 </html>

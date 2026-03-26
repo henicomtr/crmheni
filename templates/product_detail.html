@@ -82,8 +82,15 @@
             align-items: center;
             justify-content: center;
             box-shadow: var(--shadow-sm);
-            position: sticky;
-            top: 80px;
+            position: relative; /* rozet için positioning context */
+        }
+
+        /* Sticky sadece iki sütunlu desktop layout'ta aktif */
+        @media (min-width: 769px) {
+            .detail-image-wrap {
+                position: sticky;
+                top: 80px;
+            }
         }
 
         .detail-image-wrap img {
@@ -218,64 +225,135 @@
 
         .detail-add-form .quantity-control {
             display: flex;
-            align-items: center;
-            gap: 0;
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            align-items: stretch;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
             overflow: hidden;
-            background: var(--surface);
+            background: #f1f5f9;
+            height: 44px;
         }
 
         .detail-add-form .quantity-control button {
             width: 44px;
-            height: 44px;
             border: none;
             background: transparent;
-            font-size: 18px;
+            font-size: 20px;
             cursor: pointer;
-            color: var(--text-secondary);
-            transition: var(--transition);
+            color: #64748b;
+            transition: background .15s, color .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
         .detail-add-form .quantity-control button:hover {
-            background: var(--surface-3);
-            color: var(--text-primary);
+            background: #0f172a;
+            color: #ffffff;
         }
 
         .detail-add-form .quantity-control input {
             flex: 1;
-            height: 44px;
             border: none;
-            outline: none;
+            border-left: 1.5px solid #e2e8f0;
+            border-right: 1.5px solid #e2e8f0;
+            background: #ffffff;
             text-align: center;
-            font-family: var(--mono);
             font-size: 15px;
             font-weight: 700;
-            background: transparent;
-            color: var(--text-primary);
+            color: #0f172a;
+            padding: 0 4px;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .detail-add-form .quantity-control input::-webkit-outer-spin-button,
+        .detail-add-form .quantity-control input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
         }
 
         .detail-add-form .add-to-cart-btn {
             width: 100%;
             padding: 14px;
-            background: var(--dark);
+            background: linear-gradient(135deg, #c2710c 0%, #a85e0a 100%);
             color: #fff;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 10px;
             font-family: var(--font);
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
-            transition: var(--transition);
-            letter-spacing: -.01em;
+            box-shadow: 0 3px 10px rgba(168,94,10,.30);
+            transition: background .18s, box-shadow .18s, transform .12s;
+            letter-spacing: .01em;
         }
 
         .detail-add-form .add-to-cart-btn:hover {
-            background: var(--dark-3);
+            background: linear-gradient(135deg, #9a5208 0%, #7c4206 100%);
+            box-shadow: 0 5px 16px rgba(168,94,10,.45);
             transform: translateY(-1px);
         }
 
-        /* .message-box stilleri main.css'den gelir */
+        .detail-add-form .add-to-cart-btn:active { transform: translateY(0); }
+
+        /* İndirim teşvik mesajı — showroom ile aynı amber stil */
+        .detail-add-form .message-box {
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 8px 12px;
+            line-height: 1.35;
+            border: 1.5px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            background: #f1f5f9;
+            transition: background .2s, border-color .2s, color .2s;
+        }
+
+        .detail-add-form .message-box.discount-hint {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-color: #f59e0b;
+            border-width: 2px;
+            color: #78350f;
+            box-shadow: 0 2px 8px rgba(245,158,11,.18);
+        }
+
+        .detail-add-form .message-box.discount-hint::before {
+            content: "🏷️";
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+
+        /* Aktif indirim rozeti — görsel üstü sağ köşe */
+        .card-disc-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 3;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(21,128,61,.50), inset 0 1px 0 rgba(255,255,255,.20);
+            line-height: 1;
+            text-align: center;
+            animation: badge-pop .25s cubic-bezier(.4,0,.2,1);
+        }
+
+        @keyframes badge-pop {
+            0%   { transform: scale(.6); opacity: 0; }
+            70%  { transform: scale(1.12); }
+            100% { transform: scale(1);  opacity: 1; }
+        }
 
         /* Dil seçici */
         .lang-switcher {
@@ -524,7 +602,7 @@
             }
 
             .detail-image-wrap {
-                position: static;
+                position: relative;
                 aspect-ratio: 4/3;
             }
 
@@ -555,13 +633,14 @@
         <!-- ANA GRID -->
         <div class="detail-main">
 
-            <!-- GÖRSEL -->
+            <!-- GÖRSEL (position:sticky — indirim rozeti position:absolute için yeterli, mobilde relative) -->
             <div class="detail-image-wrap">
                 {% if product.image %}
                 <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}">
                 {% else %}
                 <div class="detail-image-placeholder">📦</div>
                 {% endif %}
+                {# İndirim rozeti — JS tarafından dinamik güncellenir #}
             </div>
 
             <!-- BİLGİ -->
@@ -620,15 +699,18 @@
                     </div>
                 </div>
 
-                <!-- SEPETE EKLE -->
-                <form method="post" action="{{ add_to_cart_url }}" class="detail-add-form">
+                <!-- SEPETE EKLE — update-cart (SET semantiği), AJAX ile sayfa yenilemez -->
+                <form method="post" action="{{ update_cart_url }}" class="detail-add-form card-form">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <div class="quantity-control">
                         <button type="button" class="minus">−</button>
-                        <input type="number" name="quantity" class="quantity-input" value="{{ min_qty }}"
+                        <input type="number" name="quantity" class="quantity-input"
+                            value="{{ qty_in_cart if qty_in_cart > 0 else min_qty }}"
                             min="{{ min_qty }}" data-min="{{ min_qty }}" data-increment="{{ increment }}"
-                            data-price="{{ product.unit_price }}" data-box="{{ product.pieces_per_box }}"
-                            data-pallet-box="{{ product.boxes_per_pallet }}">
+                            data-price="{{ product.unit_price or 0 }}"
+                            data-box="{{ product.pieces_per_box }}"
+                            data-pallet-box="{{ product.boxes_per_pallet }}"
+                            data-cart-qty="{{ qty_in_cart }}">
                         <button type="button" class="plus">+</button>
                     </div>
                     <div class="message-box"></div>
@@ -839,7 +921,7 @@
         }
     };
     </script>
-    <script src="{{ url_for('static', path='js/showroom.js') }}"></script>
+    <script src="{{ url_for('static', path='js/showroom.js') }}?v=3"></script>
     <script>
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -852,6 +934,7 @@
         });
     </script>
 
+    {% include 'partials/site_footer.html' %}
 </body>
 
 </html>

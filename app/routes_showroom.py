@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import os, math, json
@@ -947,7 +947,17 @@ def showroom_es(request: Request, db: Session = Depends(get_db)):
 
 
 def _showroom(request: Request, lang: str, db: Session):
+    # Arama filtresi — q parametresi varsa ürün adı veya slug'a göre filtrele
+    q = (request.query_params.get("q") or "").strip().lower()
     products = db.query(Product).all()
+    if q:
+        filtered = []
+        for p in products:
+            trans = p.get_translation(lang)
+            name  = (trans.name if trans else "") or p.slug or ""
+            if q in name.lower() or q in (p.slug or "").lower():
+                filtered.append(p)
+        products = filtered
     cart     = request.session.get("cart", {})
 
     products_ctx = []
@@ -965,21 +975,23 @@ def _showroom(request: Request, lang: str, db: Session):
                 }
         lang_slug = p.get_slug_for(lang)
         products_ctx.append({
-            "product":         p,
-            "trans":           trans,
-            "cart_info":       cart_info,
-            "qty_in_cart":     cart.get(pid_str, 0),
-            "min_qty":         (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "increment":       (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "add_to_cart_url": add_to_cart_url(lang),
-            "product_url":     product_url(lang, lang_slug) if lang_slug else "#",
-            "category_label":  get_category_label(p.category or "", lang),
-            "category_url":    category_url(lang, p.category or "") if p.category else None,
+            "product":          p,
+            "trans":            trans,
+            "cart_info":        cart_info,
+            "qty_in_cart":      cart.get(pid_str, 0),
+            "min_qty":          (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
+            "increment":        (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
+            "add_to_cart_url":  add_to_cart_url(lang),
+            "update_cart_url":  update_cart_url(lang),
+            "product_url":      product_url(lang, lang_slug) if lang_slug else "#",
+            "category_label":   get_category_label(p.category or "", lang),
+            "category_url":     category_url(lang, p.category or "") if p.category else None,
         })
 
     ctx = common_ctx(request, lang, db=db)
     ctx["products_ctx"] = products_ctx
     ctx["active_page"] = "showroom"
+    ctx["search_query"] = request.query_params.get("q", "")
     return templates.TemplateResponse("showroom.html", ctx)
 
 
@@ -1095,6 +1107,7 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
         "min_qty":          min_qty,
         "increment":        increment,
         "add_to_cart_url":  add_to_cart_url(lang),
+        "update_cart_url":  update_cart_url(lang),
         "category_label":   get_category_label(product.category or "", lang),
         "category_url":     category_url(lang, product.category or "") if product.category else None,
     })
@@ -1158,16 +1171,17 @@ def _category(request: Request, lang: str, cat_slug: str, db: Session):
                 }
         lang_slug = p.get_slug_for(lang)
         products_ctx.append({
-            "product":         p,
-            "trans":           trans,
-            "cart_info":       cart_info,
-            "qty_in_cart":     cart.get(pid_str, 0),
-            "min_qty":         (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "increment":       (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
-            "add_to_cart_url": add_to_cart_url(lang),
-            "product_url":     product_url(lang, lang_slug) if lang_slug else "#",
-            "category_label":  get_category_label(p.category or "", lang),
-            "category_url":    category_url(lang, p.category or "") if p.category else None,
+            "product":          p,
+            "trans":            trans,
+            "cart_info":        cart_info,
+            "qty_in_cart":      cart.get(pid_str, 0),
+            "min_qty":          (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
+            "increment":        (p.pieces_per_box or 1) * (p.boxes_per_pallet or 1),
+            "add_to_cart_url":  add_to_cart_url(lang),
+            "update_cart_url":  update_cart_url(lang),
+            "product_url":      product_url(lang, lang_slug) if lang_slug else "#",
+            "category_label":   get_category_label(p.category or "", lang),
+            "category_url":     category_url(lang, p.category or "") if p.category else None,
         })
 
     cat_label = get_category_label(cat_key, lang)
@@ -1322,6 +1336,10 @@ def _add_to_cart(request, lang, product_id, quantity, db):
     key       = str(product_id)
     cart[key] = cart.get(key, 0) + quantity
     request.session["cart"] = cart
+    # AJAX isteği ise JSON dön, normal form ise redirect
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return JSONResponse({"success": True, "cart_count": len(cart)})
     return RedirectResponse(showroom_url(lang), status_code=303)
 
 
@@ -1378,6 +1396,10 @@ def _update_cart(request, lang, product_id, quantity, db):
             quantity -= remainder
         cart[key] = quantity
     request.session["cart"] = cart
+    # AJAX isteği ise JSON dön, normal form ise redirect
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    if is_ajax:
+        return JSONResponse({"success": True, "cart_count": len(cart), "qty": cart.get(key, 0)})
     return RedirectResponse(basket_url(lang), status_code=303)
 
 
@@ -1419,6 +1441,35 @@ def _remove_cart(request, lang, product_id):
     cart.pop(str(product_id), None)
     request.session["cart"] = cart
     return RedirectResponse(basket_url(lang), status_code=303)
+
+
+# =========================================================
+# SEARCH API — canlı arama dropdown için JSON endpoint
+# =========================================================
+
+@router.get("/api/search")
+def api_search(request: Request, q: str = "", lang: str = "en", db: Session = Depends(get_db)):
+    """Ürün adı veya slug'a göre arama — JSON liste döner."""
+    q = q.strip().lower()
+    if len(q) < 2:
+        return JSONResponse([])
+    products = db.query(Product).all()
+    results  = []
+    for p in products:
+        trans = p.get_translation(lang)
+        name  = (trans.name if trans else "") or p.slug or ""
+        if q in name.lower() or q in (p.slug or "").lower():
+            lang_slug = p.get_slug_for(lang)
+            results.append({
+                "id":    p.id,
+                "name":  name,
+                "image": p.image,
+                "price": p.unit_price,
+                "url":   product_url(lang, lang_slug) if lang_slug else "#",
+            })
+        if len(results) >= 8:
+            break
+    return JSONResponse(results)
 
 
 # =========================================================

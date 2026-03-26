@@ -1,0 +1,162 @@
+{# Ortak site footer — tüm public sayfalarda kullanılır.
+   Gerekli değişkenler: site, lang, ui, home_url, showroom_url, basket_url
+   Opsiyonel (tüm public sayfalar zaten geçiriyor): hp, lang_urls, lang_labels #}
+
+{% set footer_cols = site.get_footer_columns() if site else [] %}
+{% set current_year = 2025 %}
+
+<footer class="site-footer">
+
+    {# Arka plan görseli varsa overlay ile göster #}
+    {% if site and site.footer_bg_image_url %}
+    <div class="site-footer-bg" style="background-image:url('{{ site.footer_bg_image_url }}');"></div>
+    {% endif %}
+
+    <div class="site-footer-inner">
+
+        {# ── Marka sütunu: logo + açıklama + sosyal medya ── #}
+        <div class="site-footer-brand">
+            <a href="{{ home_url }}" class="site-footer-logo-link">
+                {% if site and site.logo_white_url %}
+                <img src="{{ site.logo_white_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img">
+                {% elif site and site.logo_url %}
+                <img src="{{ site.logo_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img">
+                {% else %}
+                <span class="site-footer-logo-text">{{ (site.site_name or 'Heni')|upper }}</span>
+                {% endif %}
+            </a>
+
+            {% if site and site.footer_description %}
+            <p class="site-footer-desc">{{ site.footer_description }}</p>
+            {% else %}
+            <p class="site-footer-desc">B2B cleaning &amp; personal care products. Global wholesale distributor.</p>
+            {% endif %}
+
+            {# Sosyal medya ikonları #}
+            <div class="site-footer-social">
+                {% if site and site.social_instagram %}
+                <a href="{{ site.social_instagram }}" target="_blank" rel="noopener" aria-label="Instagram" class="site-footer-social-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                        <circle cx="12" cy="12" r="4"/>
+                        <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+                    </svg>
+                </a>
+                {% endif %}
+                {% if site and site.social_linkedin %}
+                <a href="{{ site.social_linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn" class="site-footer-social-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+                        <rect x="2" y="9" width="4" height="12"/>
+                        <circle cx="4" cy="4" r="2"/>
+                    </svg>
+                </a>
+                {% endif %}
+                {% if site and site.social_twitter %}
+                <a href="{{ site.social_twitter }}" target="_blank" rel="noopener" aria-label="Twitter / X" class="site-footer-social-link">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                </a>
+                {% endif %}
+                {% if site and site.social_whatsapp %}
+                <a href="https://wa.me/{{ site.social_whatsapp|replace('+','') }}" target="_blank" rel="noopener" aria-label="WhatsApp" class="site-footer-social-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                    </svg>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ── Footer sütunları — admin'den JSON ile yönetilir ── #}
+        {% for col in footer_cols %}
+        <div class="site-footer-col">
+            <h4 class="site-footer-col-title">{{ col.title }}</h4>
+            <ul class="site-footer-col-links">
+                {% for link in col.links %}
+                <li><a href="{{ link.url or '#' }}">{{ link.label }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+
+        {# ── Footer sütunları boşsa varsayılan navigasyon göster ── #}
+        {% if not footer_cols %}
+        <div class="site-footer-col">
+            <h4 class="site-footer-col-title">{{ ui.products if ui else 'Products' }}</h4>
+            <ul class="site-footer-col-links">
+                <li><a href="{{ showroom_url }}">{{ ui.all_products if ui else 'All Products' }}</a></li>
+                <li><a href="{{ home_url }}">{{ ui.home if ui else 'Home' }}</a></li>
+                <li><a href="{{ basket_url }}">{{ ui.basket if ui else 'Basket' }}</a></li>
+            </ul>
+        </div>
+        {% endif %}
+
+        {# ── İletişim sütunu ── #}
+        {% if site and (site.contact_email or site.contact_phone or site.contact_address) %}
+        <div class="site-footer-col">
+            <h4 class="site-footer-col-title">Contact</h4>
+            <ul class="site-footer-col-links site-footer-contact-list">
+                {% if site.contact_email %}
+                <li>
+                    <a href="mailto:{{ site.contact_email }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        {{ site.contact_email }}
+                    </a>
+                </li>
+                {% endif %}
+                {% if site.contact_phone %}
+                <li>
+                    <a href="tel:{{ site.contact_phone|replace(' ','') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.91a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.02z"/>
+                        </svg>
+                        {{ site.contact_phone }}
+                    </a>
+                </li>
+                {% endif %}
+                {% if site.contact_address %}
+                <li>
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        {{ site.contact_address }}
+                    </span>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </div>{# /site-footer-inner #}
+
+    {# ── Alt çizgi: copyright ── #}
+    <div class="site-footer-bottom">
+        <p class="site-footer-copy">
+            {% if site and site.footer_copyright_lead %}
+            {{ site.footer_copyright_lead }}
+            {% else %}
+            © {{ current_year }} {{ site.site_name or 'Heni' }}. All rights reserved.
+            {% endif %}
+            {% if site and site.footer_copyright %}
+            <span class="site-footer-copy-extra">{{ site.footer_copyright }}</span>
+            {% endif %}
+        </p>
+
+        {# Dil linkleri — küçük #}
+        {% if lang_urls is defined %}
+        <div class="site-footer-langs">
+            {% for lc, lurl in lang_urls.items() %}
+            <a href="{{ lurl }}" class="{% if lc == lang %}active{% endif %}">{{ lc|upper }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+</footer>

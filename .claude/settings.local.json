@@ -8,7 +8,12 @@
       "Bash(source venv/Scripts/activate)",
       "Bash(python -c \"from app.main import app; print\\(''OK''\\)\")",
       "Bash(python -c \"import reportlab; print\\(''ok''\\)\")",
-      "Bash(python generate_pdf.py)"
+      "Bash(python generate_pdf.py)",
+      "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/**)",
+      "Bash(venv/Scripts/python -c \":*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\ACER NİTRO\\Desktop\\projeler\\crmheni\\app"
     ]
   }
 }

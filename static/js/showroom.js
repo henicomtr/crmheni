@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return 0;
     }
 
-    // Dile göre indirim mesajı
+    // Sadece bir sonraki indirim kademesi için teşvik mesajı
+    // Aktif indirim mesajda gösterilmez — rozette görünür
     function getDiscountMessage(pallets, piecesPerBox, boxesPerPallet) {
         const unitsPerPallet = piecesPerBox * boxesPerPallet;
 
@@ -35,65 +36,65 @@ document.addEventListener("DOMContentLoaded", function () {
             return Math.ceil((targetPallets - pallets) * unitsPerPallet);
         }
 
-        // Her dil için mesaj şablonları
+        // Her dil için mesaj şablonları — sadece bir sonraki hedef
         const msgs = {
             en: {
-                to5:   (n) => `Add ${n} more for 5% discount`,
-                at5:   (n) => `5% discount active · Add ${n} more for 7%`,
-                at7:   (n) => `7% discount active · Add ${n} more for 9%`,
-                at9:   (n) => `9% discount active · Add ${n} more for 12%`,
-                max:       `12% discount active — maximum reached`,
+                to5:  (n) => `Add ${n} more for 5% discount`,
+                to7:  (n) => `Add ${n} more for 7% discount`,
+                to9:  (n) => `Add ${n} more for 9% discount`,
+                to12: (n) => `Add ${n} more for 12% discount`,
+                max:       ``,
             },
             tr: {
-                to5:   (n) => `%5 indirim için ${n} adet daha ekleyin`,
-                at5:   (n) => `%5 indirim aktif · %7 için ${n} adet daha ekleyin`,
-                at7:   (n) => `%7 indirim aktif · %9 için ${n} adet daha ekleyin`,
-                at9:   (n) => `%9 indirim aktif · %12 için ${n} adet daha ekleyin`,
-                max:       `%12 indirim aktif — maksimum indirime ulaştınız`,
+                to5:  (n) => `%5 indirim için ${n} adet daha ekleyin`,
+                to7:  (n) => `%7 indirim için ${n} adet daha ekleyin`,
+                to9:  (n) => `%9 indirim için ${n} adet daha ekleyin`,
+                to12: (n) => `%12 indirim için ${n} adet daha ekleyin`,
+                max:       ``,
             },
             de: {
-                to5:   (n) => `${n} mehr hinzufügen für 5% Rabatt`,
-                at5:   (n) => `5% Rabatt aktiv · ${n} mehr für 7%`,
-                at7:   (n) => `7% Rabatt aktiv · ${n} mehr für 9%`,
-                at9:   (n) => `9% Rabatt aktiv · ${n} mehr für 12%`,
-                max:       `12% Rabatt aktiv — Maximum erreicht`,
+                to5:  (n) => `${n} mehr hinzufügen für 5% Rabatt`,
+                to7:  (n) => `${n} mehr hinzufügen für 7% Rabatt`,
+                to9:  (n) => `${n} mehr hinzufügen für 9% Rabatt`,
+                to12: (n) => `${n} mehr hinzufügen für 12% Rabatt`,
+                max:       ``,
             },
             fr: {
-                to5:   (n) => `Ajoutez ${n} de plus pour 5% de remise`,
-                at5:   (n) => `Remise 5% active · ${n} de plus pour 7%`,
-                at7:   (n) => `Remise 7% active · ${n} de plus pour 9%`,
-                at9:   (n) => `Remise 9% active · ${n} de plus pour 12%`,
-                max:       `Remise 12% active — maximum atteint`,
+                to5:  (n) => `Ajoutez ${n} de plus pour 5% de remise`,
+                to7:  (n) => `Ajoutez ${n} de plus pour 7% de remise`,
+                to9:  (n) => `Ajoutez ${n} de plus pour 9% de remise`,
+                to12: (n) => `Ajoutez ${n} de plus pour 12% de remise`,
+                max:       ``,
             },
             ar: {
-                to5:   (n) => `أضف ${n} المزيد للحصول على خصم 5%`,
-                at5:   (n) => `خصم 5% نشط · أضف ${n} للحصول على 7%`,
-                at7:   (n) => `خصم 7% نشط · أضف ${n} للحصول على 9%`,
-                at9:   (n) => `خصم 9% نشط · أضف ${n} للحصول على 12%`,
-                max:       `خصم 12% نشط — تم الوصول إلى الحد الأقصى`,
+                to5:  (n) => `أضف ${n} المزيد للحصول على خصم 5%`,
+                to7:  (n) => `أضف ${n} المزيد للحصول على خصم 7%`,
+                to9:  (n) => `أضف ${n} المزيد للحصول على خصم 9%`,
+                to12: (n) => `أضف ${n} المزيد للحصول على خصم 12%`,
+                max:       ``,
             },
             ru: {
-                to5:   (n) => `Добавьте ещё ${n} для скидки 5%`,
-                at5:   (n) => `Скидка 5% активна · Добавьте ${n} для 7%`,
-                at7:   (n) => `Скидка 7% активна · Добавьте ${n} для 9%`,
-                at9:   (n) => `Скидка 9% активна · Добавьте ${n} для 12%`,
-                max:       `Скидка 12% активна — достигнут максимум`,
+                to5:  (n) => `Добавьте ещё ${n} для скидки 5%`,
+                to7:  (n) => `Добавьте ещё ${n} для скидки 7%`,
+                to9:  (n) => `Добавьте ещё ${n} для скидки 9%`,
+                to12: (n) => `Добавьте ещё ${n} для скидки 12%`,
+                max:       ``,
             },
             es: {
-                to5:   (n) => `Añade ${n} más para un 5% de descuento`,
-                at5:   (n) => `Descuento 5% activo · Añade ${n} para 7%`,
-                at7:   (n) => `Descuento 7% activo · Añade ${n} para 9%`,
-                at9:   (n) => `Descuento 9% activo · Añade ${n} para 12%`,
-                max:       `Descuento 12% activo — máximo alcanzado`,
+                to5:  (n) => `Añade ${n} más para un 5% de descuento`,
+                to7:  (n) => `Añade ${n} más para un 7% de descuento`,
+                to9:  (n) => `Añade ${n} más para un 9% de descuento`,
+                to12: (n) => `Añade ${n} más para un 12% de descuento`,
+                max:       ``,
             },
         };
 
         const m = msgs[lang] || msgs['en'];
 
         if (pallets < 2)  return m.to5(unitsToNext(2));
-        if (pallets < 4)  return m.at5(unitsToNext(4));
-        if (pallets < 6)  return m.at7(unitsToNext(6));
-        if (pallets < 9)  return m.at9(unitsToNext(9));
+        if (pallets < 4)  return m.to7(unitsToNext(4));
+        if (pallets < 6)  return m.to9(unitsToNext(6));
+        if (pallets < 9)  return m.to12(unitsToNext(9));
         return m.max;
     }
 
@@ -122,36 +123,60 @@ document.addEventListener("DOMContentLoaded", function () {
             let qty = parseInt(input.value) || minQty;
             if (qty < minQty) { qty = minQty; input.value = qty; }
 
-            const pallets  = getPallets(qty);
-            const rate     = getDiscountRate(pallets);
+            const pallets   = getPallets(qty);
+            const rate      = getDiscountRate(pallets);
             const discPrice = basePrice * (1 - rate);
 
             // Hem showroom hem de detail sayfası için container'ı bul
             const card       = control.closest('.product-card') || control.closest('.detail-info') || document;
-            // Hem showroom hem de detail sayfası için fiyat elementlerini bul
             const newPriceEl = card.querySelector('.new-price') || card.querySelector('.detail-price');
             const oldPriceEl = card.querySelector('.old-price') || card.querySelector('.detail-old-price');
 
-            if (newPriceEl) newPriceEl.textContent = formatPrice(discPrice);
-
-            if (oldPriceEl) {
-                if (rate > 0) {
-                    oldPriceEl.style.display = 'inline';
-                    oldPriceEl.textContent   = formatPrice(basePrice);
-                } else {
-                    oldPriceEl.style.display = 'none';
+            // Fiyat verisi varsa fiyat alanını güncelle
+            if (basePrice > 0) {
+                if (newPriceEl) newPriceEl.textContent = formatPrice(discPrice);
+                if (oldPriceEl) {
+                    if (rate > 0) {
+                        oldPriceEl.style.display = 'inline';
+                        oldPriceEl.textContent   = formatPrice(basePrice);
+                    } else {
+                        oldPriceEl.style.display = 'none';
+                    }
                 }
             }
 
+            // Aktif indirim rozetini sağ üst köşede güncelle (showroom ve detail sayfası)
+            const imgDiv = card.querySelector('.product-image') || document.querySelector('.detail-image-wrap');
+            if (imgDiv) {
+                let overlay = imgDiv.querySelector('.card-disc-overlay');
+                if (rate > 0) {
+                    if (!overlay) {
+                        // Rozet yoksa oluştur
+                        overlay = document.createElement('div');
+                        overlay.className = 'card-disc-overlay';
+                        imgDiv.appendChild(overlay);
+                    }
+                    overlay.textContent = `-${Math.round(rate * 100)}%`;
+                    overlay.style.display = 'flex';
+                } else if (overlay) {
+                    // İndirim yoksa rozeti gizle
+                    overlay.style.display = 'none';
+                }
+            }
+
+            // Mesaj kutusunu güncelle — sadece bir sonraki hedef
             if (msgBox) {
-                msgBox.textContent = getDiscountMessage(pallets, piecesPerBox, boxesPerPallet);
-                // İndirim durumuna göre CSS class güncelle
+                const msg = getDiscountMessage(pallets, piecesPerBox, boxesPerPallet);
+                msgBox.textContent = msg;
                 msgBox.classList.remove('discount-hint', 'discount-active', 'discount-max');
                 if (pallets >= 9) {
-                    msgBox.classList.add('discount-max');
+                    // Maksimum indirimde mesaj kutusu gizlenir
+                    msgBox.style.display = 'none';
                 } else if (pallets >= 2) {
-                    msgBox.classList.add('discount-active');
+                    msgBox.style.display = '';
+                    msgBox.classList.add('discount-hint');
                 } else {
+                    msgBox.style.display = '';
                     msgBox.classList.add('discount-hint');
                 }
             }
@@ -189,15 +214,69 @@ document.addEventListener("DOMContentLoaded", function () {
         updateUI();
     });
 
-    // ── Sepet rozeti ─────────────────────────────────────
-    const badge    = document.getElementById('basket-badge');
-    const inBasket = document.querySelectorAll('.in-basket-info').length;
-    if (badge) {
-        if (inBasket > 0) {
-            badge.textContent = inBasket;
+    // ── Sepet Rozeti Güncelleme (yardımcı fonksiyon) ─────
+    function updateBasketBadge(count) {
+        const badge = document.getElementById('basket-badge');
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
             badge.style.display = 'inline-flex';
         } else {
             badge.style.display = 'none';
         }
     }
+
+    // ── Sepet rozeti referansı (AJAX güncellemeleri için) ─
+    // Sayfa yükünde badge'i server-render edilmiş değeriyle bırak;
+    // sadece AJAX işlemleri sonrası updateBasketBadge() çağrılır.
+    const badge = document.getElementById('basket-badge');
+
+    // ── Sepete Ekle — AJAX ile sayfa yenilemeden işle ────
+    document.querySelectorAll('.card-form').forEach(form => {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const btn = form.querySelector('.add-to-cart-btn');
+
+            // Butonu geçici olarak devre dışı bırak
+            if (btn) btn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    updateBasketBadge(data.cart_count);
+
+                    // Sepet miktarını input'a yansıt — sepet-kart entegrasyonu
+                    const qtyInput = form.querySelector('.quantity-input');
+                    if (qtyInput && data.qty !== undefined) {
+                        qtyInput.dataset.cartQty = data.qty;
+                    }
+
+                    // Kısa başarı geri bildirimi — buton metni geçici değişir
+                    if (btn) {
+                        const origText = btn.textContent;
+                        btn.textContent = '✓';
+                        btn.style.background = 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)';
+                        setTimeout(() => {
+                            btn.textContent = origText;
+                            btn.style.background = '';
+                            btn.disabled = false;
+                        }, 1200);
+                    }
+                }
+            })
+            .catch(() => {
+                // Hata durumunda normal form submit yap
+                if (btn) btn.disabled = false;
+                form.submit();
+            });
+        });
+    });
 });

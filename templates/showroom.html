@@ -60,79 +60,117 @@
            SHOWROOM — ÜRÜN KARTI TASARIMI
         ══════════════════════════════════════ */
 
-        /* Grid: masaüstünde 4 kolon, tablette 3, mobilde 2 */
+        /* Showroom sayfa arka planı — gümüş/pearl gradient */
+        body.site-page {
+            background:
+                radial-gradient(ellipse at 75% 0%, rgba(180, 200, 235, 0.55) 0%, transparent 55%),
+                radial-gradient(ellipse at 15% 85%, rgba(195, 210, 235, 0.30) 0%, transparent 50%),
+                linear-gradient(180deg, #edf1f8 0%, #f5f7fc 40%, #f0f4fa 100%);
+        }
+
+        /* ══ GRID ══ */
         .product-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 16px;
-            padding: 24px 32px 80px;
+            padding: 20px 24px 80px;
             max-width: 1440px;
             margin: 0 auto;
         }
 
-        /* Kart bileşeni */
+        /* ══ KART KABUĞU ══ */
         .product-card {
             background: var(--white);
-            border-radius: var(--r-lg);
-            border: 1px solid var(--gray-200);
+            border-radius: 16px;
+            border: 1px solid rgba(200,210,230,0.7);
             overflow: hidden;
-            box-shadow: var(--sh-sm);
-            transition: box-shadow .2s var(--ease), transform .2s var(--ease);
+            box-shadow: 0 2px 8px rgba(15,23,42,.07), 0 0 0 0 transparent;
+            transition: box-shadow .25s var(--ease), transform .25s var(--ease), border-color .25s var(--ease);
             display: flex;
             flex-direction: column;
             cursor: pointer;
         }
 
         .product-card:hover {
-            box-shadow: var(--sh-md);
-            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(15,23,42,.13);
+            transform: translateY(-4px);
+            border-color: rgba(194,113,12,.35);
         }
 
-        /* Görsel bağlantısı — tüm görsel alanı tıklanabilir */
+        /* ══ GÖRSEL ALANI ══ */
         .card-img-link {
             display: block;
             text-decoration: none;
         }
 
-        /* Görsel alanı: kare oran, overflow gizli */
         .product-image {
             position: relative;
             aspect-ratio: 1 / 1;
             overflow: hidden;
-            background: #f7f8fa;
+            background: #fff;
         }
 
         .product-image img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
-            transition: transform .45s ease;
+            object-fit: contain;
+            padding: 8px;
+            transition: transform .4s ease;
             display: block;
+            box-sizing: border-box;
         }
 
         .product-card:hover .product-image img {
-            transform: scale(1.05);
+            transform: scale(1.06);
         }
 
-        /* Görsel alt kısmına kategori banner */
+        /* Görsel üstü aktif indirim rozeti — sağ üst köşe, dinamik JS tarafından güncellenir */
+        .card-disc-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 3;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(21,128,61,.55), inset 0 1px 0 rgba(255,255,255,.22);
+            line-height: 1;
+            text-align: center;
+            animation: badge-pop .25s cubic-bezier(.4,0,.2,1);
+        }
+
+        @keyframes badge-pop {
+            0%   { transform: scale(.6); opacity: 0; }
+            70%  { transform: scale(1.12); }
+            100% { transform: scale(1);  opacity: 1; }
+        }
+
+        /* Kategori banner — ince şerit */
         .card-cat-banner {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(10, 10, 10, 0.82);
-            backdrop-filter: blur(3px);
-            color: #fff;
-            font-size: 11px;
+            background: rgba(8, 8, 18, 0.75);
+            backdrop-filter: blur(4px);
+            color: rgba(255,255,255,0.88);
+            font-size: 9px;
             font-weight: 700;
             text-align: center;
-            padding: 6px 10px;
-            letter-spacing: 0.04em;
+            padding: 4px 8px;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            line-height: 1.3;
         }
 
-        /* Görsel yoksa placeholder */
+        /* Placeholder */
         .no-image {
             width: 100%;
             height: 100%;
@@ -144,19 +182,20 @@
             background: #f5f5f5;
         }
 
-        /* Kart alt içerik alanı */
+        /* ══ KART İÇERİK ALANI ══ */
         .product-body {
-            padding: 14px 14px 16px;
+            padding: 12px 12px 14px;
             display: flex;
             flex-direction: column;
             flex: 1;
             gap: 8px;
+            border-top: 1px solid rgba(200,210,230,0.5);
         }
 
-        /* Ürün başlığı: 2 satır sınırı */
+        /* Ürün başlığı */
         .card-title {
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.4;
             color: var(--navy);
             display: -webkit-box;
@@ -172,80 +211,76 @@
             color: inherit;
         }
 
-        .card-title a:hover {
-            color: var(--metallic);
-        }
+        .card-title a:hover { color: var(--metallic); }
 
-        /* Fiyat satırı */
+        /* ══ FİYAT SATIRI ══ */
         .price-area {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             gap: 6px;
             flex-wrap: wrap;
-            margin-top: auto;
         }
 
-        /* Ana fiyat: büyük ve belirgin */
         .new-price {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 800;
             color: var(--orange);
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
             line-height: 1;
         }
 
-        /* Eski fiyat: üstü çizili */
         .old-price {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--gray-400);
             text-decoration: line-through;
             font-weight: 400;
         }
 
-        /* İndirim etiketi */
+        /* İndirim etiketi — fiyat yanında küçük ek gösterge */
         .disc-tag {
-            background: var(--orange-bg);
-            color: var(--orange);
-            font-size: 11px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: var(--r-sm);
-            border: 1px solid var(--orange-border);
+            display: none; /* overlay badge kullanılıyor, bu gizli kalabilir */
         }
 
-        /* Sepette bilgi */
-        .in-basket-info {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            background: #ecfdf5;
-            color: #059669;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 4px 9px;
-            border-radius: var(--r-sm);
-            border: 1px solid #a7f3d0;
-        }
-
-        .in-basket-info::before {
-            content: "✓";
-            font-size: 10px;
-        }
-
-        /* Form: son öğeye yapışık */
+        /* ══ İNDİRİM MESAJ KUTUSU — daha belirgin ══ */
         .card-form {
             margin-top: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
         }
 
-        /* Miktar kontrolü */
+        .message-box {
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 7px 10px;
+            line-height: 1.35;
+            min-height: 32px;
+            border: 1.5px solid var(--gray-200);
+            transition: background .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--gray-500);
+            background: var(--gray-100);
+        }
+
+        /* İndirim teşvik mesajı — amber renk, sadece bir sonraki kademin hedefini gösterir */
+        .message-box.discount-hint {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-color: #f59e0b;
+            border-width: 2px;
+            color: #78350f;
+            box-shadow: 0 2px 8px rgba(245,158,11,.18);
+        }
+        .message-box.discount-hint::before { content: "🏷️"; font-size: 13px; flex-shrink: 0; }
+
+        /* ══ MİKTAR KONTROLÜ ══ */
         .quantity-control {
             display: flex;
             align-items: stretch;
             border: 1.5px solid var(--gray-200);
-            border-radius: var(--r);
+            border-radius: 10px;
             overflow: hidden;
             background: var(--gray-100);
             height: 38px;
@@ -257,7 +292,7 @@
             background: transparent;
             cursor: pointer;
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 400;
             color: var(--gray-500);
             transition: background .15s var(--ease), color .15s var(--ease);
             display: flex;
@@ -267,7 +302,7 @@
         }
 
         .quantity-control button:hover {
-            background: var(--metallic);
+            background: var(--navy);
             color: var(--white);
         }
 
@@ -278,7 +313,7 @@
             border-right: 1.5px solid var(--gray-200);
             background: var(--white);
             text-align: center;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--navy);
             padding: 0 4px;
@@ -288,97 +323,77 @@
         }
 
         .quantity-input::-webkit-outer-spin-button,
-        .quantity-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-        }
+        .quantity-input::-webkit-inner-spin-button { -webkit-appearance: none; }
 
-        /* İndirim mesaj kutusu */
-        .message-box {
-            font-size: 11px;
-            font-weight: 600;
-            border-radius: var(--r-sm);
-            padding: 7px 10px;
-            line-height: 1.4;
-            min-height: 34px;
-            border: 1.5px solid var(--gray-200);
-            transition: background .25s var(--ease), border-color .25s var(--ease), color .25s var(--ease);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--gray-500);
-        }
-
-        .message-box.discount-hint   { background: #fffbeb; border-color: #f59e0b; color: #92400e; }
-        .message-box.discount-hint::before { content: "🏷️"; font-size: 13px; flex-shrink: 0; }
-        .message-box.discount-active { background: #f0fdf4; border-color: #22c55e; color: #14532d; }
-        .message-box.discount-active::before { content: "✅"; font-size: 12px; flex-shrink: 0; }
-        .message-box.discount-max    { background: #dcfce7; border-color: #16a34a; color: #14532d; font-weight: 700; }
-        .message-box.discount-max::before { content: "🎉"; font-size: 13px; flex-shrink: 0; }
-
-        /* Sepete ekle butonu: kurumsal navy/mavi stil */
+        /* ══ SEPETE EKLE BUTONU ══ */
         .add-to-cart-btn {
             width: 100%;
             padding: 11px 16px;
-            background: var(--metallic);
+            background: linear-gradient(135deg, #c2710c 0%, #a85e0a 100%);
             color: var(--white);
-            border: 1.5px solid var(--metallic);
-            border-radius: var(--r);
+            border: none;
+            border-radius: 10px;
             font-family: var(--font);
             font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
+            font-weight: 700;
+            letter-spacing: 0.03em;
             cursor: pointer;
-            transition: background .18s var(--ease), border-color .18s var(--ease), box-shadow .18s var(--ease);
+            box-shadow: 0 3px 10px rgba(168,94,10,.30);
+            transition: background .18s var(--ease), box-shadow .18s var(--ease), transform .12s var(--ease);
         }
 
         .add-to-cart-btn:hover {
-            background: var(--navy);
-            border-color: var(--navy);
-            box-shadow: 0 4px 12px rgba(30,58,138,.30);
+            background: linear-gradient(135deg, #9a5208 0%, #7c4206 100%);
+            box-shadow: 0 5px 16px rgba(168,94,10,.45);
+            transform: translateY(-1px);
         }
 
-        /* ══════════════════════════════════════
-           RESPONSIVE
-        ══════════════════════════════════════ */
+        .add-to-cart-btn:active { transform: translateY(0); }
+
+        /* ══ RESPONSIVE ══ */
 
         /* Tablet: 3 kolon */
         @media (max-width: 1100px) {
             .product-grid {
                 grid-template-columns: repeat(3, 1fr);
-                padding: 20px 24px 60px;
+                padding: 16px 16px 60px;
+                gap: 14px;
             }
         }
 
-        /* Büyük telefon: 2 kolon */
+        /* Büyük telefon: 2 kolon — geniş kartlar */
         @media (max-width: 768px) {
             .product-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-                padding: 16px 14px 60px;
+                gap: 8px;
+                padding: 10px 8px 60px;
             }
             .product-body {
                 padding: 10px 10px 12px;
-                gap: 6px;
+                gap: 7px;
             }
             .card-title {
                 font-size: 12px;
+                font-weight: 700;
                 min-height: 2.6em;
             }
-            .new-price { font-size: 17px; }
-            .quantity-control { height: 34px; }
-            .quantity-control button { width: 34px; font-size: 16px; }
-            .add-to-cart-btn { padding: 9px 12px; font-size: 12px; }
-            .message-box { font-size: 10px; min-height: 30px; padding: 5px 8px; }
+            .new-price { font-size: 19px; }
+            .card-disc-overlay { width: 38px; height: 38px; font-size: 11px; top: 8px; right: 8px; }
+            .quantity-control { height: 36px; border-radius: 8px; }
+            .quantity-control button { width: 36px; font-size: 17px; }
+            .add-to-cart-btn { padding: 10px 10px; font-size: 12px; border-radius: 8px; }
+            .message-box { font-size: 10px; min-height: 28px; padding: 5px 8px; }
         }
 
-        /* Küçük telefon: 2 kolon, daha kompakt */
+        /* Küçük telefon */
         @media (max-width: 400px) {
             .product-grid {
-                gap: 8px;
-                padding: 12px 10px 50px;
+                gap: 6px;
+                padding: 8px 6px 50px;
             }
-            .new-price { font-size: 15px; }
+            .new-price { font-size: 17px; }
             .card-title { font-size: 11px; }
+            .card-disc-overlay { width: 34px; height: 34px; font-size: 10px; }
         }
     </style>
 </head>
@@ -387,8 +402,9 @@
 
     {% include 'partials/site_header.html' %}
 
+    {# Hero — sadece kategori sayfalarında göster; ana showroom doğrudan ürün gridine geçer #}
+    {% if is_category_page %}
     <section class="hero hero-site">
-        {% if is_category_page %}
         <div style="font-size:12px;margin-bottom:8px;">
             <a href="{{ showroom_url }}" style="color:var(--text-muted);text-decoration:none;">← {{ ui.all_products }}</a>
         </div>
@@ -396,11 +412,21 @@
         {% if cat_trans and cat_trans.intro %}
         <p class="cat-intro-text">{{ cat_trans.intro }}</p>
         {% endif %}
-        {% else %}
-        <h1>{{ ui.hero_title }}</h1>
-        <p>{{ ui.hero_sub }}</p>
-        {% endif %}
     </section>
+    {% endif %}
+
+    {# Arama yapıldıysa ve sonuç yoksa bildir #}
+    {% if search_query and not products_ctx %}
+    <div style="text-align:center;padding:80px 24px;color:var(--gray-500);">
+        <div style="font-size:48px;margin-bottom:16px;">🔍</div>
+        <p style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:8px;">
+            "{{ search_query }}" — {{ ui.no_results | default('No results found') }}
+        </p>
+        <p style="font-size:14px;">
+            <a href="{{ showroom_url }}" style="color:var(--accent);text-decoration:none;">← {{ ui.all_products | default('All products') }}</a>
+        </p>
+    </div>
+    {% endif %}
 
     <section class="product-grid">
 
@@ -415,13 +441,18 @@
 
         <div class="product-card">
 
-            <!-- Görsel alanı: kategori etiketi alt overlay olarak konumlandırıldı -->
+            <!-- Görsel alanı -->
             <a href="{{ pc.product_url }}" class="card-img-link">
                 <div class="product-image">
                     {% if product.image %}
                     <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="lazy">
                     {% else %}
                     <div class="no-image">📦</div>
+                    {% endif %}
+
+                    {# İndirim rozeti — görsel üstü sağ köşe #}
+                    {% if cart_info and cart_info.discount_rate > 0 %}
+                    <div class="card-disc-overlay">-{{ (cart_info.discount_rate * 100)|int }}%</div>
                     {% endif %}
 
                     {% if pc.category_label %}
@@ -440,30 +471,24 @@
                     {% if cart_info and cart_info.discount_rate > 0 %}
                     <span class="new-price">{{ price(cart_info.unit_price) }}</span>
                     <span class="old-price">{{ price(product.unit_price) }}</span>
-                    <span class="disc-tag">%{{ (cart_info.discount_rate * 100)|int }}</span>
                     {% else %}
                     <span class="new-price" data-base-price="{{ product.unit_price }}">{{ price(product.unit_price) }}</span>
                     <span class="old-price" style="display:none;"></span>
                     {% endif %}
                 </div>
 
-                {% if qty_in_cart > 0 %}
-                <div class="in-basket-info">
-                    {{ ui.in_basket }}: {{ qty_in_cart }} {{ ui.qty }}
-                    {% if cart_info and cart_info.discount_rate > 0 %}
-                    · %{{ (cart_info.discount_rate * 100)|int }} {{ ui.discount }}
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <form method="post" action="{{ pc.add_to_cart_url }}" class="card-form">
+                {# update-cart kullan: SET semantiği (ekleme değil, toplam miktarı yazar) #}
+                <form method="post" action="{{ pc.update_cart_url }}" class="card-form">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <div class="quantity-control">
                         <button type="button" class="minus">−</button>
-                        <input type="number" name="quantity" class="quantity-input" value="{{ min_qty }}"
+                        <input type="number" name="quantity" class="quantity-input"
+                            value="{{ qty_in_cart if qty_in_cart > 0 else min_qty }}"
                             min="{{ min_qty }}" data-min="{{ min_qty }}" data-increment="{{ increment }}"
-                            data-price="{{ product.unit_price }}" data-box="{{ product.pieces_per_box }}"
-                            data-pallet-box="{{ product.boxes_per_pallet }}">
+                            data-price="{{ product.unit_price or 0 }}"
+                            data-box="{{ product.pieces_per_box }}"
+                            data-pallet-box="{{ product.boxes_per_pallet }}"
+                            data-cart-qty="{{ qty_in_cart }}">
                         <button type="button" class="plus">+</button>
                     </div>
                     <div class="message-box"></div>
@@ -521,7 +546,9 @@
         }
     };
     </script>
-    <script src="{{ url_for('static', path='js/showroom.js') }}"></script>
+    <script src="{{ url_for('static', path='js/showroom.js') }}?v=3"></script>
+
+    {% include 'partials/site_footer.html' %}
 </body>
 
 </html>

@@ -1,84 +1,160 @@
-{# Ortak site header — tüm sayfalarda sabit, anasayfa tarzı. hp, lang_urls, ui, site, home_url, showroom_url, basket_url, lang, cart gerekli. Opsiyonel: active_page (home|showroom|basket) #}
+{# Ortak site header — iki satırlı koyu tasarım.
+   Üst satır: logo | arama | dil seçici
+   Alt satır: nav linkleri + sepet
+   Gerekli değişkenler: hp, lang_urls, ui, site, home_url, showroom_url, basket_url, lang, cart
+   Opsiyonel: active_page (home|showroom|basket) #}
 <header class="site-header {% if site.logo_white_url %}has-white-logo{% endif %}" id="site-header">
-    <a href="{{ home_url }}" class="site-header-logo">
-        {% if site.logo_url %}
-        <img src="{{ site.logo_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-default">
-        {% if site.logo_white_url %}
-        <img src="{{ site.logo_white_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-white">
-        {% endif %}
-        {% else %}
-        <span class="site-header-logo-icon">{{ (site.site_name or 'H')[0]|upper }}</span>
-        <span class="site-header-logo-text">{{ (site.site_name or 'HENI KOZMETIK')|upper }}</span>
-        {% endif %}
-    </a>
 
-    <nav class="site-header-links">
-        {% if hp and hp.get('nav_links') %}
-        {% for item in hp.nav_links %}
-        <a href="{{ item.url or '#' }}">{{ item.label }}</a>
-        {% endfor %}
-        {% else %}
-        <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
-        <a href="{{ showroom_url }}" class="{% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
-        {% endif %}
-        <a href="{{ basket_url }}" class="site-header-basket {% if active_page == 'basket' %}active{% endif %}">
-            {{ ui.basket }}
-            {% set cart_count = cart|length %}
-            {% if cart_count > 0 %}
-            <span id="basket-badge" class="site-header-badge">{{ cart_count }}</span>
+    {# ── Üst satır: logo | arama | dil ── #}
+    <div class="shdr-top">
+
+        {# Logo #}
+        <a href="{{ home_url }}" class="site-header-logo">
+            {% if site.logo_url %}
+            <img src="{{ site.logo_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-default">
+            {% if site.logo_white_url %}
+            <img src="{{ site.logo_white_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-white">
+            {% endif %}
             {% else %}
-            <span id="basket-badge" class="site-header-badge" style="display:none;">0</span>
+            <span class="site-header-logo-icon">{{ (site.site_name or 'H')[0]|upper }}</span>
+            <span class="site-header-logo-text">{{ site.site_name or 'Heni' }}</span>
             {% endif %}
         </a>
-    </nav>
 
-    <div class="site-header-lang" id="site-header-lang">
-        <button type="button" class="site-header-lang-trigger" id="lang-trigger" aria-expanded="false" aria-haspopup="true" aria-label="Dil seçin">
-            <svg class="site-header-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-            <span class="site-header-lang-current">{{ lang_labels.get(lang, lang) }}</span>
-            <svg class="site-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M6 9l6 6 6-6"/>
+        {# Ürün arama formu — showroom sayfasına yönlendirir, canlı dropdown ile #}
+        <div class="shdr-search-wrap" id="shdr-search-wrap">
+            <form class="shdr-search" action="{{ showroom_url }}" method="get" role="search" autocomplete="off" id="shdr-search-form">
+                <svg class="shdr-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input
+                    type="search"
+                    name="q"
+                    id="shdr-search-input"
+                    class="shdr-search-input"
+                    placeholder="{{ ui.search_placeholder | default('Search...') }}"
+                    value="{{ request.query_params.get('q', '') if request is defined else '' }}"
+                    aria-label="Ürün ara"
+                    autocomplete="off"
+                >
+                {# Sesli arama butonu — Web Speech API #}
+                <button type="button" class="shdr-search-mic" id="shdr-mic-btn" aria-label="Sesli arama">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                </button>
+            </form>
+            {# Canlı arama sonuç dropdown #}
+            <div class="shdr-search-dropdown" id="shdr-search-dropdown" aria-live="polite"></div>
+        </div>
+
+        {# Dil seçici #}
+        <div class="site-header-lang" id="site-header-lang">
+            <button type="button" class="site-header-lang-trigger" id="lang-trigger" aria-expanded="false" aria-haspopup="true" aria-label="Dil seçin">
+                <svg class="site-header-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                <span class="site-header-lang-current">{{ lang_labels.get(lang, lang) }}</span>
+                <svg class="site-header-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M6 9l6 6 6-6"/>
+                </svg>
+            </button>
+            <div class="site-header-lang-dropdown" id="lang-dropdown" role="menu" aria-hidden="true">
+                {% for lc, lurl in lang_urls.items() %}
+                <a href="{{ lurl }}" role="menuitem" class="{% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# Mobil arama butonu — sadece ≤768px'de görünür, sepetin solunda #}
+        <button type="button" class="shdr-mobile-search-btn" id="shdr-mobile-search-btn" aria-label="Arama">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
             </svg>
         </button>
-        <div class="site-header-lang-dropdown" id="lang-dropdown" role="menu" aria-hidden="true">
-            {% for lc, lurl in lang_urls.items() %}
-            <a href="{{ lurl }}" role="menuitem" class="{% if lc == lang %}active{% endif %}">{{ lang_labels.get(lc, lc) }}</a>
+
+        {# Mobil sepet ikonu — sadece ≤768px'de görünür #}
+        <a href="{{ basket_url }}" class="site-header-mobile-basket" aria-label="{{ ui.basket }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <path d="M16 10a4 4 0 01-8 0"/>
+            </svg>
+            {% set cart_count = cart|length %}
+            {% if cart_count > 0 %}
+            <span class="site-header-mobile-basket-badge">{{ cart_count }}</span>
+            {% endif %}
+        </a>
+
+        {# Mobil hamburger butonu — sadece ≤768px'de görünür #}
+        <button type="button" class="site-header-mobile-toggle" id="mobile-menu-toggle" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-menu">
+            <span class="mobile-toggle-bar"></span>
+            <span class="mobile-toggle-bar"></span>
+            <span class="mobile-toggle-bar"></span>
+        </button>
+
+    </div>{# /shdr-top #}
+
+    {# ── Alt satır: navigasyon linkleri ── #}
+    <div class="shdr-bottom">
+        <nav class="site-header-links">
+            {% if hp and hp.get('nav_links') %}
+            {% for item in hp.nav_links %}
+            <a href="{{ item.url or '#' }}" class="{% if item.url == request.url.path or (active_page == 'showroom' and item.url and showroom_url in item.url) or (active_page == 'home' and item.url and home_url in item.url) %}active{% endif %}">{{ item.label }}</a>
             {% endfor %}
-        </div>
-    </div>
+            {% else %}
+            <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
+            <a href="{{ showroom_url }}" class="{% if active_page == 'showroom' %}active{% endif %}">{{ ui.products }}</a>
+            {% endif %}
+            <a href="{{ basket_url }}" class="site-header-basket {% if active_page == 'basket' %}active{% endif %}">
+                {{ ui.basket }}
+                {% set cart_count = cart|length %}
+                {% if cart_count > 0 %}
+                <span id="basket-badge" class="site-header-badge">{{ cart_count }}</span>
+                {% else %}
+                <span id="basket-badge" class="site-header-badge" style="display:none;">0</span>
+                {% endif %}
+            </a>
+        </nav>
+    </div>{# /shdr-bottom #}
 
-    <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="site-header-cta">{{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →</a>
-
-    {# Mobil sepet ikonu — sadece ≤768px'de görünür #}
-    <a href="{{ basket_url }}" class="site-header-mobile-basket" aria-label="{{ ui.basket }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 01-8 0"/>
-        </svg>
-        {% set cart_count = cart|length %}
-        {% if cart_count > 0 %}
-        <span class="site-header-mobile-basket-badge">{{ cart_count }}</span>
-        {% endif %}
-    </a>
-
-    {# Mobil hamburger butonu — sadece ≤768px'de görünür #}
-    <button type="button" class="site-header-mobile-toggle" id="mobile-menu-toggle" aria-label="Menüyü aç" aria-expanded="false" aria-controls="mobile-menu">
-        <span class="mobile-toggle-bar"></span>
-        <span class="mobile-toggle-bar"></span>
-        <span class="mobile-toggle-bar"></span>
-    </button>
 </header>
+
+{# Mobil arama paneli — header'ın hemen altına slayt açılır #}
+<div class="shdr-mobile-search-panel" id="shdr-mobile-search-panel" aria-hidden="true">
+    <form class="shdr-mobile-search-form" action="{{ showroom_url }}" method="get" role="search" autocomplete="off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;color:rgba(255,255,255,0.5);">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <input type="search" name="q" id="shdr-mobile-search-input"
+            class="shdr-mobile-search-input"
+            placeholder="{{ ui.search_placeholder | default('Search...') }}"
+            autocomplete="off">
+        <button type="button" class="shdr-mobile-search-mic" id="shdr-mobile-mic-btn" aria-label="Sesli arama">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+        </button>
+    </form>
+    <div class="shdr-search-dropdown shdr-mobile-dropdown" id="shdr-mobile-dropdown" aria-live="polite"></div>
+</div>
 
 {# Mobil menü paneli — header'ın hemen altına açılır #}
 <div class="site-header-mobile-menu" id="mobile-menu" aria-hidden="true">
     <nav class="mobile-menu-nav">
         {% if hp and hp.get('nav_links') %}
         {% for item in hp.nav_links %}
-        <a href="{{ item.url or '#' }}" class="mobile-menu-item">{{ item.label }}</a>
+        <a href="{{ item.url or '#' }}" class="mobile-menu-item {% if item.url == request.url.path or (active_page == 'showroom' and item.url and showroom_url in item.url) or (active_page == 'home' and item.url and home_url in item.url) %}active{% endif %}">{{ item.label }}</a>
         {% endfor %}
         {% else %}
         <a href="{{ home_url }}" class="mobile-menu-item {% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
@@ -102,6 +178,13 @@
             {% endfor %}
         </div>
 
+        {# Sepet #}
+        <a href="{{ basket_url }}" class="mobile-menu-item {% if active_page == 'basket' %}active{% endif %}">
+            {{ ui.basket }}
+            {% set cart_count = cart|length %}
+            {% if cart_count > 0 %}&nbsp;<span style="background:#3b82f6;color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;">{{ cart_count }}</span>{% endif %}
+        </a>
+
         {# CTA butonu #}
         <a href="{{ (hp.get('nav_cta_url') if hp else '') or '#contact' }}" class="mobile-menu-item mobile-menu-item-cta">
             {{ (hp.get('nav_cta_text') if hp else '') or 'Get Quote' }} →
@@ -111,6 +194,9 @@
 
 <script>
 (function() {
+    var LANG = document.documentElement.lang || 'en';
+
+    // ── Scroll efekti ────────────────────────────────────
     var header = document.getElementById('site-header');
     if (header) {
         window.addEventListener('scroll', function() {
@@ -118,7 +204,7 @@
         });
     }
 
-    // Masaüstü dil dropdown
+    // ── Masaüstü dil dropdown ────────────────────────────
     var trigger = document.getElementById('lang-trigger');
     var dropdown = document.getElementById('lang-dropdown');
     var wrapper = document.getElementById('site-header-lang');
@@ -146,7 +232,7 @@
         });
     }
 
-    // Mobil dil accordion
+    // ── Mobil dil accordion ──────────────────────────────
     var langTrigger = document.getElementById('mobile-lang-trigger');
     var langOptions = document.getElementById('mobile-lang-options');
     if (langTrigger && langOptions) {
@@ -159,7 +245,7 @@
         });
     }
 
-    // Mobil hamburger menü
+    // ── Mobil hamburger menü ─────────────────────────────
     var mobileToggle = document.getElementById('mobile-menu-toggle');
     var mobileMenu = document.getElementById('mobile-menu');
     if (mobileToggle && mobileMenu) {
@@ -180,7 +266,6 @@
         mobileToggle.addEventListener('click', function() {
             if (mobileMenu.classList.contains('open')) closeMobileMenu(); else openMobileMenu();
         });
-        // Menü dışına tıklanınca kapat
         document.addEventListener('click', function(e) {
             if (mobileMenu.classList.contains('open') &&
                 !mobileMenu.contains(e.target) &&
@@ -189,5 +274,120 @@
             }
         });
     }
+
+    // ── Mobil arama paneli aç/kapat ──────────────────────
+    var mobileSearchBtn   = document.getElementById('shdr-mobile-search-btn');
+    var mobileSearchPanel = document.getElementById('shdr-mobile-search-panel');
+    var mobileSearchInput = document.getElementById('shdr-mobile-search-input');
+    if (mobileSearchBtn && mobileSearchPanel) {
+        mobileSearchBtn.addEventListener('click', function() {
+            var isOpen = mobileSearchPanel.classList.toggle('open');
+            mobileSearchPanel.setAttribute('aria-hidden', !isOpen);
+            mobileSearchBtn.classList.toggle('active', isOpen);
+            if (isOpen && mobileSearchInput) mobileSearchInput.focus();
+        });
+    }
+
+    // ── Canlı arama ortak yardımcı ──────────────────────
+    var noResultsText = { en: 'No results found', tr: 'Sonuç bulunamadı', de: 'Keine Ergebnisse', fr: 'Aucun résultat', ar: 'لا توجد نتائج', ru: 'Ничего не найдено', es: 'Sin resultados' };
+
+    function formatPrice(usd) {
+        if (!usd) return '';
+        if (LANG === 'tr') return (usd).toFixed(2) + ' ₺';
+        if (LANG === 'de' || LANG === 'fr' || LANG === 'ru' || LANG === 'es') return (usd).toFixed(2) + ' €';
+        return '$' + usd.toFixed(2);
+    }
+
+    function renderDropdown(dropdown, items) {
+        if (items === null) { dropdown.innerHTML = ''; dropdown.classList.remove('open'); return; }
+        if (items.length === 0) {
+            dropdown.innerHTML = '<div class="shdr-search-no-result">' + (noResultsText[LANG] || noResultsText.en) + '</div>';
+        } else {
+            dropdown.innerHTML = items.map(function(p) {
+                return '<a href="' + p.url + '" class="shdr-search-item">' +
+                    (p.image ? '<img src="' + p.image + '" class="shdr-search-item-img" alt="">' : '<span class="shdr-search-item-placeholder">📦</span>') +
+                    '<span class="shdr-search-item-name">' + p.name + '</span>' +
+                    (p.price ? '<span class="shdr-search-item-price">' + formatPrice(p.price) + '</span>' : '') +
+                    '</a>';
+            }).join('');
+        }
+        dropdown.classList.add('open');
+    }
+
+    function debounce(fn, ms) {
+        var t; return function() { clearTimeout(t); t = setTimeout(fn.bind(this, arguments), ms); };
+    }
+
+    function setupSearch(inputEl, dropdownEl) {
+        if (!inputEl || !dropdownEl) return;
+        var lastQ = '';
+        var doSearch = debounce(function() {
+            var q = inputEl.value.trim();
+            if (q === lastQ) return;
+            lastQ = q;
+            if (q.length < 2) { renderDropdown(dropdownEl, null); return; }
+            fetch('/api/search?q=' + encodeURIComponent(q) + '&lang=' + LANG)
+                .then(function(r) { return r.json(); })
+                .then(function(items) { renderDropdown(dropdownEl, items); })
+                .catch(function() { renderDropdown(dropdownEl, null); });
+        }, 280);
+
+        inputEl.addEventListener('input', doSearch);
+
+        // Dropdown dışına tıklayınca kapat
+        document.addEventListener('click', function(e) {
+            if (!inputEl.contains(e.target) && !dropdownEl.contains(e.target)) {
+                renderDropdown(dropdownEl, null);
+            }
+        });
+
+        inputEl.addEventListener('focus', function() {
+            if (inputEl.value.trim().length >= 2) doSearch();
+        });
+    }
+
+    // Masaüstü arama
+    setupSearch(
+        document.getElementById('shdr-search-input'),
+        document.getElementById('shdr-search-dropdown')
+    );
+    // Mobil arama
+    setupSearch(
+        document.getElementById('shdr-mobile-search-input'),
+        document.getElementById('shdr-mobile-dropdown')
+    );
+
+    // ── Sesli arama ──────────────────────────────────────
+    var langToSpeech = { tr: 'tr-TR', de: 'de-DE', fr: 'fr-FR', ar: 'ar-SA', ru: 'ru-RU', es: 'es-ES', en: 'en-US' };
+
+    function setupVoice(micBtn, inputEl) {
+        if (!micBtn || !inputEl) return;
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { micBtn.style.display = 'none'; return; } // desteklenmiyor, gizle
+
+        var recognition = new SR();
+        recognition.lang = langToSpeech[LANG] || 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        var listening = false;
+
+        recognition.onstart  = function() { listening = true;  micBtn.classList.add('listening'); };
+        recognition.onend    = function() { listening = false; micBtn.classList.remove('listening'); };
+        recognition.onerror  = function() { listening = false; micBtn.classList.remove('listening'); };
+        recognition.onresult = function(e) {
+            var text = e.results[0][0].transcript;
+            inputEl.value = text;
+            inputEl.dispatchEvent(new Event('input'));
+        };
+
+        micBtn.addEventListener('click', function() {
+            if (listening) { recognition.stop(); } else { recognition.start(); }
+        });
+    }
+
+    setupVoice(document.getElementById('shdr-mic-btn'), document.getElementById('shdr-search-input'));
+    setupVoice(document.getElementById('shdr-mobile-mic-btn'), document.getElementById('shdr-mobile-search-input'));
+
 })();
 </script>

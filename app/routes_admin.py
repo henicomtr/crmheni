@@ -1705,10 +1705,10 @@ async def settings_post(
     social_whatsapp: str = Form(""),
     analytics_code: str = Form(""),
     custom_css: str = Form(""),
-    footer_bg_image_url: str = Form(""),
     logo: UploadFile = File(None),
     logo_white: UploadFile = File(None),
     favicon: UploadFile = File(None),
+    footer_bg_image: UploadFile = File(None),
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required),
 ):
@@ -1732,7 +1732,6 @@ async def settings_post(
     s.social_whatsapp    = social_whatsapp
     s.analytics_code     = analytics_code
     s.custom_css         = custom_css
-    s.footer_bg_image_url = footer_bg_image_url
 
     if logo and logo.filename:
         os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
@@ -1787,6 +1786,25 @@ async def settings_post(
             with open(path, "wb") as f:
                 f.write(await favicon.read())
             s.favicon_url = f"/static/upload/images/{fname}"
+
+    # Footer arka plan görseli yükleme (tüm dillere global uygulanır)
+    if footer_bg_image and footer_bg_image.filename:
+        os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
+        if _is_jpeg_jpg_png_upload(footer_bg_image):
+            try:
+                optimized_fname = await optimize_and_save_image(footer_bg_image, UPLOAD_DIR_IMAGES)
+                s.footer_bg_image_url = f"/static/upload/images/{optimized_fname}"
+            except ValueError as e:
+                if "too large" in str(e).lower():
+                    return RedirectResponse("/admin/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/admin/settings?saved=0", status_code=302)
+        else:
+            ext = os.path.splitext(footer_bg_image.filename)[1]
+            fname = f"footer_bg{ext}"
+            path = os.path.join(UPLOAD_DIR_IMAGES, fname)
+            with open(path, "wb") as f:
+                f.write(await footer_bg_image.read())
+            s.footer_bg_image_url = f"/static/upload/images/{fname}"
 
     db.commit()
     return RedirectResponse("/admin/settings?saved=1", status_code=302)
