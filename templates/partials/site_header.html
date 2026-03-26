@@ -87,9 +87,7 @@
                 <path d="M16 10a4 4 0 01-8 0"/>
             </svg>
             {% set cart_count = cart|length %}
-            {% if cart_count > 0 %}
-            <span class="site-header-mobile-basket-badge">{{ cart_count }}</span>
-            {% endif %}
+            <span id="mobile-basket-badge" class="site-header-mobile-basket-badge"{% if cart_count == 0 %} style="display:none;"{% endif %}>{{ cart_count if cart_count > 0 else 0 }}</span>
         </a>
 
         {# Mobil hamburger butonu — sadece ≤768px'de görünür #}
@@ -106,7 +104,7 @@
         <nav class="site-header-links">
             {% if hp and hp.get('nav_links') %}
             {% for item in hp.nav_links %}
-            <a href="{{ item.url or '#' }}" class="{% if item.url == request.url.path or (active_page == 'showroom' and item.url and showroom_url in item.url) or (active_page == 'home' and item.url and home_url in item.url) %}active{% endif %}">{{ item.label }}</a>
+            <a href="{{ item.url or '#' }}" class="{% if (active_page == 'home' and item.url == home_url) or (active_page == 'showroom' and item.url == showroom_url) %}active{% endif %}">{{ item.label }}</a>
             {% endfor %}
             {% else %}
             <a href="{{ home_url }}" class="{% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>
@@ -154,7 +152,7 @@
     <nav class="mobile-menu-nav">
         {% if hp and hp.get('nav_links') %}
         {% for item in hp.nav_links %}
-        <a href="{{ item.url or '#' }}" class="mobile-menu-item {% if item.url == request.url.path or (active_page == 'showroom' and item.url and showroom_url in item.url) or (active_page == 'home' and item.url and home_url in item.url) %}active{% endif %}">{{ item.label }}</a>
+        <a href="{{ item.url or '#' }}" class="mobile-menu-item {% if (active_page == 'home' and item.url == home_url) or (active_page == 'showroom' and item.url == showroom_url) %}active{% endif %}">{{ item.label }}</a>
         {% endfor %}
         {% else %}
         <a href="{{ home_url }}" class="mobile-menu-item {% if active_page == 'home' %}active{% endif %}">{{ ui.home }}</a>

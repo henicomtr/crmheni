@@ -214,15 +214,27 @@ document.addEventListener("DOMContentLoaded", function () {
         updateUI();
     });
 
-    // ── Sepet Rozeti Güncelleme (yardımcı fonksiyon) ─────
+    // ── Sepet Rozeti Güncelleme (masaüstü + mobil) ───────
     function updateBasketBadge(count) {
+        // Masaüstü nav badge
         const badge = document.getElementById('basket-badge');
-        if (!badge) return;
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-flex';
-        } else {
-            badge.style.display = 'none';
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        // Mobil header badge
+        const mobileBadge = document.getElementById('mobile-basket-badge');
+        if (mobileBadge) {
+            if (count > 0) {
+                mobileBadge.textContent = count;
+                mobileBadge.style.display = '';
+            } else {
+                mobileBadge.style.display = 'none';
+            }
         }
     }
 
