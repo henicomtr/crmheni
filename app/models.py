@@ -50,6 +50,9 @@ class Product(Base):
     # Kullanıcı değerlendirme sayısı (ProductRating tablosundan hesaplanır)
     rating_count = Column(Integer, default=0)
 
+    # Son güncelleme tarihi — sitemap lastmod ve cache invalidation için
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     translations = relationship(
         "ProductTranslation",
         back_populates="product",

@@ -6,6 +6,16 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{% block title %}HENİ{% endblock %}</title>
 	<link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+
+	{# Canonical tag — self-referencing, http → https düzeltmesi uygulanır #}
+	{% if canonical_url is defined and canonical_url %}
+		{# Route'tan açıkça geçirilmişse kullan #}
+		<link rel="canonical" href="{{ canonical_url | replace('http://', 'https://') }}">
+	{% elif request is defined %}
+		{# request.url üzerinden otomatik üret #}
+		<link rel="canonical" href="{{ (request.url | string) | replace('http://', 'https://') }}">
+	{% endif %}
+
 	{% block extra_head %}{% endblock %}
 </head>
 <body style="background:#f5f7fb;min-height:100vh;">

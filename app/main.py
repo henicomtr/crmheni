@@ -100,6 +100,12 @@ def _migrate_products():
                 conn.execute(text("ALTER TABLE products ADD COLUMN rating_count INTEGER DEFAULT 0"))
             except Exception:
                 pass
+        # Eski kurulumlar için updated_at kolonu ekle
+        if "updated_at" not in existing:
+            try:
+                conn.execute(text("ALTER TABLE products ADD COLUMN updated_at DATETIME"))
+            except Exception:
+                pass
         conn.commit()
 
 _migrate_products()
@@ -159,6 +165,8 @@ def _seed_admin():
 _seed_admin()
 
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import RedirectResponse
 
 app = FastAPI(title="HENİ CRM")
 
@@ -167,6 +175,26 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SECRET_KEY", "fallback-sadece-development-icin")
 )
+
+
+class HttpsRedirectMiddleware(BaseHTTPMiddleware):
+    """
+    HTTP → HTTPS yönlendirme middleware'i.
+    Nginx gibi bir reverse proxy arkasında çalışırken X-Forwarded-Proto
+    header'ını kontrol eder. Direkt HTTP geliyorsa HTTPS'e yönlendirir.
+    Robots.txt ve sitemap gibi crawler endpoint'lerini de kapsar.
+    """
+    async def dispatch(self, request, call_next):
+        # Forwarded-Proto header'ı nginx tarafından set edilir
+        forwarded_proto = request.headers.get("x-forwarded-proto", "")
+        # Direkt HTTP bağlantısı ve proxy'den geçmemiş ise yönlendir
+        if forwarded_proto == "http":
+            https_url = str(request.url).replace("http://", "https://", 1)
+            return RedirectResponse(url=https_url, status_code=301)
+        return await call_next(request)
+
+
+app.add_middleware(HttpsRedirectMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)

@@ -1,0 +1,28 @@
+User-agent: *
+Allow: /
+
+# Admin ve API yollarını engelle
+Disallow: /admin
+Disallow: /api/
+Disallow: /static/upload/
+
+# Filtre ve oturum parametreli URL'leri engelle
+Disallow: /*?*
+Disallow: /search?*
+
+# GPTBot ve CCBot'u engelle
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+# OAI-SearchBot'a izin ver (Bing/OpenAI arama entegrasyonu)
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic yapay zeka botuna izin ver (Claude arama entegrasyonu)
+User-agent: anthropic-ai
+Allow: /
+
+Sitemap: https://henib2b.com/sitemap.xml

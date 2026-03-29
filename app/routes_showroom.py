@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Request, Depends, Form, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import os, math, json
+from datetime import date
 
 from app.database import get_db
 from app.models import Product, ProductTranslation, ProductRating, QuoteRequest, Page, PageTranslation, FaqItem
@@ -900,6 +901,192 @@ def build_basket_context(basket_items):
 
 
 # =========================================================
+# STATİK DOSYALAR — robots.txt, sitemap.xml
+# =========================================================
+
+@router.get("/robots.txt", include_in_schema=False)
+def serve_robots():
+    """robots.txt dosyasını static klasöründen serve eder."""
+    robots_path = os.path.join(BASE_DIR, "static", "robots.txt")
+    return FileResponse(robots_path, media_type="text/plain")
+
+
+@router.get("/sitemap.xml", include_in_schema=False)
+def serve_sitemap(db: Session = Depends(get_db)):
+    """
+    Dinamik XML sitemap üretir.
+    - Tüm ürün sayfaları (7 dil)
+    - Tüm yayında CMS sayfaları (7 dil)
+    - Tüm kategori sayfaları (7 dil)
+    - Statik sayfalar: anasayfa, iletişim, hakkımızda, quote-request (7 dil)
+    """
+    BASE_URL  = "https://henib2b.com"
+    bugun     = date.today().isoformat()
+
+    # Statik sayfa slug'ları (dile göre)
+    STATIC_PATHS = {
+        "homepage": {
+            "en": "/", "tr": "/tr", "de": "/de",
+            "fr": "/fr", "ar": "/ar", "ru": "/ru", "es": "/es",
+        },
+        "contact": {
+            "en": "/contact", "tr": "/tr/iletisim", "de": "/de/kontakt",
+            "fr": "/fr/contact", "ar": "/ar/contact", "ru": "/ru/kontakt", "es": "/es/contacto",
+        },
+        "about": {
+            "en": "/about", "tr": "/tr/hakkimizda", "de": "/de/ueber-uns",
+            "fr": "/fr/a-propos", "ar": "/ar/about", "ru": "/ru/o-nas", "es": "/es/sobre-nosotros",
+        },
+        "quote": {
+            "en": "/quote-request", "tr": "/tr/quote-request", "de": "/de/quote-request",
+            "fr": "/fr/quote-request", "ar": "/ar/quote-request", "ru": "/ru/quote-request", "es": "/es/quote-request",
+        },
+    }
+
+    urls = []  # Her URL için {"loc": ..., "lastmod": ..., "changefreq": ..., "priority": ..., "alternates": [...]}
+
+    # ── 1. Statik sayfalar ────────────────────────────────────────
+    for page_key, lang_map in STATIC_PATHS.items():
+        prio      = "1.0" if page_key == "homepage" else "0.5"
+        lastmod   = bugun
+        changefreq = "monthly"
+
+        for lang, path in lang_map.items():
+            # Tüm dil alternatifleri bu URL bloğuna eklenecek
+            alternates = [
+                {"lang": l, "href": BASE_URL + p}
+                for l, p in lang_map.items()
+            ]
+            alternates.append({"lang": "x-default", "href": BASE_URL + lang_map["en"]})
+            urls.append({
+                "loc":        BASE_URL + path,
+                "lastmod":    lastmod,
+                "changefreq": changefreq,
+                "priority":   prio,
+                "alternates": alternates,
+            })
+
+    # ── 2. Ürün sayfaları ────────────────────────────────────────
+    products = db.query(Product).filter(Product.slug.isnot(None)).all()
+    for p in products:
+        lang_map = {}
+        for lang in SUPPORTED_LANGS:
+            slug = p.get_slug_for(lang)
+            if not slug:
+                continue
+            seg  = PRODUCT_SEGMENT.get(lang, "product")
+            if lang == DEFAULT_LANG:
+                path = f"/{seg}/{slug}"
+            else:
+                path = f"/{lang}/{seg}/{slug}"
+            lang_map[lang] = path
+
+        if not lang_map:
+            continue
+
+        alternates = [{"lang": l, "href": BASE_URL + path} for l, path in lang_map.items()]
+        if "en" in lang_map:
+            alternates.append({"lang": "x-default", "href": BASE_URL + lang_map["en"]})
+
+        # updated_at varsa gerçek tarihi kullan, yoksa bugünün tarihi
+        product_lastmod = p.updated_at.date().isoformat() if p.updated_at else bugun
+
+        for lang, path in lang_map.items():
+            urls.append({
+                "loc":        BASE_URL + path,
+                "lastmod":    product_lastmod,
+                "changefreq": "weekly",
+                "priority":   "0.7",
+                "alternates": alternates,
+            })
+
+    # ── 3. CMS sayfa sayfaları ───────────────────────────────────
+    pages = db.query(Page).filter(Page.is_published == 1).all()
+    for pg in pages:
+        lastmod  = pg.updated_at.date().isoformat() if pg.updated_at else bugun
+        lang_map = {}
+        for lang in SUPPORTED_LANGS:
+            slug = pg.get_slug_for(lang)
+            if not slug:
+                continue
+            if lang == DEFAULT_LANG:
+                path = f"/{slug}"
+            else:
+                path = f"/{lang}/{slug}"
+            lang_map[lang] = path
+
+        if not lang_map:
+            continue
+
+        alternates = [{"lang": l, "href": BASE_URL + path} for l, path in lang_map.items()]
+        if "en" in lang_map:
+            alternates.append({"lang": "x-default", "href": BASE_URL + lang_map["en"]})
+
+        for lang, path in lang_map.items():
+            urls.append({
+                "loc":        BASE_URL + path,
+                "lastmod":    lastmod,
+                "changefreq": "monthly",
+                "priority":   "0.5",
+                "alternates": alternates,
+            })
+
+    # ── 4. Kategori sayfaları ────────────────────────────────────
+    for cat_key in CATEGORY_LABELS:
+        lang_map = {}
+        for lang in SUPPORTED_LANGS:
+            cat_slugs = CATEGORY_SLUGS_BY_LANG.get(lang, CATEGORY_SLUGS_BY_LANG["en"])
+            cat_slug  = cat_slugs.get(cat_key, "")
+            if not cat_slug:
+                continue
+            seg = CATEGORY_SEGMENT.get(lang, "category")
+            if lang == DEFAULT_LANG:
+                path = f"/{seg}/{cat_slug}"
+            else:
+                path = f"/{lang}/{seg}/{cat_slug}"
+            lang_map[lang] = path
+
+        if not lang_map:
+            continue
+
+        alternates = [{"lang": l, "href": BASE_URL + path} for l, path in lang_map.items()]
+        if "en" in lang_map:
+            alternates.append({"lang": "x-default", "href": BASE_URL + lang_map["en"]})
+
+        for lang, path in lang_map.items():
+            urls.append({
+                "loc":        BASE_URL + path,
+                "lastmod":    bugun,
+                "changefreq": "weekly",
+                "priority":   "0.8",
+                "alternates": alternates,
+            })
+
+    # ── XML oluştur ──────────────────────────────────────────────
+    xml_parts = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml_parts.append(
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:xhtml="http://www.w3.org/1999/xhtml">'
+    )
+
+    for entry in urls:
+        xml_parts.append("  <url>")
+        xml_parts.append(f"    <loc>{entry['loc']}</loc>")
+        xml_parts.append(f"    <lastmod>{entry['lastmod']}</lastmod>")
+        xml_parts.append(f"    <changefreq>{entry['changefreq']}</changefreq>")
+        xml_parts.append(f"    <priority>{entry['priority']}</priority>")
+        for alt in entry.get("alternates", []):
+            xml_parts.append(
+                f'    <xhtml:link rel="alternate" hreflang="{alt["lang"]}" href="{alt["href"]}"/>'
+            )
+        xml_parts.append("  </url>")
+
+    xml_parts.append("</urlset>")
+    xml_content = "\n".join(xml_parts)
+
+    return Response(content=xml_content, media_type="application/xml")
+
+
 # HOMEPAGE  /  /tr  /de  /fr  /ar  /ru  /es
 # =========================================================
 
@@ -939,6 +1126,9 @@ def _homepage(request: Request, lang: str, db=None):
         "ar": "/ar", "ru": "/ru", "es": "/es",
     }
     ctx["active_page"] = "home"
+    # Query string olmadan temiz canonical URL (EN → /, diğer diller → /lang)
+    lang_prefix = "" if lang == "en" else f"/{lang}"
+    ctx["canonical_url"] = f"https://henib2b.com{lang_prefix}/"
     return templates.TemplateResponse("homepage.html", ctx)
 
 
@@ -1021,6 +1211,8 @@ def _showroom(request: Request, lang: str, db: Session):
     ctx["products_ctx"] = products_ctx
     ctx["active_page"] = "showroom"
     ctx["search_query"] = request.query_params.get("q", "")
+    # Query string olmadan temiz canonical URL
+    ctx["canonical_url"] = f"https://henib2b.com{request.url.path}"
     return templates.TemplateResponse("showroom.html", ctx)
 
 
@@ -1175,7 +1367,8 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
 
     min_qty   = (product.pieces_per_box or 1) * (product.boxes_per_pallet or 1)
     increment = (product.pieces_per_box or 1) * (product.boxes_per_pallet or 1)  # 1 palet artış birimi
-    canonical = product_url(lang, product.get_slug_for(lang))
+    # Query string olmadan temiz canonical URL — base.html bu değişkeni kullanır
+    canonical_url = product_url(lang, product.get_slug_for(lang))
 
     # Aynı kategorideki ilgili ürünleri çek (mevcut ürün hariç, en fazla 4 adet)
     related_ctx = []
@@ -1216,7 +1409,7 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
         "trans":            trans,
         "meta_title":       meta_title,
         "meta_description": meta_desc,
-        "canonical":        canonical,
+        "canonical_url":    canonical_url,
         "discount_tiers":   discount_tiers,
         "export_list":      export_list,
         "qty_in_cart":      qty_in_cart,
@@ -1342,6 +1535,8 @@ def _category(request: Request, lang: str, cat_slug: str, db: Session):
         "meta_title":       meta_title,
         "meta_description": meta_desc,
         "lang_urls":        lang_urls,
+        # Query string olmadan temiz canonical URL
+        "canonical_url":    f"https://henib2b.com{request.url.path}",
     })
     return templates.TemplateResponse("showroom.html", ctx)
 
@@ -1753,6 +1948,8 @@ def _page_detail(request: Request, lang: str, slug: str, db: Session):
         "meta_title":       meta_title,
         "meta_description": meta_desc,
         "langs":            SUPPORTED_LANGS,
+        # Query string olmadan temiz canonical URL
+        "canonical_url":    f"https://henib2b.com{request.url.path}",
     })
     template_name = page.template or "page_generic.html"
     return templates.TemplateResponse(template_name, ctx)
