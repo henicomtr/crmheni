@@ -16,9 +16,33 @@
 		<link rel="canonical" href="{{ (request.url | string) | replace('http://', 'https://') }}">
 	{% endif %}
 
+	{# Hreflang — çok dilli sayfalar için dil alternatifleri; lang_urls route'tan geçirilmezse blok üretilmez #}
+	{% if lang_urls is defined and lang_urls %}
+		{% for lc, lurl in lang_urls.items() %}
+		<link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
+		{% endfor %}
+		{% if lang_urls.en is defined %}
+		<link rel="alternate" hreflang="x-default" href="{{ ('https://henib2b.com' + lang_urls.en) if lang_urls.en.startswith('/') else lang_urls.en }}">
+		{% endif %}
+	{% endif %}
+
 	{% block extra_head %}{% endblock %}
 </head>
 <body style="background:#f5f7fb;min-height:100vh;">
 	{% block content %}{% endblock %}
+	{# Organization schema — tüm sayfalarda ortak, site ayarlarından beslenir #}
+	<script type="application/ld+json">
+	{
+		"@context": "https://schema.org",
+		"@type": "Organization",
+		"name": "Heni B2B",
+		"url": "https://henib2b.com",
+		{% if site is defined and site and site.logo_url %}"logo": "{{ site.logo_url }}",{% endif %}
+		"contactPoint": {
+			"@type": "ContactPoint",
+			"contactType": "customer service"
+		}
+	}
+	</script>
 </body>
 </html>

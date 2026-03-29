@@ -100,10 +100,10 @@ def _migrate_products():
                 conn.execute(text("ALTER TABLE products ADD COLUMN rating_count INTEGER DEFAULT 0"))
             except Exception:
                 pass
-        # Eski kurulumlar için updated_at kolonu ekle
+        # Eski kurulumlar için updated_at kolonu ekle (TIMESTAMP: PostgreSQL uyumlu)
         if "updated_at" not in existing:
             try:
-                conn.execute(text("ALTER TABLE products ADD COLUMN updated_at DATETIME"))
+                conn.execute(text("ALTER TABLE products ADD COLUMN updated_at TIMESTAMP"))
             except Exception:
                 pass
         conn.commit()

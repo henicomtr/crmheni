@@ -17,13 +17,13 @@
     <meta property="og:image" content="{{ product.image }}">
     {% endif %}
     <meta property="og:type" content="product">
-    <link rel="canonical" href="{{ canonical }}">
+    <link rel="canonical" href="{{ canonical_url }}">
 
-    <!-- hreflang — SEO: her dildeki eşdeğer URL -->
+    <!-- hreflang — SEO: her dildeki eşdeğer URL; göreli path'e henib2b.com prefix eklenir -->
     {% for lc, lurl in lang_urls.items() %}
-    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
     {% endfor %}
-    <link rel="alternate" hreflang="x-default" href="{{ lang_urls.en }}">
+    <link rel="alternate" hreflang="x-default" href="{{ ('https://henib2b.com' + lang_urls.en) if lang_urls.en.startswith('/') else lang_urls.en }}">
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
 
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
@@ -1489,6 +1489,64 @@
     </script>
 
     {% include 'partials/site_footer.html' %}
+
+    {# Product schema — Google Rich Results için yapısal veri #}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "{{ (trans.name if trans and trans.name else '') | e }}",
+        "description": "{{ (trans.description if trans and trans.description else '') | e | truncate(500, True, '') }}",
+        {% if product.image %}"image": "{{ product.image | e }}",{% endif %}
+        "brand": {
+            "@type": "Brand",
+            "name": "Heni B2B"
+        },
+        "offers": {
+            "@type": "AggregateOffer",
+            "priceCurrency": "USD",
+            "lowPrice": "{{ '%.2f' | format(product.unit_price * (1 - discount_tiers[-1].rate) if discount_tiers else product.unit_price) }}",
+            "highPrice": "{{ '%.2f' | format(product.unit_price) }}",
+            "offerCount": "5",
+            "availability": "https://schema.org/InStock"
+        }
+    }
+    </script>
+
+    {# BreadcrumbList schema — gezinti hiyerarşisi #}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "{{ ui.home if ui and ui.home is defined else 'Home' }}",
+                "item": "https://henib2b.com{{ home_url if home_url is defined else '/' }}"
+            }
+            {% if category_label and category_url %},
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "{{ category_label | e }}",
+                "item": "https://henib2b.com{{ category_url }}"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": "{{ (trans.name if trans and trans.name else '') | e }}"
+            }
+            {% else %},
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "{{ (trans.name if trans and trans.name else '') | e }}"
+            }
+            {% endif %}
+        ]
+    }
+    </script>
 </body>
 
 </html>
