@@ -662,6 +662,8 @@
         }
     </style>
     <script src="{{ url_for('static', path='js/homepage.js') }}" defer></script>
+    {% if site and site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
+    {% if site and site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
 </head>
 
 <body class="site-page">

@@ -310,6 +310,8 @@
             .footer-grid { grid-template-columns: 1fr; gap: 32px; }
         }
     </style>
+    {% if site and site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
+    {% if site and site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
 </head>
 
 <body class="site-page">

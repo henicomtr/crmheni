@@ -686,6 +686,8 @@
             .page-hero { padding: 48px 20px 40px; }
         }
     </style>
+    {% if site and site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
+    {% if site and site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
 </head>
 
 <body class="site-page">
