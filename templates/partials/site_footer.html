@@ -18,9 +18,9 @@
         <div class="site-footer-brand">
             <a href="{{ home_url }}" class="site-footer-logo-link">
                 {% if site and site.logo_white_url %}
-                <img src="{{ site.logo_white_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img">
+                <img src="{{ site.logo_white_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img" loading="lazy" width="160" height="48">
                 {% elif site and site.logo_url %}
-                <img src="{{ site.logo_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img">
+                <img src="{{ site.logo_url }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img" loading="lazy" width="160" height="48">
                 {% else %}
                 <span class="site-footer-logo-text">{{ (site.site_name or 'Heni')|upper }}</span>
                 {% endif %}

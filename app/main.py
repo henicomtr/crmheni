@@ -196,6 +196,35 @@ class HttpsRedirectMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(HttpsRedirectMiddleware)
 
+
+# Statik dosya uzantılarına göre cache süresi (saniye)
+_CACHE_1_YEAR  = "public, max-age=31536000, immutable"   # görsel, font, css
+_CACHE_1_WEEK  = "public, max-age=604800"                # js dosyaları
+_IMMUTABLE_EXTS = {".webp", ".jpg", ".jpeg", ".png", ".gif", ".svg",
+                   ".woff", ".woff2", ".ttf", ".otf", ".ico", ".css"}
+_WEEK_EXTS      = {".js"}
+
+
+class StaticCacheMiddleware(BaseHTTPMiddleware):
+    """
+    /static/ altındaki dosyalara uzantıya göre Cache-Control header ekler.
+    Nginx reverse proxy arkasında çalışırken bile etkilidir.
+    """
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path.startswith("/static/"):
+            # Uzantıyı al (query string olmadan)
+            ext = os.path.splitext(path.split("?")[0])[1].lower()
+            if ext in _IMMUTABLE_EXTS:
+                response.headers["Cache-Control"] = _CACHE_1_YEAR
+            elif ext in _WEEK_EXTS:
+                response.headers["Cache-Control"] = _CACHE_1_WEEK
+        return response
+
+
+app.add_middleware(StaticCacheMiddleware)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
 app.include_router(showroom_router)

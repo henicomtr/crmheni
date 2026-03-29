@@ -2004,12 +2004,43 @@ async def media_upload(
             hatalar.append(f"{file.filename}: Desteklenmeyen dosya türü")
             continue
 
-        # Benzersiz dosya adı oluştur
-        guvenli_ad = f"media_{uuid.uuid4().hex[:12]}{ext}"
-        tam_yol = os.path.join(hedef_dir, guvenli_ad)
-
-        with open(tam_yol, "wb") as f:
-            f.write(icerik)
+        # JPG/JPEG/PNG → WebP dönüşümü; diğer dosyalar olduğu gibi kaydedilir
+        if ext in (".jpg", ".jpeg", ".png") and hedef_dir == UPLOAD_DIR_IMAGES:
+            from io import BytesIO
+            from PIL import Image as _PilImage
+            try:
+                img = _PilImage.open(BytesIO(icerik))
+                img.load()
+                # Maksimum boyut 1200px (aspect ratio korunur)
+                max_dim = 1200
+                if img.width > max_dim or img.height > max_dim:
+                    resample = _PilImage.Resampling.LANCZOS if hasattr(_PilImage, "Resampling") else _PilImage.LANCZOS
+                    img.thumbnail((max_dim, max_dim), resample=resample)
+                # Alfa kanalını beyaz arka plana yapıştır (WebP JPEG uyumlu)
+                if img.mode in ("RGBA", "LA", "P"):
+                    bg = _PilImage.new("RGB", img.size, (255, 255, 255))
+                    alpha = img.convert("RGBA").split()[-1]
+                    bg.paste(img.convert("RGB"), mask=alpha)
+                    img = bg
+                elif img.mode != "RGB":
+                    img = img.convert("RGB")
+                guvenli_ad = f"media_{uuid.uuid4().hex[:12]}.webp"
+                tam_yol = os.path.join(hedef_dir, guvenli_ad)
+                img.save(tam_yol, "WEBP", quality=75, optimize=True)
+                print(f"[media_upload] WebP olarak kaydedildi: {guvenli_ad}")
+            except Exception as e:
+                # Dönüşüm başarısız olursa orijinal formatı kaydet
+                guvenli_ad = f"media_{uuid.uuid4().hex[:12]}{ext}"
+                tam_yol = os.path.join(hedef_dir, guvenli_ad)
+                with open(tam_yol, "wb") as f:
+                    f.write(icerik)
+                print(f"[media_upload] WebP dönüşümü başarısız, ham kaydedildi: {guvenli_ad} ({e})")
+        else:
+            # Video, belge, SVG, GIF, zaten WebP olan dosyalar → olduğu gibi kaydet
+            guvenli_ad = f"media_{uuid.uuid4().hex[:12]}{ext}"
+            tam_yol = os.path.join(hedef_dir, guvenli_ad)
+            with open(tam_yol, "wb") as f:
+                f.write(icerik)
 
         yuklenenler.append({"name": guvenli_ad, "url": f"{url_prefix}/{guvenli_ad}"})
 

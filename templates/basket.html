@@ -9,9 +9,12 @@
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap"></noscript>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.css" />
-    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js" defer></script>
 
     <style>
         /* ════════════════════════════════════════
@@ -736,7 +739,7 @@
                     <div class="item-body">
 
                         {% if item.product.image %}
-                        <img src="{{ item.product.image }}" class="item-thumb" alt="{{ t.name if t else '' }}">
+                        <img src="{{ item.product.image }}" class="item-thumb" alt="{{ t.name if t else '' }}" loading="lazy" width="80" height="80">
                         {% else %}
                         <div class="item-thumb-placeholder">📦</div>
                         {% endif %}
@@ -937,8 +940,8 @@
         }
     };
     </script>
-    <script src="{{ url_for('static', path='js/basket.js') }}"></script>
-    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js"></script>
+    <script src="{{ url_for('static', path='js/basket.js') }}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js" defer></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const phoneInput = document.querySelector("#phone");

@@ -28,7 +28,10 @@
 
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
 
     <style>
         .detail-page {
@@ -948,7 +951,7 @@
             <!-- GÖRSEL (position:sticky — indirim rozeti position:absolute için yeterli, mobilde relative) -->
             <div class="detail-image-wrap">
                 {% if product.image %}
-                <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}">
+                <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="eager" fetchpriority="high" width="600" height="600">
                 {% else %}
                 <div class="detail-image-placeholder">📦</div>
                 {% endif %}
@@ -1351,7 +1354,7 @@
         }
     };
     </script>
-    <script src="{{ url_for('static', path='js/showroom.js') }}?v=3"></script>
+    <script src="{{ url_for('static', path='js/showroom.js') }}?v=3" defer></script>
     <script>
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
