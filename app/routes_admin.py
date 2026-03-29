@@ -886,7 +886,7 @@ async def update_product(
         return RedirectResponse("/esk/products", status_code=302)
 
     form = await request.form()
-    LANGS = ["en", "tr", "de", "fr"]
+    LANGS = ["en", "tr", "de", "fr", "ar", "ru", "es"]
 
     # Evrensel alanlar
     product.category         = form.get("category", product.category or "")
