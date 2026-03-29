@@ -4,97 +4,69 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>HENİ — Kontrol Merkezi</title>
+    <title>Oturum Aç — HENİ</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --ink:     #0a0a0a;
-            --paper:   #f4f0e8;
-            --gold:    #c8a84b;
-            --gold2:   #e8c97a;
-            --muted:   #6b6560;
-            --err:     #c0392b;
+            --ink:    #08090a;
+            --panel:  #0f1114;
+            --border: rgba(255,255,255,.07);
+            --gold:   #c8a84b;
+            --gold2:  #e8c97a;
+            --muted:  #5a5e66;
+            --text:   #d4d6da;
+            --err:    #e05252;
         }
 
         html, body {
             height: 100%;
             font-family: 'DM Sans', sans-serif;
             background: var(--ink);
-            color: var(--paper);
+            color: var(--text);
             overflow: hidden;
         }
 
-        /* ── Arka plan: hareketli çizgiler ── */
+        /* ── Arka plan ── */
         .bg {
             position: fixed; inset: 0;
-            background: var(--ink);
+            background:
+                radial-gradient(ellipse 100% 50% at 100% 50%, rgba(200,168,75,.06) 0%, transparent 55%),
+                radial-gradient(ellipse 60% 80% at 0% 100%, rgba(200,168,75,.04) 0%, transparent 50%),
+                var(--ink);
             z-index: 0;
         }
 
-        .bg::before {
-            content: '';
-            position: absolute; inset: 0;
+        .bg-grid {
+            position: fixed; inset: 0;
             background-image:
-                repeating-linear-gradient(
-                    90deg,
-                    transparent,
-                    transparent 59px,
-                    rgba(200,168,75,.07) 59px,
-                    rgba(200,168,75,.07) 60px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 59px,
-                    rgba(200,168,75,.07) 59px,
-                    rgba(200,168,75,.07) 60px
-                );
-            animation: gridDrift 20s linear infinite;
+                repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,.022) 79px, rgba(255,255,255,.022) 80px),
+                repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,.022) 79px, rgba(255,255,255,.022) 80px);
+            z-index: 0;
         }
 
-        @keyframes gridDrift {
-            from { background-position: 0 0; }
-            to   { background-position: 60px 60px; }
-        }
-
-        .bg::after {
-            content: '';
-            position: absolute;
-            width: 600px; height: 600px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(200,168,75,.15) 0%, transparent 70%);
-            top: -150px; right: -100px;
-            animation: pulse 6s ease-in-out infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { transform: scale(1);   opacity: .6; }
-            to   { transform: scale(1.2); opacity: 1;  }
-        }
-
-        /* ── Layout ── */
+        /* ── İki sütun layout ── */
         .wrapper {
             position: relative; z-index: 1;
             display: grid;
-            grid-template-columns: 1fr 480px;
+            grid-template-columns: 1fr 440px;
             height: 100vh;
         }
 
-        /* ── Sol panel: motivasyon ── */
+        /* ── Sol: marka paneli ── */
         .left {
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 56px 64px;
-            border-right: 1px solid rgba(200,168,75,.2);
-            animation: fadeLeft .9s cubic-bezier(.22,1,.36,1) both;
+            padding: 56px 72px;
+            border-right: 1px solid var(--border);
+            animation: slideLeft .8s cubic-bezier(.22,1,.36,1) both;
         }
 
-        @keyframes fadeLeft {
-            from { opacity: 0; transform: translateX(-30px); }
+        @keyframes slideLeft {
+            from { opacity: 0; transform: translateX(-28px); }
             to   { opacity: 1; transform: translateX(0); }
         }
 
@@ -105,135 +77,170 @@
         }
 
         .brand-mark {
-            width: 44px; height: 44px;
-            border: 2px solid var(--gold);
+            width: 42px; height: 42px;
+            border: 1.5px solid var(--gold);
             border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 22px;
+            font-size: 20px;
             color: var(--gold);
             letter-spacing: 1px;
         }
 
         .brand-name {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            letter-spacing: 4px;
-            color: var(--paper);
+            font-size: 26px;
+            letter-spacing: 5px;
+            color: #fff;
         }
 
-        .brand-name span {
-            color: var(--gold);
-        }
+        .brand-name span { color: var(--gold); }
 
-        /* Büyük slogan */
-        .hero-text {
+        .hero {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 40px 0;
+            padding: 48px 0;
         }
 
-        .tagline {
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .eyebrow::before {
+            content: '';
+            display: block;
+            width: 28px; height: 1px;
+            background: var(--gold);
+        }
+
+        .headline {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: clamp(52px, 6vw, 88px);
-            line-height: .95;
-            letter-spacing: 2px;
-            color: var(--paper);
-            margin-bottom: 28px;
+            font-size: clamp(48px, 5.5vw, 82px);
+            line-height: .92;
+            letter-spacing: 1px;
+            color: #fff;
+            margin-bottom: 32px;
         }
 
-        .tagline em {
+        .headline em {
             font-style: normal;
             color: var(--gold);
             display: block;
         }
 
-        .sub {
-            font-size: 15px;
+        .desc {
+            font-size: 14px;
             font-weight: 300;
             color: var(--muted);
-            line-height: 1.7;
-            max-width: 380px;
-            border-left: 2px solid var(--gold);
-            padding-left: 18px;
-            font-style: italic;
+            line-height: 1.8;
+            max-width: 360px;
         }
 
-        /* Stats */
-        .stats {
+        /* Metrik kartları */
+        .metrics {
             display: flex;
-            gap: 40px;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
-        .stat {
-            animation: countUp .8s ease both;
+        .metric {
+            flex: 1;
+            padding: 20px 24px;
+            border-right: 1px solid var(--border);
+            animation: fadeUp .6s ease both;
         }
 
-        .stat:nth-child(2) { animation-delay: .1s; }
-        .stat:nth-child(3) { animation-delay: .2s; }
+        .metric:last-child { border-right: none; }
+        .metric:nth-child(2) { animation-delay: .1s; }
+        .metric:nth-child(3) { animation-delay: .2s; }
 
-        @keyframes countUp {
-            from { opacity: 0; transform: translateY(12px); }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        .stat-num {
+        .metric-val {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 36px;
+            font-size: 32px;
             color: var(--gold);
-            letter-spacing: 1px;
             line-height: 1;
+            letter-spacing: 1px;
         }
 
-        .stat-label {
-            font-size: 11px;
+        .metric-label {
+            font-size: 10px;
             letter-spacing: 2px;
             text-transform: uppercase;
             color: var(--muted);
             margin-top: 4px;
         }
 
-        /* ── Sağ panel: form ── */
+        /* ── Sağ: form paneli ── */
         .right {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 48px 56px;
-            animation: fadeRight .9s .15s cubic-bezier(.22,1,.36,1) both;
+            padding: 48px 52px;
+            animation: slideRight .8s .1s cubic-bezier(.22,1,.36,1) both;
         }
 
-        @keyframes fadeRight {
-            from { opacity: 0; transform: translateX(30px); }
+        @keyframes slideRight {
+            from { opacity: 0; transform: translateX(28px); }
             to   { opacity: 1; transform: translateX(0); }
         }
 
-        .form-card {
-            width: 100%;
-            max-width: 360px;
-        }
+        .form-card { width: 100%; max-width: 340px; }
+
+        .form-header { margin-bottom: 40px; }
 
         .form-title {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 38px;
+            font-size: 34px;
             letter-spacing: 3px;
-            color: var(--paper);
+            color: #fff;
             margin-bottom: 6px;
         }
 
-        .form-subtitle {
+        .form-sub {
             font-size: 13px;
-            color: var(--muted);
-            margin-bottom: 44px;
             font-weight: 300;
+            color: var(--muted);
         }
 
-        .field {
-            margin-bottom: 22px;
+        /* Uyarı kutusu */
+        .alert {
+            border-radius: 8px;
+            padding: 13px 16px;
+            font-size: 13px;
+            margin-bottom: 28px;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
 
-        label {
+        .alert-error {
+            background: rgba(224,82,82,.08);
+            border: 1px solid rgba(224,82,82,.25);
+            color: #f08080;
+        }
+
+        .alert-icon { flex-shrink: 0; margin-top: 1px; }
+
+        .field { margin-bottom: 20px; }
+
+        .field-label {
             display: block;
             font-size: 10px;
             letter-spacing: 2.5px;
@@ -242,212 +249,240 @@
             margin-bottom: 8px;
         }
 
-        input {
+        .field-input {
             width: 100%;
-            background: rgba(255,255,255,.04);
-            border: 1px solid rgba(200,168,75,.25);
-            border-radius: 6px;
-            padding: 14px 18px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 8px;
+            padding: 13px 16px;
             font-family: 'DM Sans', sans-serif;
-            font-size: 15px;
-            color: var(--paper);
-            transition: border-color .25s, background .25s, box-shadow .25s;
+            font-size: 14px;
+            color: var(--text);
+            transition: border-color .2s, background .2s, box-shadow .2s;
             outline: none;
         }
 
-        input::placeholder { color: rgba(244,240,232,.2); }
+        .field-input::placeholder { color: rgba(255,255,255,.15); }
 
-        input:focus {
-            border-color: var(--gold);
-            background: rgba(200,168,75,.06);
-            box-shadow: 0 0 0 3px rgba(200,168,75,.12);
+        .field-input:focus {
+            border-color: rgba(200,168,75,.5);
+            background: rgba(200,168,75,.04);
+            box-shadow: 0 0 0 3px rgba(200,168,75,.1);
         }
 
-        /* Hata mesajı */
-        .error-box {
-            background: rgba(192,57,43,.15);
-            border: 1px solid rgba(192,57,43,.4);
-            border-radius: 6px;
-            padding: 12px 16px;
-            font-size: 13px;
-            color: #e74c3c;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .field-input:disabled {
+            opacity: .4;
+            cursor: not-allowed;
         }
 
-        .error-box::before {
-            content: '⚠';
-            font-size: 15px;
-        }
-
-        /* Giriş butonu */
-        .btn {
+        .btn-submit {
             width: 100%;
-            margin-top: 8px;
-            padding: 16px;
+            margin-top: 10px;
+            padding: 15px;
             background: var(--gold);
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 18px;
+            font-size: 17px;
             letter-spacing: 3px;
-            color: var(--ink);
+            color: #0a0a0a;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            transition: transform .15s, box-shadow .15s;
+            transition: opacity .2s, transform .15s, box-shadow .2s;
         }
 
-        .btn::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.25) 50%, transparent 100%);
-            transform: translateX(-100%);
-            transition: transform .5s ease;
+        .btn-submit:hover {
+            opacity: .92;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px rgba(200,168,75,.3);
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(200,168,75,.35);
+        .btn-submit:active { transform: translateY(0); }
+
+        .btn-submit:disabled {
+            opacity: .3;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .btn:hover::after {
-            transform: translateX(100%);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        /* Alt not */
-        .footer-note {
-            margin-top: 40px;
+        .form-footer {
+            margin-top: 36px;
             padding-top: 24px;
-            border-top: 1px solid rgba(200,168,75,.12);
+            border-top: 1px solid var(--border);
+        }
+
+        .form-footer p {
             font-size: 11px;
             color: var(--muted);
+            letter-spacing: .4px;
+            line-height: 1.7;
+        }
+
+        .security-badges {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--muted);
             letter-spacing: .5px;
-            line-height: 1.6;
         }
 
-        /* Sağ alttaki dekoratif yuvarlak */
-        .deco-circle {
+        .badge svg {
+            width: 12px; height: 12px;
+            stroke: var(--gold);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            flex-shrink: 0;
+        }
+
+        .deco {
             position: fixed;
-            bottom: -180px; left: -100px;
-            width: 400px; height: 400px;
+            bottom: -220px; left: -120px;
+            width: 480px; height: 480px;
             border-radius: 50%;
-            border: 1px solid rgba(200,168,75,.1);
+            border: 1px solid rgba(200,168,75,.05);
             pointer-events: none;
-            animation: spin 30s linear infinite;
         }
 
-        .deco-circle::before {
+        .deco::before {
             content: '';
             position: absolute;
-            inset: 30px;
+            inset: 50px;
             border-radius: 50%;
-            border: 1px dashed rgba(200,168,75,.08);
+            border: 1px dashed rgba(200,168,75,.04);
         }
 
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-        }
-
-        /* Mobil */
         @media (max-width: 860px) {
             .wrapper { grid-template-columns: 1fr; }
             .left { display: none; }
-            .right { padding: 40px 28px; }
+            .right { padding: 40px 24px; }
         }
     </style>
 </head>
 <body>
 
 <div class="bg"></div>
-<div class="deco-circle"></div>
+<div class="bg-grid"></div>
+<div class="deco"></div>
 
 <div class="wrapper">
 
-    <!-- Sol: Motivasyon paneli -->
+    <!-- Sol: Marka ve bilgi paneli -->
     <div class="left">
         <div class="brand">
             <div class="brand-mark">H</div>
             <div class="brand-name">HENİ <span>CRM</span></div>
         </div>
 
-        <div class="hero-text">
-            <h1 class="tagline">
-                Her gün<br>
-                <em>yeni bir</em>
-                fırsat.
+        <div class="hero">
+            <div class="eyebrow">Yönetim Merkezi</div>
+            <h1 class="headline">
+                Kontrol<br>
+                <em>sizin</em>
+                elinizde.
             </h1>
-            <p class="sub">
-                Pazarlar uyurken siz çalışıyorsunuz. Bugün aldığınız her karar,
-                yarın gelen her siparişin temelidir.
+            <p class="desc">
+                Ürün, müşteri, finans ve içerik yönetimini tek bir platform üzerinden
+                güvenle yürütün.
             </p>
         </div>
 
-        <div class="stats">
-            <div class="stat">
-                <div class="stat-num" id="s1">0</div>
-                <div class="stat-label">Ülkeye ihracat</div>
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-val" id="m1">0</div>
+                <div class="metric-label">Ülkeye ihracat</div>
             </div>
-            <div class="stat">
-                <div class="stat-num" id="s2">0</div>
-                <div class="stat-label">Aktif ürün</div>
+            <div class="metric">
+                <div class="metric-val" id="m2">0</div>
+                <div class="metric-label">Aktif ürün</div>
             </div>
-            <div class="stat">
-                <div class="stat-num" id="s3">0</div>
-                <div class="stat-label">Müşteri</div>
+            <div class="metric">
+                <div class="metric-val" id="m3">0</div>
+                <div class="metric-label">Müşteri</div>
             </div>
         </div>
     </div>
 
-    <!-- Sağ: Form -->
+    <!-- Sağ: Giriş formu -->
     <div class="right">
         <div class="form-card">
-            <div class="form-title">GİRİŞ YAP</div>
-            <div class="form-subtitle">Kontrol merkezine hoş geldiniz.</div>
+
+            <div class="form-header">
+                <div class="form-title">OTURUM AÇ</div>
+                <div class="form-sub">Yetkili personele özel alan</div>
+            </div>
 
             {% if error %}
-            <div class="error-box">{{ error }}</div>
+            <div class="alert alert-error">
+                <svg class="alert-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
             {% endif %}
 
-            <form method="post" action="/admin/login">
+            <form method="post" action="/esk/login" id="login-form">
                 <div class="field">
-                    <label for="email">E-Posta</label>
+                    <label class="field-label" for="email">E-Posta Adresi</label>
                     <input
+                        class="field-input"
                         type="email"
                         id="email"
                         name="email"
-                        placeholder="admin@heni.com"
+                        placeholder="ornek@heni.com"
                         autocomplete="email"
+                        {% if banned %}disabled{% endif %}
                         required
                     >
                 </div>
 
                 <div class="field">
-                    <label for="password">Şifre</label>
+                    <label class="field-label" for="password">Şifre</label>
                     <input
+                        class="field-input"
                         type="password"
                         id="password"
                         name="password"
-                        placeholder="••••••••"
+                        placeholder="••••••••••"
                         autocomplete="current-password"
+                        {% if banned %}disabled{% endif %}
                         required
                     >
                 </div>
 
-                <button type="submit" class="btn">GİRİŞ YAP →</button>
+                <button
+                    type="submit"
+                    class="btn-submit"
+                    {% if banned %}disabled{% endif %}
+                >GİRİŞ YAP</button>
             </form>
 
-            <div class="footer-note">
-                Bu sayfa yalnızca yetkili personel içindir.<br>
-                Yetkisiz erişim girişimleri kayıt altına alınır.
+            <div class="form-footer">
+                <p>Bu alana yetkisiz erişim girişimleri kayıt altına alınır ve yasal işlem başlatılır.</p>
+                <div class="security-badges">
+                    <div class="badge">
+                        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        HTTPS Şifreli
+                    </div>
+                    <div class="badge">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        JWT Korumalı
+                    </div>
+                    <div class="badge">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        IP Takipli
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -455,23 +490,25 @@
 </div>
 
 <script>
-    // Sayaç animasyonu — gerçek verilerle istersen backend'den besleyebilirsin
-    function animateCount(el, target, duration = 1600, suffix = '') {
-        let start = 0;
-        const step = target / (duration / 16);
-        const timer = setInterval(() => {
+    // Sayaç animasyonu
+    function animateCount(el, target, duration, suffix) {
+        suffix = suffix || '';
+        duration = duration || 1400;
+        var start = 0;
+        var step = target / (duration / 16);
+        var timer = setInterval(function() {
             start += step;
             if (start >= target) { start = target; clearInterval(timer); }
             el.textContent = Math.floor(start) + suffix;
         }, 16);
     }
 
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            animateCount(document.getElementById('s1'), 34);
-            animateCount(document.getElementById('s2'), 128);
-            animateCount(document.getElementById('s3'), 470);
-        }, 400);
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            animateCount(document.getElementById('m1'), 34);
+            animateCount(document.getElementById('m2'), 128);
+            animateCount(document.getElementById('m3'), 470);
+        }, 300);
     });
 </script>
 

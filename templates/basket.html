@@ -74,74 +74,6 @@
         input, textarea, button, select { font-family: var(--font); }
 
         /* ════════════════════════════════════════
-           BREADCRUMB
-        ════════════════════════════════════════ */
-        .bc-bar {
-            background: var(--white);
-            border-bottom: 1px solid var(--gray-200);
-            padding: 0 20px;
-            height: 42px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--gray-400);
-        }
-        .bc-bar a {
-            color: var(--gray-500);
-            transition: color .15s;
-        }
-        .bc-bar a:hover { color: var(--metallic); }
-        .bc-sep { font-size: 9px; }
-        .bc-cur { color: var(--navy); font-weight: 600; }
-
-        /* ════════════════════════════════════════
-           PAGE HEADER
-        ════════════════════════════════════════ */
-        .page-hd {
-            background: var(--white);
-            border-bottom: 1px solid var(--gray-200);
-            padding: 24px 20px 20px;
-        }
-        .page-hd-inner {
-            max-width: 1160px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .page-hd h1 {
-            font-size: clamp(20px, 4vw, 26px);
-            font-weight: 800;
-            color: var(--navy);
-            letter-spacing: -0.025em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .count-badge {
-            width: 26px; height: 26px;
-            background: var(--metallic);
-            color: var(--white);
-            font-size: 12px;
-            font-weight: 700;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .page-hd-meta {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--gray-500);
-            white-space: nowrap;
-        }
-
-        /* ════════════════════════════════════════
            LAYOUT
         ════════════════════════════════════════ */
         .basket-layout {
@@ -598,8 +530,7 @@
         }
 
         @media (max-width: 540px) {
-            .bc-bar, .page-hd { padding-left: 14px; padding-right: 14px; }
-            .basket-layout { padding: 12px 12px 50px; gap: 12px; }
+.basket-layout { padding: 12px 12px 50px; gap: 12px; }
 
             .item-body {
                 padding: 12px 14px 10px;
@@ -691,33 +622,94 @@
             .btn-del { height: 30px; padding: 4px 9px; font-size: 11px; }
         }
     </style>
+
+    <style>
+        /* ══════════════════════════════════════
+           SAYFA HERO — page_generic ile aynı stil
+        ══════════════════════════════════════ */
+        .page-hero {
+            background: var(--navy);
+            padding: 72px 48px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(30,58,138,0.4) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 1160px;
+            margin: 0 auto;
+        }
+        .page-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 20px;
+        }
+        .page-breadcrumb a {
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .page-breadcrumb a:hover { color: rgba(255,255,255,0.9); }
+        .page-breadcrumb svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .page-hero h1 {
+            font-size: clamp(28px, 4vw, 46px);
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .hero-count-badge {
+            font-size: 16px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border-radius: 999px;
+            padding: 2px 14px;
+            letter-spacing: 0;
+        }
+        @media (max-width: 640px) {
+            .page-hero { padding: 48px 20px 40px; }
+        }
+    </style>
 </head>
 
 <body class="site-page">
 
     {% include 'partials/site_header.html' %}
 
-    <!-- Breadcrumb -->
-    <div class="bc-bar">
-        <a href="{{ home_url | default('/') }}">{{ ui.home | default('Home') }}</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-cur">{{ ui.basket }}</span>
-    </div>
-
-    <!-- Page Header -->
-    <div class="page-hd">
-        <div class="page-hd-inner">
+    <!-- ═══ HERO: Breadcrumb + Sayfa Başlığı ═══ -->
+    <section class="page-hero">
+        <div class="page-hero-inner">
+            <nav class="page-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ home_url | default('/') }}">{{ ui.home | default('Home') }}</a>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                <span>{{ ui.basket }}</span>
+            </nav>
             <h1>
                 {{ ui.basket }}
                 {% if basket_items %}
-                <span class="count-badge">{{ basket_items|length }}</span>
+                <span class="hero-count-badge">{{ basket_items|length }}</span>
                 {% endif %}
             </h1>
-            {% if basket_items %}
-            <span class="page-hd-meta">{{ basket_items|length }} {{ ui.product | default('items') }} &middot; {{ price(total_price) }}</span>
-            {% endif %}
         </div>
-    </div>
+    </section>
 
     <!-- Layout -->
     <div class="basket-layout">

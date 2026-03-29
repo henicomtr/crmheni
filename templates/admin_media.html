@@ -1,0 +1,1058 @@
+{% extends "admin_layout.html" %}
+
+{% block topbar_title %}Medya Kütüphanesi{% endblock %}
+
+{% block content %}
+<style>
+    /* ================================================
+       MEDYA KÜTÜPHANESİ — STYLES
+    ================================================ */
+
+    .media-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .media-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #0a0a0a;
+    }
+
+    /* ── Filtre Sekmeleri ── */
+    .media-tabs {
+        display: flex;
+        gap: 4px;
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 12px;
+        padding: 4px;
+        width: fit-content;
+    }
+
+    .media-tab {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        color: #5a5a5a;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .media-tab:hover {
+        background: #f4f5f7;
+        color: #0a0a0a;
+    }
+
+    .media-tab.active {
+        background: #0a0a0a;
+        color: white;
+    }
+
+    .tab-badge {
+        background: rgba(255,255,255,0.2);
+        color: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 1px 7px;
+        border-radius: 20px;
+    }
+
+    .media-tab:not(.active) .tab-badge {
+        background: #e5e5e3;
+        color: #5a5a5a;
+    }
+
+    /* ── Upload Alanı ── */
+    .upload-zone {
+        background: white;
+        border: 2px dashed #d0d0cc;
+        border-radius: 14px;
+        padding: 32px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 28px;
+        position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+        border-color: #0a0a0a;
+        background: #fafafa;
+    }
+
+    .upload-zone-icon {
+        width: 48px;
+        height: 48px;
+        background: #f4f5f7;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 12px;
+    }
+
+    .upload-zone-icon svg {
+        width: 24px;
+        height: 24px;
+        color: #5a5a5a;
+    }
+
+    .upload-zone-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1d1d1f;
+        margin-bottom: 4px;
+    }
+
+    .upload-zone-sub {
+        font-size: 12px;
+        color: #9a9a9a;
+    }
+
+    .upload-zone-sub strong {
+        color: #5a5a5a;
+    }
+
+    #upload-input {
+        display: none;
+    }
+
+    /* Yükleme progress */
+    .upload-progress {
+        display: none;
+        margin-top: 12px;
+    }
+
+    .upload-progress-bar {
+        height: 4px;
+        background: #e5e5e3;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .upload-progress-fill {
+        height: 100%;
+        background: #0a0a0a;
+        border-radius: 4px;
+        width: 0%;
+        transition: width 0.3s;
+    }
+
+    .upload-status {
+        font-size: 12px;
+        color: #5a5a5a;
+        margin-top: 6px;
+        text-align: center;
+    }
+
+    /* ── Medya Grid ── */
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .media-item {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 12px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.15s;
+        position: relative;
+    }
+
+    .media-item:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+
+    /* Seçili durum */
+    .media-item.selected {
+        border-color: #0a0a0a;
+        box-shadow: 0 0 0 2px #0a0a0a;
+    }
+
+    .media-item.selected .media-item-check {
+        opacity: 1;
+    }
+
+    .media-item-check {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 22px;
+        height: 22px;
+        background: #0a0a0a;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 2;
+    }
+
+    .media-item-check svg {
+        width: 12px;
+        height: 12px;
+        color: white;
+    }
+
+    /* Silme butonu (hover'da görünür) */
+    .media-item-delete {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        background: rgba(200, 30, 20, 0.9);
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s;
+        z-index: 2;
+    }
+
+    .media-item:hover .media-item-delete {
+        opacity: 1;
+    }
+
+    .media-item-delete svg {
+        width: 13px;
+        height: 13px;
+        color: white;
+    }
+
+    /* Görsel önizleme */
+    .media-thumb {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        object-fit: cover;
+        display: block;
+        background: #f4f5f7;
+    }
+
+    /* Görsel olmayan dosyalar için ikon */
+    .media-thumb-placeholder {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: #f4f5f7;
+    }
+
+    .media-thumb-placeholder svg {
+        width: 36px;
+        height: 36px;
+        color: #9a9a9a;
+    }
+
+    .media-thumb-ext {
+        font-size: 11px;
+        font-weight: 700;
+        font-family: 'DM Mono', monospace;
+        color: #5a5a5a;
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 4px;
+        padding: 2px 6px;
+        letter-spacing: 0.04em;
+    }
+
+    /* Video için farklı ikon */
+    .media-thumb-video {
+        background: #0a0a0a;
+    }
+
+    .media-thumb-video svg {
+        color: rgba(255,255,255,0.5);
+    }
+
+    .media-thumb-video .media-thumb-ext {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
+        color: rgba(255,255,255,0.7);
+    }
+
+    /* Dosya bilgisi */
+    .media-info {
+        padding: 10px 12px;
+        border-top: 1px solid #e5e5e3;
+    }
+
+    .media-info-name {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #1d1d1f;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+    }
+
+    .media-info-meta {
+        font-size: 10.5px;
+        color: #9a9a9a;
+        font-family: 'DM Mono', monospace;
+    }
+
+    /* ── Belge Listesi (görseller dışı) ── */
+    .media-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .media-list-item {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.15s;
+    }
+
+    .media-list-item:hover {
+        box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+    }
+
+    .media-list-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: #f4f5f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .media-list-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #5a5a5a;
+    }
+
+    .media-list-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .media-list-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1d1d1f;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .media-list-meta {
+        font-size: 11px;
+        color: #9a9a9a;
+        font-family: 'DM Mono', monospace;
+        margin-top: 2px;
+    }
+
+    .media-list-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .btn-view {
+        padding: 7px 14px;
+        border: 1px solid #e5e5e3;
+        border-radius: 8px;
+        background: white;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1d1d1f;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .btn-view:hover {
+        background: #f4f5f7;
+    }
+
+    .btn-delete {
+        padding: 7px 14px;
+        border: 1px solid #ffd0cc;
+        border-radius: 8px;
+        background: #fff5f5;
+        font-size: 12px;
+        font-weight: 600;
+        color: #c0392b;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+
+    .btn-delete:hover {
+        background: #ffe0dc;
+    }
+
+    /* ── Boş durum ── */
+    .media-empty {
+        text-align: center;
+        padding: 80px 20px;
+        color: #9a9a9a;
+    }
+
+    .media-empty-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.4;
+    }
+
+    .media-empty-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: #5a5a5a;
+        margin-bottom: 4px;
+    }
+
+    .media-empty-sub {
+        font-size: 12px;
+    }
+
+    /* ── Önizleme Modal ── */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open {
+        display: flex;
+    }
+
+    .modal-box {
+        background: white;
+        border-radius: 18px;
+        overflow: hidden;
+        max-width: 800px;
+        width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e5e3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .modal-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1d1d1f;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modal-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f4f5f7;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+
+    .modal-close:hover {
+        background: #e5e5e3;
+    }
+
+    .modal-close svg {
+        width: 14px;
+        height: 14px;
+        color: #5a5a5a;
+    }
+
+    .modal-preview {
+        flex: 1;
+        overflow: auto;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f5f7;
+        min-height: 200px;
+    }
+
+    .modal-preview img {
+        max-width: 100%;
+        max-height: 60vh;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+
+    .modal-preview video {
+        max-width: 100%;
+        max-height: 60vh;
+        border-radius: 8px;
+    }
+
+    .modal-meta {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e5e3;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .modal-meta-info {
+        font-size: 12px;
+        color: #9a9a9a;
+        font-family: 'DM Mono', monospace;
+    }
+
+    .modal-url {
+        font-size: 11.5px;
+        background: #f4f5f7;
+        border: 1px solid #e5e5e3;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-family: 'DM Mono', monospace;
+        color: #1d1d1f;
+        flex: 1;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .modal-url:hover {
+        background: #ebebea;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .modal-btn-copy {
+        padding: 8px 16px;
+        border: 1px solid #e5e5e3;
+        border-radius: 8px;
+        background: white;
+        font-size: 12px;
+        font-weight: 600;
+        color: #1d1d1f;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .modal-btn-copy:hover {
+        background: #f4f5f7;
+    }
+
+    .modal-btn-delete {
+        padding: 8px 16px;
+        border: 1px solid #ffd0cc;
+        border-radius: 8px;
+        background: #fff5f5;
+        font-size: 12px;
+        font-weight: 600;
+        color: #c0392b;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .modal-btn-delete:hover {
+        background: #ffe0dc;
+    }
+
+    /* Toast bildirimi */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #0a0a0a;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        z-index: 2000;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.25s;
+        pointer-events: none;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .toast.error {
+        background: #c0392b;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .media-grid {
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        }
+    }
+</style>
+
+<!-- ── Başlık ── -->
+<div class="media-header">
+    <h1 class="media-title">Medya Kütüphanesi</h1>
+</div>
+
+<!-- ── Upload Alanı ── -->
+<div class="upload-zone" id="upload-zone">
+    <input type="file" id="upload-input" multiple
+           accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv">
+    <div class="upload-zone-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9H16.74A8 8 0 1 0 3 16.3"/>
+        </svg>
+    </div>
+    <div class="upload-zone-text">Dosya yüklemek için tıklayın veya sürükleyin</div>
+    <div class="upload-zone-sub">
+        <strong>Görseller:</strong> JPG, PNG, GIF, WebP &nbsp;|&nbsp;
+        <strong>Videolar:</strong> MP4, WebM, MOV &nbsp;|&nbsp;
+        <strong>Belgeler:</strong> PDF, Word, Excel &nbsp;—&nbsp; Maks. 50 MB
+    </div>
+    <div class="upload-progress" id="upload-progress">
+        <div class="upload-progress-bar">
+            <div class="upload-progress-fill" id="upload-progress-fill"></div>
+        </div>
+        <div class="upload-status" id="upload-status">Yükleniyor…</div>
+    </div>
+</div>
+
+<!-- ── Filtre Sekmeleri ── -->
+<div class="media-tabs" style="margin-bottom:20px;">
+    <a href="/esk/media?tip=all"
+       class="media-tab {% if aktif_tip == 'all' %}active{% endif %}">
+        Tümü
+        <span class="tab-badge">{{ sayimlar.all }}</span>
+    </a>
+    <a href="/esk/media?tip=image"
+       class="media-tab {% if aktif_tip == 'image' %}active{% endif %}">
+        Görseller
+        <span class="tab-badge">{{ sayimlar.image }}</span>
+    </a>
+    <a href="/esk/media?tip=video"
+       class="media-tab {% if aktif_tip == 'video' %}active{% endif %}">
+        Videolar
+        <span class="tab-badge">{{ sayimlar.video }}</span>
+    </a>
+    <a href="/esk/media?tip=doc"
+       class="media-tab {% if aktif_tip == 'doc' %}active{% endif %}">
+        Belgeler
+        <span class="tab-badge">{{ sayimlar.doc }}</span>
+    </a>
+</div>
+
+<!-- ── Medya Listesi ── -->
+{% if dosyalar %}
+
+    {% if aktif_tip in ('all', 'image') and dosyalar | selectattr('media_type', 'equalto', 'image') | list %}
+    <!-- Görseller — Grid görünümü -->
+    {% if aktif_tip == 'all' %}
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#9a9a9a;margin-bottom:10px;">Görseller</div>
+    {% endif %}
+    <div class="media-grid" style="margin-bottom:28px;">
+        {% for d in dosyalar %}
+        {% if d.media_type == 'image' %}
+        <div class="media-item" data-filename="{{ d.name }}" onclick="openModal('{{ d.name }}', '{{ d.url }}', '{{ d.media_type }}', '{{ d.size_str }}', '{{ d.modified }}')">
+            <div class="media-item-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            </div>
+            <button class="media-item-delete" onclick="event.stopPropagation(); deleteFile('{{ d.name }}', this.closest('.media-item'))"
+                    title="Sil">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <img class="media-thumb" src="{{ d.url }}" alt="{{ d.name }}" loading="lazy">
+            <div class="media-info">
+                <div class="media-info-name" title="{{ d.name }}">{{ d.name }}</div>
+                <div class="media-info-meta">{{ d.size_str }} · {{ d.ext }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if aktif_tip in ('all', 'video') and dosyalar | selectattr('media_type', 'equalto', 'video') | list %}
+    <!-- Videolar — Grid görünümü -->
+    {% if aktif_tip == 'all' %}
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#9a9a9a;margin-bottom:10px;">Videolar</div>
+    {% endif %}
+    <div class="media-grid" style="margin-bottom:28px;">
+        {% for d in dosyalar %}
+        {% if d.media_type == 'video' %}
+        <div class="media-item" data-filename="{{ d.name }}" onclick="openModal('{{ d.name }}', '{{ d.url }}', '{{ d.media_type }}', '{{ d.size_str }}', '{{ d.modified }}')">
+            <button class="media-item-delete" onclick="event.stopPropagation(); deleteFile('{{ d.name }}', this.closest('.media-item'))"
+                    title="Sil">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="media-thumb-placeholder media-thumb-video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span class="media-thumb-ext">{{ d.ext }}</span>
+            </div>
+            <div class="media-info">
+                <div class="media-info-name" title="{{ d.name }}">{{ d.name }}</div>
+                <div class="media-info-meta">{{ d.size_str }}</div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if aktif_tip in ('all', 'doc') and dosyalar | selectattr('media_type', 'equalto', 'doc') | list %}
+    <!-- Belgeler — Liste görünümü -->
+    {% if aktif_tip == 'all' %}
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:#9a9a9a;margin-bottom:10px;">Belgeler</div>
+    {% endif %}
+    <div class="media-list">
+        {% for d in dosyalar %}
+        {% if d.media_type == 'doc' %}
+        <div class="media-list-item">
+            <div class="media-list-icon">
+                {% if d.ext == 'PDF' %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6C5.46 2 4.96 2.21 4.59 2.59C4.21 2.96 4 3.46 4 4V20C4 20.55 4.45 21 5 21H19C19.55 21 20 20.55 20 20V8L14 2Z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <path d="M9 15v-2h6v2"/>
+                    <line x1="12" y1="13" x2="12" y2="18"/>
+                </svg>
+                {% elif d.ext in ('XLS', 'XLSX') %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <line x1="3" y1="9" x2="21" y2="9"/>
+                    <line x1="3" y1="15" x2="21" y2="15"/>
+                    <line x1="9" y1="9" x2="9" y2="21"/>
+                    <line x1="15" y1="9" x2="15" y2="21"/>
+                </svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M14 2H6C5.46 2 4.96 2.21 4.59 2.59C4.21 2.96 4 3.46 4 4V20C4 20.55 4.45 21 5 21H19C19.55 21 20 20.55 20 20V8L14 2Z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/>
+                    <line x1="9" y1="17" x2="13" y2="17"/>
+                </svg>
+                {% endif %}
+            </div>
+            <div class="media-list-info">
+                <div class="media-list-name">{{ d.name }}</div>
+                <div class="media-list-meta">{{ d.ext }} · {{ d.size_str }} · {{ d.modified }}</div>
+            </div>
+            <div class="media-list-actions">
+                <a href="{{ d.url }}" target="_blank" class="btn-view">Görüntüle</a>
+                <button class="btn-delete" onclick="deleteFile('{{ d.name }}', this.closest('.media-list-item'))">Sil</button>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{% else %}
+<!-- Boş durum -->
+<div class="media-empty">
+    <div class="media-empty-icon">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+        </svg>
+    </div>
+    <div class="media-empty-text">Henüz dosya yok</div>
+    <div class="media-empty-sub">Yukarıdaki alandan dosya yükleyebilirsiniz.</div>
+</div>
+{% endif %}
+
+<!-- ── Önizleme Modal ── -->
+<div class="modal-overlay" id="preview-modal" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="modal-title">—</span>
+            <button class="modal-close" onclick="closeModal()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-preview" id="modal-preview">
+            <!-- Önizleme içeriği buraya eklenir -->
+        </div>
+        <div class="modal-meta">
+            <input class="modal-url" type="text" id="modal-url" readonly
+                   onclick="copyUrl()" title="URL'yi kopyalamak için tıklayın">
+            <div class="modal-actions">
+                <button class="modal-btn-copy" onclick="copyUrl()">URL Kopyala</button>
+                <button class="modal-btn-delete" id="modal-delete-btn" onclick="deleteModalFile()">Sil</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast bildirimi -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── Aktif modal dosya bilgisi ──
+    let _modalFileName = '';
+
+    // Önizleme modalını aç
+    function openModal(name, url, type, size, modified) {
+        _modalFileName = name;
+        document.getElementById('modal-title').textContent = name;
+        document.getElementById('modal-url').value = url;
+
+        const preview = document.getElementById('modal-preview');
+        preview.innerHTML = '';
+
+        if (type === 'image') {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = name;
+            preview.appendChild(img);
+        } else if (type === 'video') {
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.style.maxWidth = '100%';
+            preview.appendChild(video);
+        } else {
+            // Belge için iframe veya link
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.style.cssText = 'padding:24px 32px;background:white;border-radius:12px;text-decoration:none;font-weight:600;color:#1d1d1f;font-size:15px;border:1px solid #e5e5e3;';
+            link.textContent = '↗ Belgeyi Yeni Sekmede Aç';
+            preview.appendChild(link);
+        }
+
+        document.getElementById('preview-modal').classList.add('open');
+    }
+
+    // Modalı kapat
+    function closeModal(event) {
+        if (!event || event.target === document.getElementById('preview-modal')) {
+            document.getElementById('preview-modal').classList.remove('open');
+            // Video varsa durdur
+            const video = document.querySelector('#modal-preview video');
+            if (video) video.pause();
+        }
+    }
+
+    // URL kopyala
+    function copyUrl() {
+        const input = document.getElementById('modal-url');
+        input.select();
+        navigator.clipboard.writeText(input.value).then(() => {
+            showToast('URL kopyalandı!');
+        }).catch(() => {
+            document.execCommand('copy');
+            showToast('URL kopyalandı!');
+        });
+    }
+
+    // Modal'dan silme
+    function deleteModalFile() {
+        if (!_modalFileName) return;
+        const name = _modalFileName;
+        closeModal({target: document.getElementById('preview-modal')});
+        // DOM elemanını bul (grid veya liste)
+        const el = document.querySelector(`[data-filename="${name}"]`) ||
+                   null;
+        deleteFile(name, el);
+    }
+
+    // Dosya silme (grid veya liste öğesiyle birlikte)
+    function deleteFile(fileName, element) {
+        if (!confirm(`"${fileName}" dosyasını silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz.`)) return;
+
+        fetch('/esk/media/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: fileName }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                if (element) {
+                    element.style.opacity = '0';
+                    element.style.transform = 'scale(0.8)';
+                    element.style.transition = 'all 0.2s';
+                    setTimeout(() => {
+                        element.remove();
+                        // Sayımları güncelle
+                        updateCounts();
+                    }, 220);
+                }
+                showToast('Dosya silindi.');
+            } else {
+                showToast(data.error || 'Hata oluştu.', true);
+            }
+        })
+        .catch(() => showToast('Bağlantı hatası.', true));
+    }
+
+    // DOM'daki sayımları güncelle (silme sonrası)
+    function updateCounts() {
+        const images = document.querySelectorAll('.media-item').length;
+        const docs = document.querySelectorAll('.media-list-item').length;
+        // Sayfayı yenile — basit ve güvenilir
+        setTimeout(() => location.reload(), 300);
+    }
+
+    // ── Upload işlemi ──
+    const uploadZone = document.getElementById('upload-zone');
+    const uploadInput = document.getElementById('upload-input');
+    const uploadProgress = document.getElementById('upload-progress');
+    const uploadProgressFill = document.getElementById('upload-progress-fill');
+    const uploadStatus = document.getElementById('upload-status');
+
+    uploadZone.addEventListener('click', () => uploadInput.click());
+
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        if (files.length) uploadFiles(files);
+    });
+
+    uploadInput.addEventListener('change', (e) => {
+        if (e.target.files.length) uploadFiles(e.target.files);
+    });
+
+    function uploadFiles(files) {
+        const formData = new FormData();
+        for (const f of files) {
+            formData.append('files', f);
+        }
+
+        uploadProgress.style.display = 'block';
+        uploadProgressFill.style.width = '20%';
+        uploadStatus.textContent = `${files.length} dosya yükleniyor…`;
+
+        // İlerleme animasyonu
+        let pct = 20;
+        const timer = setInterval(() => {
+            pct = Math.min(pct + 10, 85);
+            uploadProgressFill.style.width = pct + '%';
+        }, 200);
+
+        fetch('/esk/media/upload', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            clearInterval(timer);
+            uploadProgressFill.style.width = '100%';
+
+            if (data.errors && data.errors.length) {
+                uploadStatus.textContent = data.errors.join(', ');
+                showToast(data.errors[0], true);
+            } else {
+                uploadStatus.textContent = `${data.count} dosya yüklendi.`;
+                showToast(`${data.count} dosya başarıyla yüklendi!`);
+            }
+
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+                uploadProgressFill.style.width = '0%';
+                uploadInput.value = '';
+                if (data.count > 0) location.reload();
+            }, 1200);
+        })
+        .catch(() => {
+            clearInterval(timer);
+            uploadProgress.style.display = 'none';
+            showToast('Yükleme sırasında hata oluştu.', true);
+        });
+    }
+
+    // ── Toast bildirimi ──
+    let _toastTimer = null;
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.className = 'toast' + (isError ? ' error' : '');
+        toast.classList.add('show');
+        if (_toastTimer) clearTimeout(_toastTimer);
+        _toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Escape ile modal kapat
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal({target: document.getElementById('preview-modal')});
+    });
+</script>
+
+{% endblock %}

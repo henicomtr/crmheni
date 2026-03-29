@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Erişim Doğrulama</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --ink:    #08090a;
+            --panel:  #0f1114;
+            --border: rgba(255,255,255,.07);
+            --gold:   #c8a84b;
+            --gold2:  #e8c97a;
+            --muted:  #5a5e66;
+            --text:   #d4d6da;
+            --err:    #e05252;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--ink);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* ── Arka plan ── */
+        .bg {
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 50% -10%, rgba(200,168,75,.08) 0%, transparent 60%),
+                var(--ink);
+            z-index: 0;
+        }
+
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,.025) 79px, rgba(255,255,255,.025) 80px),
+                repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,.025) 79px, rgba(255,255,255,.025) 80px);
+            z-index: 0;
+        }
+
+        /* ── Merkez kart ── */
+        .stage {
+            position: relative; z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 400px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 44px 44px;
+            box-shadow: 0 32px 80px rgba(0,0,0,.6);
+            animation: riseIn .6s cubic-bezier(.22,1,.36,1) both;
+        }
+
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(24px) scale(.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── Kilit ikonu ── */
+        .lock-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .lock-icon {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: rgba(200,168,75,.1);
+            border: 1px solid rgba(200,168,75,.25);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .lock-icon svg {
+            width: 26px; height: 26px;
+            fill: none;
+            stroke: var(--gold);
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* ── Başlık ── */
+        .card-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 26px;
+            letter-spacing: 3px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .card-sub {
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        /* ── Hata kutusu ── */
+        .error-box {
+            background: rgba(224,82,82,.1);
+            border: 1px solid rgba(224,82,82,.3);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #f08080;
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* ── Ban kutusu ── */
+        .ban-box {
+            background: rgba(200,168,75,.06);
+            border: 1px solid rgba(200,168,75,.2);
+            border-radius: 8px;
+            padding: 20px 16px;
+            font-size: 13px;
+            color: var(--gold2);
+            margin-bottom: 24px;
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .ban-box .ban-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* ── PIN kutucukları ── */
+        .pin-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+
+        .pin-cell {
+            width: 64px; height: 72px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 32px;
+            color: var(--gold);
+            letter-spacing: 2px;
+            cursor: default;
+            transition: border-color .2s, background .2s, box-shadow .2s;
+            position: relative;
+        }
+
+        .pin-cell.active {
+            border-color: var(--gold);
+            background: rgba(200,168,75,.06);
+            box-shadow: 0 0 0 3px rgba(200,168,75,.12);
+        }
+
+        .pin-cell.filled {
+            border-color: rgba(200,168,75,.4);
+        }
+
+        /* Gösterge nokta — şifreyi maskeliyoruz */
+        .pin-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: var(--gold);
+        }
+
+        /* Gizli input */
+        #pin-input {
+            position: absolute;
+            opacity: 0;
+            width: 1px; height: 1px;
+            pointer-events: none;
+        }
+
+        /* ── Numpad ── */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .numpad-btn {
+            height: 56px;
+            background: rgba(255,255,255,.04);
+            border: 1px solid rgba(255,255,255,.07);
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            transition: background .15s, border-color .15s, transform .1s;
+            display: flex; align-items: center; justify-content: center;
+            user-select: none;
+        }
+
+        .numpad-btn:hover {
+            background: rgba(255,255,255,.08);
+            border-color: rgba(255,255,255,.15);
+        }
+
+        .numpad-btn:active {
+            transform: scale(.95);
+            background: rgba(200,168,75,.1);
+            border-color: rgba(200,168,75,.3);
+        }
+
+        .numpad-btn.del {
+            font-size: 20px;
+            color: var(--muted);
+        }
+
+        .numpad-btn.del:hover {
+            color: var(--err);
+            border-color: rgba(224,82,82,.3);
+        }
+
+        /* Gizli form submit butonu */
+        #submit-btn { display: none; }
+
+        /* ── Alt not ── */
+        .footer-note {
+            margin-top: 36px;
+            font-size: 11px;
+            color: var(--muted);
+            text-align: center;
+            letter-spacing: .5px;
+            line-height: 1.6;
+        }
+
+        /* ── Sağ alt dekor ── */
+        .deco {
+            position: fixed;
+            bottom: -200px; right: -200px;
+            width: 500px; height: 500px;
+            border-radius: 50%;
+            border: 1px solid rgba(200,168,75,.06);
+            pointer-events: none;
+        }
+
+        .deco::before {
+            content: '';
+            position: absolute;
+            inset: 40px;
+            border-radius: 50%;
+            border: 1px dashed rgba(200,168,75,.04);
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="bg-grid"></div>
+<div class="deco"></div>
+
+<div class="stage">
+    <div class="card">
+
+        <div class="lock-wrap">
+            <div class="lock-icon">
+                <svg viewBox="0 0 24 24">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="card-title">ERİŞİM DOĞRULAMA</div>
+        <div class="card-sub">Devam etmek için PIN kodunu girin</div>
+
+        {% if banned %}
+        <div class="ban-box">
+            <span class="ban-icon">⏱</span>
+            {{ ban_msg }}
+        </div>
+        {% else %}
+
+        {% if error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <!-- PIN görsel kutucukları -->
+        <div class="pin-row" id="pin-display">
+            <div class="pin-cell active" id="cell-0"></div>
+            <div class="pin-cell" id="cell-1"></div>
+            <div class="pin-cell" id="cell-2"></div>
+            <div class="pin-cell" id="cell-3"></div>
+        </div>
+
+        <!-- Gizli form -->
+        <form method="post" action="/esk/verify" id="pin-form">
+            <input type="hidden" name="pin" id="pin-value">
+            <button type="submit" id="submit-btn">Gönder</button>
+        </form>
+
+        <!-- Sayısal tuş takımı -->
+        <div class="numpad" id="numpad">
+            <button type="button" class="numpad-btn" data-val="1">1</button>
+            <button type="button" class="numpad-btn" data-val="2">2</button>
+            <button type="button" class="numpad-btn" data-val="3">3</button>
+            <button type="button" class="numpad-btn" data-val="4">4</button>
+            <button type="button" class="numpad-btn" data-val="5">5</button>
+            <button type="button" class="numpad-btn" data-val="6">6</button>
+            <button type="button" class="numpad-btn" data-val="7">7</button>
+            <button type="button" class="numpad-btn" data-val="8">8</button>
+            <button type="button" class="numpad-btn" data-val="9">9</button>
+            <div></div>
+            <button type="button" class="numpad-btn" data-val="0">0</button>
+            <button type="button" class="numpad-btn del" id="del-btn">⌫</button>
+        </div>
+
+        {% endif %}
+    </div>
+
+    <div class="footer-note">
+        Bu alan yalnızca yetkili personele açıktır.<br>
+        Yetkisiz erişim girişimleri kayıt altına alınır.
+    </div>
+</div>
+
+<script>
+    // PIN durumu
+    let pinDigits = [];
+    const MAX = 4;
+
+    // Numpad butonu tıklamak
+    document.querySelectorAll('.numpad-btn[data-val]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (pinDigits.length < MAX) {
+                pinDigits.push(btn.dataset.val);
+                updateDisplay();
+                if (pinDigits.length === MAX) {
+                    submitPin();
+                }
+            }
+        });
+    });
+
+    // Silme butonu
+    document.getElementById('del-btn')?.addEventListener('click', () => {
+        pinDigits.pop();
+        updateDisplay();
+    });
+
+    // Klavye desteği
+    document.addEventListener('keydown', e => {
+        if (e.key >= '0' && e.key <= '9' && pinDigits.length < MAX) {
+            pinDigits.push(e.key);
+            updateDisplay();
+            if (pinDigits.length === MAX) submitPin();
+        } else if (e.key === 'Backspace') {
+            pinDigits.pop();
+            updateDisplay();
+        }
+    });
+
+    // Görsel kutucukları güncelle
+    function updateDisplay() {
+        for (let i = 0; i < MAX; i++) {
+            const cell = document.getElementById('cell-' + i);
+            if (!cell) return;
+            cell.innerHTML = '';
+            cell.classList.remove('active', 'filled');
+
+            if (i < pinDigits.length) {
+                // Dolu: nokta göster
+                const dot = document.createElement('div');
+                dot.className = 'pin-dot';
+                cell.appendChild(dot);
+                cell.classList.add('filled');
+            } else if (i === pinDigits.length) {
+                // Aktif (boş, imlec)
+                cell.classList.add('active');
+            }
+        }
+    }
+
+    // PIN formu gönder
+    function submitPin() {
+        document.getElementById('pin-value').value = pinDigits.join('');
+        // Kısa bir geri bildirim animasyonu
+        setTimeout(() => {
+            document.getElementById('pin-form').submit();
+        }, 150);
+    }
+</script>
+
+</body>
+</html>

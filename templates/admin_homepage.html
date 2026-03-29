@@ -114,6 +114,14 @@
     background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
     padding: 12px 16px; font-size: .83rem; color: #1e40af; margin-bottom: 20px;
 }
+
+/* ── Mobil uyum ── */
+@media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+    .hp-edit-wrap { max-width: 100%; }
+    .tab-nav { overflow-x: auto; flex-wrap: nowrap; }
+    .tab-btn { white-space: nowrap; }
+}
 </style>
 
 <div class="hp-edit-wrap">
@@ -132,7 +140,7 @@
     <!-- Dil seçici -->
     <div class="lang-bar">
         {% for lc in supported_langs %}
-        <a href="/admin/homepage?lang={{ lc }}&tab={{ tab }}"
+        <a href="/esk/homepage?lang={{ lc }}&tab={{ tab }}"
            class="lang-tab {% if lc == lang %}active{% endif %}">
             {{ lang_labels[lc] }}
         </a>
@@ -152,7 +160,7 @@
         <a href="?lang={{ lang }}&tab=seo"          class="tab-btn {% if tab=='seo'          %}active{% endif %}">🔍 SEO</a>
     </div>
 
-    <form method="POST" action="/admin/homepage/save">
+    <form method="POST" action="/esk/homepage/save">
         <input type="hidden" name="lang" value="{{ lang }}">
         <input type="hidden" name="tab"  value="{{ tab }}">
 
@@ -731,7 +739,7 @@ document.querySelectorAll('.hp-img-file').forEach(fileInput => {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            const res = await fetch('/admin/upload-homepage-image', {
+            const res = await fetch('/esk/upload-homepage-image', {
                 method: 'POST',
                 body: formData,
                 credentials: 'same-origin'
@@ -812,7 +820,7 @@ document.querySelectorAll('.btn-sync-img').forEach(btn => {
             const fd = new FormData();
             fd.append('field',    field);
             fd.append('src_lang', srcLang);
-            const res  = await fetch('/admin/homepage/sync-image', {
+            const res  = await fetch('/esk/homepage/sync-image', {
                 method: 'POST', body: fd, credentials: 'same-origin'
             });
             const data = await res.json();

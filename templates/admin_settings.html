@@ -28,6 +28,12 @@
     .settings-brand-col .upload-zone > div:first-child { margin-bottom:6px; }
     .settings-brand-col .brand-hint { min-height:36px; margin-top:8px; font-size:12px; color:#aaa; }
     .settings-brand-col .current-asset img { height:56px; max-width:160px; object-fit:contain; }
+    /* Mobil uyum */
+    @media (max-width: 900px) {
+        .settings-brand-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+        /* Inline grid'ler: iletişim, sosyal medya, footer link sütunları */
+        .card [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    }
 </style>
 
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px;">
@@ -48,7 +54,7 @@
     <button class="settings-tab" onclick="switchSettings('advanced',this)">⚙️ Gelişmiş</button>
 </div>
 
-<form method="post" action="/admin/settings" enctype="multipart/form-data" id="settings-form">
+<form method="post" action="/esk/settings" enctype="multipart/form-data" id="settings-form">
 
     <!-- ═══ MARKA ═══ -->
     <div id="settings-brand">

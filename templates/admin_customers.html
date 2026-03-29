@@ -473,7 +473,7 @@
         <h2>Yeni Müşteri</h2>
     </div>
     <div class="add-card-body">
-        <form method="POST" action="/admin/customers/create">
+        <form method="POST" action="/esk/customers/create">
             <div class="form-grid-3">
                 <div class="form-group">
                     <label class="form-label">Firma / Ad *</label>
@@ -601,8 +601,8 @@
                     </td>
                     <td>
                         <div class="row-actions">
-                            <a href="/admin/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
-                            <form method="POST" action="/admin/customers/delete/{{ c.id }}" style="margin:0;">
+                            <a href="/esk/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
+                            <form method="POST" action="/esk/customers/delete/{{ c.id }}" style="margin:0;">
                                 <button type="submit" class="btn-delete-sm"
                                     onclick="return confirm('{{ c.name }} silinsin mi?')">Sil</button>
                             </form>
@@ -639,8 +639,8 @@
                     </div>
                 </div>
                 <div class="row-actions">
-                    <a href="/admin/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
-                    <form method="POST" action="/admin/customers/delete/{{ c.id }}" style="margin:0;">
+                    <a href="/esk/customers/edit/{{ c.id }}" class="btn-edit-sm">Düzenle</a>
+                    <form method="POST" action="/esk/customers/delete/{{ c.id }}" style="margin:0;">
                         <button type="submit" class="btn-delete-sm"
                             onclick="return confirm('Silinsin mi?')">Sil</button>
                     </form>

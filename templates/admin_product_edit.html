@@ -457,7 +457,7 @@
 <!-- BAŞLIK -->
 <div class="admin-page-header">
     <h1 class="admin-page-title">Ürün Düzenle</h1>
-    <a href="/admin/products" class="btn-back">← Ürün Listesi</a>
+    <a href="/esk/products" class="btn-back">← Ürün Listesi</a>
 </div>
 
 <div class="edit-card">
@@ -467,7 +467,7 @@
         <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">ID #{{ product.id }}</span>
     </div>
     <div class="edit-card-body">
-        <form method="post" action="/admin/products/update/{{ product.id }}" enctype="multipart/form-data"
+        <form method="post" action="/esk/products/update/{{ product.id }}" enctype="multipart/form-data"
             id="edit-form">
 
             <!-- ÜRÜN BİLGİSİ -->
@@ -678,12 +678,12 @@
 
             <!-- SUBMIT -->
             <div class="form-actions">
-                <a href="/admin/products/delete/{{ product.id }}" class="btn-delete-product"
+                <a href="/esk/products/delete/{{ product.id }}" class="btn-delete-product"
                     onclick="return confirm('Bu ürünü ve tüm çevirilerini silmek istediğinize emin misiniz?')">
                     🗑 Ürünü Sil
                 </a>
                 <div class="form-actions-right">
-                    <a href="/admin/products" class="btn-cancel">İptal</a>
+                    <a href="/esk/products" class="btn-cancel">İptal</a>
                     <button type="submit" class="btn-submit">Değişiklikleri Kaydet</button>
                 </div>
             </div>

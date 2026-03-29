@@ -243,7 +243,7 @@
 
 <div class="admin-page-header">
     <h1 class="admin-page-title">Tedarikçi Düzenle</h1>
-    <a href="/admin/suppliers" class="btn-back">Tedarikçi Listesi</a>
+    <a href="/esk/suppliers" class="btn-back">Tedarikçi Listesi</a>
 </div>
 
 <div class="edit-card">
@@ -252,7 +252,7 @@
         <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">ID #{{ supplier.id }}</span>
     </div>
     <div class="edit-card-body">
-        <form method="POST" action="/admin/suppliers/update/{{ supplier.id }}">
+        <form method="POST" action="/esk/suppliers/update/{{ supplier.id }}">
 
             <div class="form-section-title">Firma Bilgileri</div>
             <div class="form-grid-2">
@@ -306,12 +306,12 @@
             </div>
 
             <div class="form-actions">
-                <form method="POST" action="/admin/suppliers/delete/{{ supplier.id }}" style="margin:0;"
+                <form method="POST" action="/esk/suppliers/delete/{{ supplier.id }}" style="margin:0;"
                     onsubmit="return confirm('{{ supplier.name }} silinsin mi?')">
                     <button type="submit" class="btn-delete-supplier">🗑 Tedarikçiyi Sil</button>
                 </form>
                 <div class="form-actions-right">
-                    <a href="/admin/suppliers" class="btn-cancel">İptal</a>
+                    <a href="/esk/suppliers" class="btn-cancel">İptal</a>
                     <button type="submit" class="btn-submit">Değişiklikleri Kaydet</button>
                 </div>
             </div>
@@ -390,7 +390,7 @@
         <!-- İşlem Ekle Formu -->
         <div style="background:var(--surface-2);padding:20px;border-radius:var(--radius-md);margin-bottom:20px;">
             <h3 style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Yeni Cari Hesap İşlemi Ekle</h3>
-            <form method="POST" action="/admin/suppliers/{{ supplier.id }}/account/add">
+            <form method="POST" action="/esk/suppliers/{{ supplier.id }}/account/add">
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label class="form-label">İşlem Türü *</label>
@@ -471,7 +471,7 @@
                             </div>
                         </td>
                         <td style="padding:12px 16px;text-align:center;">
-                            <form method="POST" action="/admin/suppliers/account/delete/{{ tx.id }}" style="margin:0;" onsubmit="return confirm('Bu işlem silinsin mi?')">
+                            <form method="POST" action="/esk/suppliers/account/delete/{{ tx.id }}" style="margin:0;" onsubmit="return confirm('Bu işlem silinsin mi?')">
                                 <button type="submit" style="padding:4px 8px;background:transparent;color:var(--text-muted);border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:12px;">🗑</button>
                             </form>
                         </td>

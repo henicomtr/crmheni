@@ -1,6 +1,19 @@
 {% extends "admin_layout.html" %}
 {% block content %}
-<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
+<style>
+    @media (max-width: 900px) {
+        /* Sayfalar tablosu yatay kaydırma */
+        .pages-table-wrap {
+            overflow-x: auto;
+        }
+        /* Üst başlık alt alta */
+        .pages-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+        }
+    }
+</style>
+<div class="pages-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
     <div>
         <h1 style="font-size:24px; font-weight:700; margin-bottom:4px;">Sayfalar</h1>
         <p style="color:#888; font-size:14px;">Tüm site sayfalarını buradan yönetin.</p>
@@ -17,7 +30,7 @@
 </div>
 {% endif %}
 
-<div style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden;">
+<div class="pages-table-wrap" style="background:#fff;border-radius:12px;border:1px solid #e8eaf0;overflow:hidden;">
     <table style="width:100%;border-collapse:collapse;">
         <thead>
             <tr style="background:#f8f9fb;border-bottom:1px solid #e8eaf0;">
@@ -65,14 +78,14 @@
                 <td style="padding:16px 20px;text-align:right;">
                     <div style="display:flex;gap:8px;justify-content:flex-end;">
                         {% for lc in langs %}
-                        <a href="/admin/pages/{{ page.id }}/edit?lang={{ lc }}"
+                        <a href="/esk/pages/{{ page.id }}/edit?lang={{ lc }}"
                            style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:12px;font-weight:600;color:#333;text-decoration:none;transition:.15s;"
                            onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'"
                            title="{{ lang_labels[lc] }}">
                             {{ lc|upper }}
                         </a>
                         {% endfor %}
-                        <form method="post" action="/admin/pages/{{ page.id }}/delete"
+                        <form method="post" action="/esk/pages/{{ page.id }}/delete"
                               onsubmit="return confirm('Bu sayfayı silmek istediğinize emin misiniz?')"
                               style="margin:0;">
                             <button type="submit"
@@ -99,7 +112,7 @@
     <div style="background:#fff;border-radius:14px;padding:36px;width:480px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
         <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">Yeni Sayfa Oluştur</h2>
         <p style="font-size:13px;color:#888;margin-bottom:24px;">Sayfa oluşturduktan sonra tüm dilleri düzenleyebilirsiniz.</p>
-        <form method="post" action="/admin/pages/new">
+        <form method="post" action="/esk/pages/new">
             <div style="margin-bottom:16px;">
                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#555;">Master Slug (EN) *</label>
                 <input name="slug" required placeholder="hakkimizda" pattern="[a-z0-9\-]+"

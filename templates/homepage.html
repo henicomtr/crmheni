@@ -240,11 +240,18 @@
             transition: all .3s var(--ease);
             border: 2px solid var(--metallic);
         }
-        .btn-primary:hover { 
-            background: var(--white);
-            color: var(--navy);
+        .btn-primary:hover {
+            background: #2563eb;
+            color: var(--white);
+            border-color: #2563eb;
             transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 8px 24px rgba(37,99,235,0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            box-shadow: none;
         }
         .btn-outline {
             background: transparent;
@@ -259,9 +266,17 @@
             gap: 8px;
             transition: all .3s var(--ease);
         }
-        .btn-outline:hover { 
-            border-color: var(--white); 
-            background: rgba(255,255,255,0.1);
+        .btn-outline:hover {
+            border-color: var(--white);
+            background: rgba(255,255,255,0.18);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(255,255,255,0.15);
+        }
+        .btn-outline:active {
+            transform: translateY(0);
+            background: rgba(255,255,255,0.25);
+            box-shadow: none;
         }
 
         /* ── SECTION TITLES ── */

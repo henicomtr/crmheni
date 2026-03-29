@@ -1,83 +1,616 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="/static/css/main.css">
-    <title>HENİ CRM</title>
+    <title>HENİ CRM — Admin</title>
     <style>
+        /* ================================================
+           ADMIN LAYOUT — MODERN SIDEBAR
+        ================================================ */
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #f4f5f7;
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* ── Sidebar ── */
         .sidebar {
-            width: 220px;
+            width: 230px;
             position: fixed;
             top: 0;
             bottom: 0;
-            background: white;
-            padding: 30px 20px;
-            border-right: 1px solid #e5e5e7;
+            left: 0;
+            background: #0d1239;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            z-index: 100;
+            overflow-y: auto;
         }
 
-        .sidebar a {
-            display: block;
-            padding: 12px;
-            border-radius: 10px;
+        /* Logo alanı */
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 24px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             text-decoration: none;
-            color: #1d1d1f;
-            margin-bottom: 8px;
         }
 
-        .sidebar a:hover {
-            background: #f5f5f7;
-        }
-
-        .content {
-            margin-left: 240px;
-            padding: 60px;
-        }
-
-        .power {
-            position: absolute;
-            bottom: 40px;
-            left: 40px;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            border: 1px solid #e5e5e7;
+        .sidebar-brand-icon {
+            width: 34px;
+            height: 34px;
+            background: white;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
+            flex-shrink: 0;
         }
 
-        .power:hover {
-            background: #f5f5f7;
+        .sidebar-brand-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-brand-name {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            color: #ffffff;
+            line-height: 1.1;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 10px;
+            color: rgba(255,255,255,0.35);
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        /* Navigasyon */
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-section-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.2);
+            padding: 12px 8px 6px;
+            margin-top: 4px;
+        }
+
+        .nav-section-label:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.55);
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.9);
+        }
+
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.12);
+            color: #ffffff;
+        }
+
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 20px;
+            background: white;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .nav-icon {
+            width: 18px;
+            height: 18px;
+            opacity: 0.7;
+            flex-shrink: 0;
+            transition: opacity 0.15s;
+        }
+
+        .sidebar-link:hover .nav-icon,
+        .sidebar-link.active .nav-icon {
+            opacity: 1;
+        }
+
+        /* Çıkış butonu */
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .sidebar-logout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            text-decoration: none;
+            color: rgba(255,100,80,0.7);
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .sidebar-logout:hover {
+            background: rgba(255,80,60,0.12);
+            color: #ff5040;
+        }
+
+        /* ── İçerik alanı ── */
+        .admin-content {
+            margin-left: 230px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Üst bar */
+        .topbar {
+            background: white;
+            border-bottom: 1px solid #e5e5e3;
+            padding: 0 40px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .topbar-meta {
+            font-size: 12px;
+            color: #9a9a9a;
+        }
+
+        /* Sayfa içeriği */
+        .page-body {
+            padding: 40px;
+            flex: 1;
+        }
+
+        /* Genel kart stili (admin içerikleri için) */
+        .admin-card {
+            background: white;
+            border: 1px solid #e5e5e3;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        }
+
+        /* ── Hamburger Butonu ── */
+        .sidebar-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 4px;
+            border-radius: 8px;
+            color: #1d1d1f;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+
+        .sidebar-toggle:hover {
+            background: #f4f5f7;
+        }
+
+        .sidebar-toggle svg {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
+
+        /* ── Sidebar Overlay ── */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 150;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.open {
+            display: block;
+        }
+
+        /* ── Mobil Responsive ── */
+        @media (max-width: 900px) {
+
+            /* Sidebar drawer: varsayılan gizli, açınca sola kayar */
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                z-index: 200;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 6px 0 24px rgba(0, 0, 0, 0.3);
+            }
+
+            /* İçerik alanı sidebar olmadan tam genişlik */
+            .admin-content {
+                margin-left: 0;
+            }
+
+            /* Hamburger görünür */
+            .sidebar-toggle {
+                display: flex;
+            }
+
+            /* Topbar padding azalt */
+            .topbar {
+                padding: 0 12px;
+                gap: 8px;
+            }
+
+            /* Sayfa içi padding azalt */
+            .page-body {
+                padding: 12px;
+            }
+
+            /* Taşma engelleyici: page-body tam genişlik, taşma kesmek */
+            .page-body {
+                overflow-x: hidden;
+                box-sizing: border-box;
+                width: 100%;
+            }
+
+            /* KPI grid: 4→2 sütun */
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 12px !important;
+            }
+
+            /* Finans grid: sağ kolon alta düş */
+            .finance-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Stats satırı: 3→2 sütun */
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Dashboard alt bölüm */
+            .dashboard-bottom {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Settings marka grid */
+            .settings-brand-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Form grid'leri: tek sütun */
+            .form-grid-2,
+            .form-grid-3,
+            .form-grid-4 {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Tablo kartları: yatay kaydırma */
+            .customers-table-card,
+            .requests-table-card,
+            .suppliers-table-card,
+            .products-table-card,
+            .transactions-card {
+                overflow-x: auto !important;
+            }
+
+            /* Admin sayfa başlığı */
+            .admin-page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            /* Arama kutusu tam genişlik */
+            .search-input {
+                width: 100% !important;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            /* KPI grid: 2→1 sütun */
+            .kpi-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Stats: 2→1 sütun */
+            .stats-row {
+                grid-template-columns: 1fr !important;
+            }
+
+            /* Sayfa içi padding daha da azalt */
+            .page-body {
+                padding: 8px;
+            }
+
+            /* Period tabs kaydırılabilir */
+            .period-tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+
+            /* Topbar title küçült */
+            .topbar-title {
+                font-size: 13px;
+            }
+
+            .topbar-meta {
+                display: none;
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="sidebar">
-        <h3>HENİ CRM</h3>
-        <a href="/admin">Durum</a>
-        <a href="/admin/homepage">Anasayfa</a>
-        <a href="/admin/products">Ürünler</a>
-        <a href="/admin/pages">Sayfalar</a>
-        <a href="/admin/categories">Kategoriler</a>
-        <a href="/admin/requests">Talepler</a>
-        <a href="/admin/customers">Müşteriler</a>
-        <a href="/admin/suppliers">Tedarikçiler</a>
-        <a href="/admin/finance">Finans</a>
-        <a href="/admin/settings">Site Ayarları</a>
-        <a href="/admin/logout">Çıkış Yap</a>
+    <!-- Mobil sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" id="adminSidebar">
+
+        <!-- Marka -->
+        <a href="/esk/dashboard" class="sidebar-brand">
+            <div class="sidebar-brand-icon">
+                <!-- HENİ logosu yerine H harfi -->
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <text x="3" y="15" font-size="14" font-weight="700" fill="#0a0a0a" font-family="sans-serif">H</text>
+                </svg>
+            </div>
+            <div class="sidebar-brand-text">
+                <span class="sidebar-brand-name">HENİ</span>
+                <span class="sidebar-brand-sub">Admin Panel</span>
+            </div>
+        </a>
+
+        <!-- Navigasyon -->
+        <nav class="sidebar-nav">
+
+            <span class="nav-section-label">Genel</span>
+
+            <a href="/esk/dashboard" class="sidebar-link {% if request.url.path == '/esk/dashboard' %}active{% endif %}">
+                <!-- Durum / Dashboard ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                Durum
+            </a>
+
+            <a href="/esk/homepage" class="sidebar-link {% if request.url.path == '/esk/homepage' %}active{% endif %}">
+                <!-- Anasayfa ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12L12 3L21 12V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V12Z"/>
+                </svg>
+                Anasayfa
+            </a>
+
+            <span class="nav-section-label">İçerik</span>
+
+            <a href="/esk/products" class="sidebar-link {% if '/esk/products' in request.url.path %}active{% endif %}">
+                <!-- Ürünler ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 7L12 3L4 7V17L12 21L20 17V7Z"/>
+                    <path d="M12 3V21M4 7L12 11L20 7"/>
+                </svg>
+                Ürünler
+            </a>
+
+            <a href="/esk/pages" class="sidebar-link {% if '/esk/pages' in request.url.path %}active{% endif %}">
+                <!-- Sayfalar ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6C5.46 2 4.96 2.21 4.59 2.59C4.21 2.96 4 3.46 4 4V20C4 20.55 4.45 21 5 21H19C19.55 21 20 20.55 20 20V8L14 2Z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="13" x2="15" y2="13"/>
+                    <line x1="9" y1="17" x2="13" y2="17"/>
+                </svg>
+                Sayfalar
+            </a>
+
+            <a href="/esk/categories" class="sidebar-link {% if '/esk/categories' in request.url.path %}active{% endif %}">
+                <!-- Kategoriler ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 3H3V10H10V3Z"/>
+                    <path d="M21 3H14V10H21V3Z"/>
+                    <path d="M21 14H14V21H21V14Z"/>
+                    <path d="M10 14H3V21H10V14Z"/>
+                </svg>
+                Kategoriler
+            </a>
+
+            <a href="/esk/media" class="sidebar-link {% if '/esk/media' in request.url.path %}active{% endif %}">
+                <!-- Medya Kütüphanesi ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Medya
+            </a>
+
+            <span class="nav-section-label">İş</span>
+
+            <a href="/esk/requests" class="sidebar-link {% if '/esk/requests' in request.url.path %}active{% endif %}">
+                <!-- Talepler ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15C21 15.55 20.78 16.08 20.37 16.37C19.97 16.77 19.44 17 18.89 17H6L3 21V5C3 4.45 3.22 3.92 3.63 3.63C4.03 3.22 4.56 3 5.11 3H18.89C19.44 3 19.97 3.22 20.37 3.63C20.78 4.03 21 4.56 21 5V15Z"/>
+                </svg>
+                Talepler
+            </a>
+
+            <a href="/esk/customers" class="sidebar-link {% if '/esk/customers' in request.url.path %}active{% endif %}">
+                <!-- Müşteriler ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21V19C17 17.9 16.55 16.92 15.83 16.17C15.08 15.45 14.1 15 13 15H5C3.9 15 2.92 15.45 2.17 16.17C1.45 16.92 1 17.9 1 19V21"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21V19C23 17.13 21.87 15.5 20.27 14.85"/>
+                    <path d="M16 3.13C17.6 3.79 18.73 5.42 18.73 7.29C18.73 9.16 17.6 10.79 16 11.45"/>
+                </svg>
+                Müşteriler
+            </a>
+
+            <a href="/esk/suppliers" class="sidebar-link {% if '/esk/suppliers' in request.url.path %}active{% endif %}">
+                <!-- Tedarikçiler ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                    <path d="M16 8H20L23 11V16H16V8Z"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                </svg>
+                Tedarikçiler
+            </a>
+
+            <a href="/esk/finance" class="sidebar-link {% if '/esk/finance' in request.url.path %}active{% endif %}">
+                <!-- Finans ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5C8.57 5 7.68 5.37 7.02 6.02C6.37 6.68 6 7.57 6 8.5C6 9.43 6.37 10.32 7.02 10.98C7.68 11.63 8.57 12 9.5 12H14.5C15.43 12 16.32 12.37 16.98 13.02C17.63 13.68 18 14.57 18 15.5C18 16.43 17.63 17.32 16.98 17.98C16.32 18.63 15.43 19 14.5 19H6"/>
+                </svg>
+                Finans
+            </a>
+
+            <span class="nav-section-label">Sistem</span>
+
+            <a href="/esk/settings" class="sidebar-link {% if '/esk/settings' in request.url.path %}active{% endif %}">
+                <!-- Ayarlar ikonu -->
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66M6.34 6.34L4.93 4.93M12 2V4M12 20V22M2 12H4M20 12H22"/>
+                </svg>
+                Site Ayarları
+            </a>
+
+        </nav>
+
+        <!-- Çıkış -->
+        <div class="sidebar-footer">
+            <a href="/esk/logout" class="sidebar-logout">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.8;">
+                    <path d="M9 21H5C4.47 21 3.96 20.79 3.59 20.41C3.21 20.04 3 19.53 3 19V5C3 4.47 3.21 3.96 3.59 3.59C3.96 3.21 4.47 3 5 3H9"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Çıkış Yap
+            </a>
+        </div>
+
+    </aside>
+
+    <!-- ── Ana İçerik ── -->
+    <div class="admin-content">
+
+        <!-- Üst bar -->
+        <header class="topbar">
+            <!-- Mobil hamburger menü butonu -->
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Menü aç/kapat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <line x1="3" y1="12" x2="21" y2="12"/>
+                    <line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
+            </button>
+            <span class="topbar-title">{% block topbar_title %}HENİ CRM{% endblock %}</span>
+            <span class="topbar-meta">Admin Panel</span>
+        </header>
+
+        <!-- Sayfa içeriği -->
+        <main class="page-body">
+            {% block content %}{% endblock %}
+        </main>
 
     </div>
 
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
+    <!-- Mobil sidebar toggle scripti -->
+    <script>
+        (function () {
+            const toggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('adminSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            function openSidebar() {
+                sidebar.classList.add('open');
+                overlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+
+            if (toggle) toggle.addEventListener('click', openSidebar);
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+
+            // Sidebar linkine tıklayınca kapat (mobilde sayfa geçişi)
+            if (sidebar) {
+                sidebar.querySelectorAll('.sidebar-link, .sidebar-logout').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        if (window.innerWidth <= 900) closeSidebar();
+                    });
+                });
+            }
+        })();
+    </script>
 
 </body>
 </html>

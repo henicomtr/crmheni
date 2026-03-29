@@ -135,6 +135,14 @@
         grid-template-columns: 1fr 360px;
         gap: 20px;
         align-items: start;
+        /* Grid çocukların taşmasını engelle */
+        min-width: 0;
+        width: 100%;
+    }
+
+    /* Grid doğrudan çocukları genişlik sınırı al */
+    .finance-grid > div {
+        min-width: 0;
     }
 
     /* ── İşlem Tablosu ────────────────────────────── */
@@ -144,6 +152,9 @@
         border-radius: var(--radius-lg);
         box-shadow: var(--shadow-sm);
         overflow: hidden;
+        /* Taşma önleme: esnek grid/flex içinde sıfırdan genişle */
+        min-width: 0;
+        max-width: 100%;
     }
 
     .transactions-card-header {
@@ -331,6 +342,9 @@
         overflow: hidden;
         position: sticky;
         top: 80px;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .add-form-card-header {
@@ -544,23 +558,172 @@
         font-weight: 600;
     }
 
+    /* Tablo scroll sarmalayıcı */
+    .tx-table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     @media (max-width: 1100px) {
         .kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, 1fr) !important;
         }
 
         .finance-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
         }
 
         .add-form-card {
             position: static;
         }
+
+    }
+
+    @media (max-width: 900px) {
+        /* Resmi/Şahsi hesap yan yana → alt alta */
+        .finance-account-split {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* İşlem formu içi grid'ler */
+        .form-row-2 {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* İşlem detay modal içi grid */
+        .tx-detail-grid {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* Header: başlık ve filtreler alt alta */
+        .transactions-card-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        /* Filtre butonları: genişlik sınırla, yatay kaydır */
+        .tx-filter {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 0 6px 0;
+            /* Tam genişlik: grid hücre sınırına uysun */
+            width: 100%;
+            max-width: 100%;
+            /* scrollbar gizle */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .tx-filter::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Filtre butonlarının kırılmaması */
+        .tx-filter-btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* Hesap sütununu gizle - tür badge'de implicit */
+        .tx-table th:nth-child(4),
+        .tx-table td:nth-child(4) {
+            display: none;
+        }
+
+        /* Silme butonu sütunu daralt */
+        .tx-table th:last-child,
+        .tx-table td:last-child {
+            width: 40px;
+        }
+
+        /* td padding azalt */
+        .td-inner {
+            padding: 10px 12px;
+        }
+
+        /* Tablo font küçült */
+        .tx-desc {
+            font-size: 12px;
+        }
+
+        /* Kur widget mobil */
+        .kur-widget {
+            padding: 8px 12px !important;
+            gap: 6px !important;
+            margin-bottom: 12px !important;
+        }
+
+        /* Period tabs scroll */
+        .period-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+
+        .period-btn {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* KPI kart padding küçült */
+        .kpi-card {
+            padding: 14px 14px 12px;
+        }
+
+        /* KPI değer font küçült */
+        .kpi-value {
+            font-size: 20px;
+        }
+
+        /* KPI label küçült */
+        .kpi-label {
+            margin-bottom: 6px;
+        }
+
+        /* Form body padding küçült */
+        .add-form-card-body {
+            padding: 14px;
+            gap: 10px;
+        }
+
+        /* Form alanı input padding küçült */
+        .form-control {
+            padding: 8px 10px;
+            font-size: 13px;
+        }
     }
 
     @media (max-width: 600px) {
         .kpi-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr !important;
+        }
+
+        /* 3'lü özet kpi de 1 sütun */
+        .kpi-grid-3 {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* KPI daha da küçük */
+        .kpi-card {
+            padding: 12px;
+        }
+
+        .kpi-value {
+            font-size: 18px;
+        }
+
+        /* Tutar sütunu font küçült */
+        .tx-table th:nth-child(5),
+        .tx-table td:nth-child(5) {
+            font-size: 12px;
+        }
+
+        /* Tablo padding daha da daralt */
+        .td-inner {
+            padding: 8px 10px;
         }
     }
 </style>
@@ -609,7 +772,7 @@ function setCurrency(cur, btn) {
 </div>
 
 <!-- Kur Bilgisi + Para Birimi Seçici -->
-<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
+<div class="kur-widget" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
 
     <!-- Kur bilgisi -->
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
@@ -645,7 +808,7 @@ function setCurrency(cur, btn) {
 
 <!-- KPI KARTI — TOPLAM -->
 <div style="font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Genel Özet</div>
-<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+<div class="kpi-grid kpi-grid-3" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
     <div class="kpi-card income">
         <div class="kpi-label">💰 Toplam Gelir</div>
         <div class="kpi-value positive" data-usd="{{ total_income }}" id="kpi-income">${{ "{:,.2f}".format(total_income) }}</div>
@@ -666,7 +829,7 @@ function setCurrency(cur, btn) {
 </div>
 
 <!-- KPI — RESMİ / ŞAHSİ -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+<div class="finance-account-split" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
 
     <!-- Resmi -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
@@ -763,6 +926,7 @@ function setCurrency(cur, btn) {
             </div>
 
             {% if transactions %}
+            <div class="tx-table-scroll">
             <table class="tx-table" id="tx-table">
                 <thead>
                     <tr>
@@ -836,7 +1000,7 @@ function setCurrency(cur, btn) {
                         </td>
                         <td>
                             <div class="td-inner">
-                                <form method="POST" action="/admin/finance/delete/{{ tx.id }}"
+                                <form method="POST" action="/esk/finance/delete/{{ tx.id }}"
                                     onsubmit="return confirm('Bu kayıt silinsin mi?')">
                                     <button type="submit" class="btn-tx-delete">🗑</button>
                                 </form>
@@ -846,6 +1010,7 @@ function setCurrency(cur, btn) {
                     {% endfor %}
                 </tbody>
             </table>
+            </div><!-- /tx-table-scroll -->
             {% else %}
             <div class="empty-state">
                 <div style="font-size:40px;opacity:.2;margin-bottom:12px;">💳</div>
@@ -875,7 +1040,7 @@ function setCurrency(cur, btn) {
             <!-- Transfer formu -->
             <div id="panel-transfer" style="display:none;">
             <div class="add-form-card-body">
-                <form method="POST" action="/admin/finance/transfer">
+                <form method="POST" action="/esk/finance/transfer">
 
                     <!-- Transfer yönü -->
                     <div class="form-group">
@@ -931,7 +1096,7 @@ function setCurrency(cur, btn) {
             <!-- Normal işlem formu -->
             <div id="panel-tx">
             <div class="add-form-card-body">
-                <form method="POST" action="/admin/finance/create">
+                <form method="POST" action="/esk/finance/create">
 
                     <!-- Gelir / Gider toggle -->
                     <div class="form-group">

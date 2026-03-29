@@ -60,6 +60,9 @@
     transition: background .2s;
 }
 .btn-preview:hover { background: #e5e7eb; }
+@media (max-width: 900px) {
+    .cat-list-header { flex-wrap: wrap; gap: 12px; }
+}
 </style>
 
 <div class="cat-list-header">
@@ -85,7 +88,7 @@
             {% endfor %}
         </div>
         <div class="cat-card-actions">
-            <a href="/admin/categories/{{ cat.id }}/edit?lang=tr" class="btn-edit">
+            <a href="/esk/categories/{{ cat.id }}/edit?lang=tr" class="btn-edit">
                 ✏️ Düzenle
             </a>
             <a href="/tr/kategori/{{ cat.category_slug }}" target="_blank" class="btn-preview">

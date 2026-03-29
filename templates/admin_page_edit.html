@@ -37,6 +37,12 @@
     /* TinyMCE container */
     .tox-tinymce { border-radius:8px !important; border-color:#ddd !important; }
 
+    /* Mobil uyum */
+    @media (max-width: 900px) {
+        .card [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+        #section-tabs { flex-wrap: wrap; }
+    }
+
     /* Toggle switch */
     .toggle-wrap { display:flex; align-items:center; gap:10px; }
     .toggle { position:relative; width:44px; height:24px; }
@@ -51,7 +57,7 @@
 <!-- BREADCRUMB + HEADER -->
 <div style="margin-bottom:28px;">
     <div style="font-size:13px;color:#aaa;margin-bottom:8px;">
-        <a href="/admin/pages" style="color:#aaa;text-decoration:none;">Sayfalar</a>
+        <a href="/esk/pages" style="color:#aaa;text-decoration:none;">Sayfalar</a>
         <span style="margin:0 6px;">›</span>
         <span style="color:#333;">{{ page.slug }}</span>
     </div>
@@ -83,7 +89,7 @@
 <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;">
     {% for lc in langs %}
     {% set has_trans = page.translations | selectattr('lang','eq',lc) | list | length > 0 %}
-    <a href="/admin/pages/{{ page.id }}/edit?lang={{ lc }}"
+    <a href="/esk/pages/{{ page.id }}/edit?lang={{ lc }}"
        class="lang-tab {% if lc == active_lang %}active{% endif %}">
         {% if lc == 'tr' %}🇹🇷{% elif lc == 'en' %}🇬🇧{% elif lc == 'de' %}🇩🇪{% elif lc == 'fr' %}🇫🇷{% elif lc == 'ar' %}🇸🇦{% elif lc == 'ru' %}🇷🇺{% elif lc == 'es' %}🇪🇸{% endif %}
         {{ lc|upper }}
@@ -107,7 +113,7 @@
     <button class="section-tab" onclick="switchSection('settings',this)">⚙️ Ayarlar</button>
 </div>
 
-<form method="post" action="/admin/pages/{{ page.id }}/edit" id="main-form">
+<form method="post" action="/esk/pages/{{ page.id }}/edit" id="main-form">
     <input type="hidden" name="lang" value="{{ active_lang }}">
 
     <!-- ═══ İÇERİK SEKMESİ ═══ -->
@@ -294,7 +300,7 @@
 
     <!-- SAVE BAR (content, seo, settings) -->
     <div id="save-bar" style="position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e8eaf0;padding:14px 0;display:flex;justify-content:flex-end;gap:12px;z-index:50;">
-        <a href="/admin/pages" style="padding:10px 22px;background:#f3f4f6;border-radius:8px;font-size:14px;font-weight:600;color:#333;text-decoration:none;">
+        <a href="/esk/pages" style="padding:10px 22px;background:#f3f4f6;border-radius:8px;font-size:14px;font-weight:600;color:#333;text-decoration:none;">
             ← Geri
         </a>
         <button type="submit" style="padding:10px 28px;background:#0a0a0a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
@@ -312,7 +318,7 @@
 
         {% for faq in faqs %}
         <div style="background:#f8f9fb;border-radius:10px;border:1px solid #e8eaf0;padding:20px;margin-bottom:14px;">
-            <form method="post" action="/admin/pages/{{ page.id }}/faq/{{ faq.id }}/edit">
+            <form method="post" action="/esk/pages/{{ page.id }}/faq/{{ faq.id }}/edit">
                 <input type="hidden" name="lang" value="{{ active_lang }}">
                 <div style="display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;">
                     <div style="background:#0a0a0a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:8px;flex-shrink:0;">
@@ -341,7 +347,7 @@
                     </div>
                 </div>
             </form>
-            <form id="del-faq-{{ faq.id }}" method="post" action="/admin/pages/{{ page.id }}/faq/{{ faq.id }}/delete" style="display:none;">
+            <form id="del-faq-{{ faq.id }}" method="post" action="/esk/pages/{{ page.id }}/faq/{{ faq.id }}/delete" style="display:none;">
                 <input type="hidden" name="lang" value="{{ active_lang }}">
             </form>
         </div>
@@ -353,7 +359,7 @@
 
         <div style="margin-top:20px;padding-top:20px;border-top:1px solid #f0f0f0;">
             <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:14px;">➕ Yeni SSS Ekle</div>
-            <form method="post" action="/admin/pages/{{ page.id }}/faq/add">
+            <form method="post" action="/esk/pages/{{ page.id }}/faq/add">
                 <input type="hidden" name="lang" value="{{ active_lang }}">
                 <div class="form-group">
                     <label class="form-label">Soru</label>
@@ -404,12 +410,12 @@ tinymce.init({
     image_advtab: true,
     image_uploadtab: true,
     automatic_uploads: true,
-    images_upload_url: '/admin/upload-image',
+    images_upload_url: '/esk/upload-image',
     images_upload_handler: function (blobInfo, progress) {
         return new Promise((resolve, reject) => {
             const formData = new FormData();
             formData.append('file', blobInfo.blob(), blobInfo.filename());
-            fetch('/admin/upload-image', { method: 'POST', body: formData })
+            fetch('/esk/upload-image', { method: 'POST', body: formData })
                 .then(r => r.json())
                 .then(data => {
                     if (data.location) resolve(data.location);
@@ -529,7 +535,7 @@ async function uploadFiles(files) {
         const fd = new FormData();
         fd.append('file', file);
         try {
-            const res = await fetch('/admin/upload-image', { method:'POST', body:fd });
+            const res = await fetch('/esk/upload-image', { method:'POST', body:fd });
             uploadBar.style.width = '90%';
             const data = await res.json();
             if (data.location) {

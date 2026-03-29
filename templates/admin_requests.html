@@ -423,13 +423,13 @@
                     <td>
                         <div class="td-inner">
                             <div class="req-actions">
-                                <form method="POST" action="/admin/requests/approve/{{ req.id }}">
+                                <form method="POST" action="/esk/requests/approve/{{ req.id }}">
                                     <button type="submit" class="btn-approve"
                                         onclick="return confirm('{{ req.company_name }} müşteri olarak kaydedilsin mi?')">
                                         ✓ Onayla
                                     </button>
                                 </form>
-                                <form method="POST" action="/admin/requests/delete/{{ req.id }}">
+                                <form method="POST" action="/esk/requests/delete/{{ req.id }}">
                                     <button type="submit" class="btn-reject"
                                         onclick="return confirm('Bu talep kalıcı olarak silinecek. Emin misiniz?')">
                                         ✕ İptal
@@ -469,11 +469,11 @@
                 {% endfor %}
             </div>
             <div class="req-actions">
-                <form method="POST" action="/admin/requests/approve/{{ req.id }}" style="flex:1;">
+                <form method="POST" action="/esk/requests/approve/{{ req.id }}" style="flex:1;">
                     <button type="submit" class="btn-approve" style="width:100%;"
                         onclick="return confirm('Müşteri olarak kaydedilsin mi?')">✓ Onayla</button>
                 </form>
-                <form method="POST" action="/admin/requests/delete/{{ req.id }}" style="flex:1;">
+                <form method="POST" action="/esk/requests/delete/{{ req.id }}" style="flex:1;">
                     <button type="submit" class="btn-reject" style="width:100%;"
                         onclick="return confirm('Talep silinsin mi?')">✕ İptal</button>
                 </form>

@@ -210,7 +210,7 @@
 
 <div class="admin-page-header">
     <h1 class="admin-page-title">Müşteri Düzenle</h1>
-    <a href="/admin/customers" class="btn-back">← Müşteri Listesi</a>
+    <a href="/esk/customers" class="btn-back">← Müşteri Listesi</a>
 </div>
 
 <div class="edit-card">
@@ -219,7 +219,7 @@
         <span style="font-size:11px;color:var(--text-muted);font-family:var(--mono);">ID #{{ customer.id }}</span>
     </div>
     <div class="edit-card-body">
-        <form method="POST" action="/admin/customers/update/{{ customer.id }}">
+        <form method="POST" action="/esk/customers/update/{{ customer.id }}">
             <div class="form-grid-2">
                 <div class="form-group">
                     <label class="form-label">Firma / Ad *</label>
@@ -253,12 +253,12 @@
             </div>
 
             <div class="form-actions">
-                <form method="POST" action="/admin/customers/delete/{{ customer.id }}" style="margin:0;"
+                <form method="POST" action="/esk/customers/delete/{{ customer.id }}" style="margin:0;"
                     onsubmit="return confirm('{{ customer.name }} silinsin mi?')">
                     <button type="submit" class="btn-delete-customer">🗑 Müşteriyi Sil</button>
                 </form>
                 <div class="form-actions-right">
-                    <a href="/admin/customers" class="btn-cancel">İptal</a>
+                    <a href="/esk/customers" class="btn-cancel">İptal</a>
                     <button type="submit" class="btn-submit">Değişiklikleri Kaydet</button>
                 </div>
             </div>
@@ -337,7 +337,7 @@
         <!-- İşlem Ekle Formu -->
         <div style="background:var(--surface-2);padding:20px;border-radius:var(--radius-md);margin-bottom:20px;">
             <h3 style="font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text-primary);">Yeni Cari Hesap İşlemi Ekle</h3>
-            <form method="POST" action="/admin/customers/{{ customer.id }}/account/add">
+            <form method="POST" action="/esk/customers/{{ customer.id }}/account/add">
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label class="form-label">İşlem Türü *</label>
@@ -418,7 +418,7 @@
                             </div>
                         </td>
                         <td style="padding:12px 16px;text-align:center;">
-                            <form method="POST" action="/admin/customers/account/delete/{{ tx.id }}" style="margin:0;" onsubmit="return confirm('Bu işlem silinsin mi?')">
+                            <form method="POST" action="/esk/customers/account/delete/{{ tx.id }}" style="margin:0;" onsubmit="return confirm('Bu işlem silinsin mi?')">
                                 <button type="submit" style="padding:4px 8px;background:transparent;color:var(--text-muted);border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:12px;">🗑</button>
                             </form>
                         </td>

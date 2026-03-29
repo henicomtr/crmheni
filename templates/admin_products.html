@@ -675,7 +675,7 @@
         <h2>Yeni Ürün</h2>
     </div>
     <div class="add-product-card-body">
-        <form method="post" action="/admin/products/create" enctype="multipart/form-data" id="product-form">
+        <form method="post" action="/esk/products/create" enctype="multipart/form-data" id="product-form">
 
             <!-- ÜRÜN BİLGİSİ (Evrensel) -->
             <div class="form-section-title">Ürün Bilgisi</div>
@@ -923,8 +923,8 @@
                     </td>
                     <td>
                         <div class="row-actions">
-                            <a href="/admin/products/edit/{{ product.id }}" class="btn-edit-sm">Düzenle</a>
-                            <a href="/admin/products/delete/{{ product.id }}" class="btn-delete-sm"
+                            <a href="/esk/products/edit/{{ product.id }}" class="btn-edit-sm">Düzenle</a>
+                            <a href="/esk/products/delete/{{ product.id }}" class="btn-delete-sm"
                                 onclick="return confirm('Bu ürünü silmek istediğinize emin misiniz?')">Sil</a>
                         </div>
                     </td>
@@ -955,8 +955,8 @@
         <div style="display:flex;justify-content:space-between;align-items:center;">
             <span class="product-row-price">{{ "%.2f"|format(product.unit_price) }} USD</span>
             <div class="row-actions">
-                <a href="/admin/products/edit/{{ product.id }}" class="btn-edit-sm">Düzenle</a>
-                <a href="/admin/products/delete/{{ product.id }}" class="btn-delete-sm"
+                <a href="/esk/products/edit/{{ product.id }}" class="btn-edit-sm">Düzenle</a>
+                <a href="/esk/products/delete/{{ product.id }}" class="btn-delete-sm"
                     onclick="return confirm('Silinsin mi?')">Sil</a>
             </div>
         </div>

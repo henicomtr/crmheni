@@ -9,6 +9,8 @@ from jose import jwt, JWTError
 from typing import Optional
 import shutil
 import os
+import hmac
+import hashlib
 
 from .database import get_db
 from .auth import verify_password, create_token
@@ -342,32 +344,245 @@ def admin_required(token: Optional[str] = Cookie(None)):
 
 
 # =========================================================
+# PIN KAPI & BRUTE-FORCE KORUMASI
+# =========================================================
+
+# Giriş kapısı PIN kodu (4 haneli)
+_GATE_PIN = "5016"
+# Ban süresi (dakika)
+_BAN_MINUTES = 30
+# İzin verilen maksimum yanlış deneme
+_MAX_ATTEMPTS = 3
+
+# Bellek tabanlı ban kayıtları: {ip: {"count": int, "blocked_until": datetime|None}}
+_pin_attempts: dict = {}
+_login_attempts: dict = {}
+
+
+def _get_client_ip(request: Request) -> str:
+    """İstemci IP adresini tespit eder (proxy arkasında da çalışır)."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _is_banned(store: dict, ip: str) -> bool:
+    """IP'nin aktif bir banlı olup olmadığını kontrol eder."""
+    entry = store.get(ip)
+    if not entry:
+        return False
+    blocked_until = entry.get("blocked_until")
+    if blocked_until and datetime.now(timezone.utc) < blocked_until:
+        return True
+    # Ban süresi dolmuşsa kaydı temizle
+    if blocked_until and datetime.now(timezone.utc) >= blocked_until:
+        store.pop(ip, None)
+    return False
+
+
+def _ban_remaining_seconds(store: dict, ip: str) -> int:
+    """Banlı IP için kalan saniyeyi döner."""
+    entry = store.get(ip)
+    if not entry:
+        return 0
+    blocked_until = entry.get("blocked_until")
+    if blocked_until and datetime.now(timezone.utc) < blocked_until:
+        delta = blocked_until - datetime.now(timezone.utc)
+        return int(delta.total_seconds())
+    return 0
+
+
+def _record_failure(store: dict, ip: str) -> int:
+    """Başarısız denemeyi kaydeder; yeni deneme sayısını döner.
+    Limit aşılırsa IP'yi banlar ve 0 döner (banlama gerçekleşti)."""
+    entry = store.setdefault(ip, {"count": 0, "blocked_until": None})
+    entry["count"] += 1
+    if entry["count"] >= _MAX_ATTEMPTS:
+        entry["blocked_until"] = datetime.now(timezone.utc) + _timedelta(minutes=_BAN_MINUTES)
+        entry["count"] = 0  # Sayaçı sıfırla (ban sonrası yeni süreç için)
+    return entry["count"]
+
+
+def _reset_attempts(store: dict, ip: str):
+    """Başarılı girişte deneme sayacını sıfırlar."""
+    store.pop(ip, None)
+
+
+def _make_gate_cookie(secret: str) -> str:
+    """PIN doğrulandığında kullanıcıya verilecek imzalı cookie değeri üretir."""
+    return hmac.new(secret.encode(), b"heni_gate_ok", hashlib.sha256).hexdigest()
+
+
+def _verify_gate_cookie(secret: str, value: str) -> bool:
+    """Cookie değerinin geçerliliğini HMAC ile doğrular."""
+    expected = hmac.new(secret.encode(), b"heni_gate_ok", hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, value)
+
+
+# =========================================================
+# PIN KAPISI ROUTE'LARI
+# =========================================================
+
+@router.get("/esk", response_class=HTMLResponse)
+def pin_gate_page(request: Request):
+    """PIN giriş ekranını gösterir. Zaten giriş yapılmışsa panele yönlendirir."""
+    ip = _get_client_ip(request)
+
+    # Aktif JWT token varsa direk panele gönder
+    token = request.cookies.get("token")
+    if token:
+        try:
+            jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            return RedirectResponse("/esk/dashboard", status_code=302)
+        except JWTError:
+            pass
+
+    # IP banlı mı kontrol et
+    if _is_banned(_pin_attempts, ip):
+        kalan = _ban_remaining_seconds(_pin_attempts, ip)
+        dakika = kalan // 60
+        saniye = kalan % 60
+        return templates.TemplateResponse("pin_gate.html", {
+            "request": request,
+            "banned": True,
+            "ban_msg": f"Çok fazla hatalı deneme. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+        })
+
+    return templates.TemplateResponse("pin_gate.html", {
+        "request": request,
+        "banned": False,
+        "error": request.query_params.get("error"),
+    })
+
+
+@router.post("/esk/verify")
+def pin_verify(
+    request: Request,
+    pin: str = Form(...),
+):
+    """PIN doğrulama — doğruysa login sayfasına, yanlışsa ban kontrolüyle geri döner."""
+    ip = _get_client_ip(request)
+
+    # IP banlı mı
+    if _is_banned(_pin_attempts, ip):
+        kalan = _ban_remaining_seconds(_pin_attempts, ip)
+        dakika = kalan // 60
+        saniye = kalan % 60
+        return templates.TemplateResponse("pin_gate.html", {
+            "request": request,
+            "banned": True,
+            "ban_msg": f"Çok fazla hatalı deneme. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+        })
+
+    # PIN doğru mu
+    if pin.strip() != _GATE_PIN:
+        _record_failure(_pin_attempts, ip)
+        if _is_banned(_pin_attempts, ip):
+            kalan = _ban_remaining_seconds(_pin_attempts, ip)
+            dakika = kalan // 60
+            saniye = kalan % 60
+            return templates.TemplateResponse("pin_gate.html", {
+                "request": request,
+                "banned": True,
+                "ban_msg": f"Çok fazla hatalı deneme. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+            })
+        return templates.TemplateResponse("pin_gate.html", {
+            "request": request,
+            "banned": False,
+            "error": "Hatalı PIN. Lütfen tekrar deneyin.",
+        })
+
+    # PIN doğru — cookie set et ve login'e yönlendir
+    _reset_attempts(_pin_attempts, ip)
+    response = RedirectResponse("/esk/login", status_code=302)
+    response.set_cookie(
+        key="heni_gate",
+        value=_make_gate_cookie(SECRET_KEY),
+        httponly=True,
+        samesite="lax",
+        max_age=3600,  # 1 saat geçerli
+    )
+    return response
+
+
+# =========================================================
 # LOGIN
 # =========================================================
 
-@router.get("/admin/login", response_class=HTMLResponse)
+@router.get("/esk/login", response_class=HTMLResponse)
 def login_page(request: Request):
+    """Login sayfasını gösterir. PIN kapısı geçilmemişse /esk'e yönlendirir."""
+    ip = _get_client_ip(request)
+
+    # PIN cookie kontrolü
+    gate_cookie = request.cookies.get("heni_gate", "")
+    if not _verify_gate_cookie(SECRET_KEY, gate_cookie):
+        return RedirectResponse("/esk", status_code=302)
+
+    # Login ban kontrolü
+    if _is_banned(_login_attempts, ip):
+        kalan = _ban_remaining_seconds(_login_attempts, ip)
+        dakika = kalan // 60
+        saniye = kalan % 60
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": f"Çok fazla hatalı giriş. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+            "banned": True,
+        })
+
     return templates.TemplateResponse("login.html", {"request": request})
 
 
-@router.post("/admin/login")
+@router.post("/esk/login")
 def login(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    """Kullanıcı girişi — brute-force korumalı."""
+    ip = _get_client_ip(request)
+
+    # PIN cookie kontrolü
+    gate_cookie = request.cookies.get("heni_gate", "")
+    if not _verify_gate_cookie(SECRET_KEY, gate_cookie):
+        return RedirectResponse("/esk", status_code=302)
+
+    # Login ban kontrolü
+    if _is_banned(_login_attempts, ip):
+        kalan = _ban_remaining_seconds(_login_attempts, ip)
+        dakika = kalan // 60
+        saniye = kalan % 60
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": f"Çok fazla hatalı giriş. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+            "banned": True,
+        })
+
     user = db.query(User).filter(User.email == email).first()
 
     if not user or not verify_password(password, user.password):
+        _record_failure(_login_attempts, ip)
+        if _is_banned(_login_attempts, ip):
+            kalan = _ban_remaining_seconds(_login_attempts, ip)
+            dakika = kalan // 60
+            saniye = kalan % 60
+            return templates.TemplateResponse("login.html", {
+                "request": request,
+                "error": f"Çok fazla hatalı giriş. {dakika} dk {saniye} sn sonra tekrar deneyin.",
+                "banned": True,
+            })
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Hatalı giriş"}
+            {"request": request, "error": "E-posta veya şifre hatalı."}
         )
 
+    # Başarılı giriş — deneme sayacını sıfırla
+    _reset_attempts(_login_attempts, ip)
     token = create_token({"sub": user.email})
 
-    response = RedirectResponse(url="/admin", status_code=302)
+    response = RedirectResponse(url="/esk/dashboard", status_code=302)
     response.set_cookie(
         key="token",
         value=token,
@@ -377,9 +592,9 @@ def login(
     return response
 
 
-@router.get("/admin/logout")
+@router.get("/esk/logout")
 def logout():
-    response = RedirectResponse("/admin/login", status_code=302)
+    response = RedirectResponse("/esk/login", status_code=302)
     response.delete_cookie("token")
     return response
 
@@ -388,7 +603,7 @@ def logout():
 # DASHBOARD
 # =========================================================
 
-@router.get("/admin", response_class=HTMLResponse)
+@router.get("/esk/dashboard", response_class=HTMLResponse)
 def admin_dashboard(
     request: Request,
     db: Session = Depends(get_db),
@@ -396,7 +611,7 @@ def admin_dashboard(
 ):
 
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     total_products = db.query(Product).count()
     total_stock = db.query(func.sum(Product.stock)).scalar() or 0
@@ -450,7 +665,7 @@ def admin_dashboard(
 # PRODUCTS
 # =========================================================
 
-@router.get("/admin/products", response_class=HTMLResponse)
+@router.get("/esk/products", response_class=HTMLResponse)
 def products_page(
     request: Request,
     db: Session = Depends(get_db),
@@ -458,7 +673,7 @@ def products_page(
 ):
 
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     products = db.query(Product).all()
 
@@ -473,14 +688,14 @@ def products_page(
     )
 
 
-@router.post("/admin/products/create")
+@router.post("/esk/products/create")
 async def create_product(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     import re, unicodedata
 
@@ -516,8 +731,8 @@ async def create_product(
                 image_path = f"/static/upload/images/{optimized_fname}"
             except ValueError as e:
                 if "too large" in str(e).lower():
-                    return RedirectResponse("/admin/products?error=image_too_large", status_code=302)
-                return RedirectResponse("/admin/products", status_code=302)
+                    return RedirectResponse("/esk/products?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/products", status_code=302)
         else:
             image_path = save_upload(image, UPLOAD_DIR_IMAGES, "/static/upload/images/")
     
@@ -591,11 +806,11 @@ async def create_product(
         db.add(translation)
 
     db.commit()
-    return RedirectResponse("/admin/products", status_code=302)
+    return RedirectResponse("/esk/products", status_code=302)
 
 
 
-@router.get("/admin/products/delete/{product_id}")
+@router.get("/esk/products/delete/{product_id}")
 def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
@@ -603,14 +818,14 @@ def delete_product(
 ):
 
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     product = db.query(Product).filter(Product.id == product_id).first()
     if product:
         db.delete(product)
         db.commit()
 
-    return RedirectResponse("/admin/products", status_code=302)
+    return RedirectResponse("/esk/products", status_code=302)
 
 
 # =========================================================
@@ -621,7 +836,7 @@ def delete_product(
 # PRODUCT EDIT — GET
 # =========================================================
 
-@router.get("/admin/products/edit/{product_id}", response_class=HTMLResponse)
+@router.get("/esk/products/edit/{product_id}", response_class=HTMLResponse)
 def edit_product_page(
     product_id: int,
     request: Request,
@@ -629,11 +844,11 @@ def edit_product_page(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
-        return RedirectResponse("/admin/products", status_code=302)
+        return RedirectResponse("/esk/products", status_code=302)
 
     categories_ui = _categories_ui()
     return templates.TemplateResponse(
@@ -646,7 +861,7 @@ def edit_product_page(
 # PRODUCT UPDATE — POST
 # =========================================================
 
-@router.post("/admin/products/update/{product_id}")
+@router.post("/esk/products/update/{product_id}")
 async def update_product(
     product_id: int,
     request: Request,
@@ -654,7 +869,7 @@ async def update_product(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     import re, unicodedata
 
@@ -668,7 +883,7 @@ async def update_product(
 
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
-        return RedirectResponse("/admin/products", status_code=302)
+        return RedirectResponse("/esk/products", status_code=302)
 
     form = await request.form()
     LANGS = ["en", "tr", "de", "fr"]
@@ -707,7 +922,7 @@ async def update_product(
                 except ValueError as e:
                     if "too large" in str(e).lower():
                         return RedirectResponse(
-                            f"/admin/products/edit/{product_id}?error=image_too_large",
+                            f"/esk/products/edit/{product_id}?error=image_too_large",
                             status_code=302,
                         )
                     # Diğer durumlarda olduğu gibi kaydetmeyi bozmayalım.
@@ -766,21 +981,21 @@ async def update_product(
             db.add(new_t)
 
     db.commit()
-    return RedirectResponse(f"/admin/products/edit/{product_id}", status_code=302)
+    return RedirectResponse(f"/esk/products/edit/{product_id}", status_code=302)
 
 
 # =========================================================
 # CUSTOMERS
 # =========================================================
 
-@router.get("/admin/customers", response_class=HTMLResponse)
+@router.get("/esk/customers", response_class=HTMLResponse)
 def customers_page(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     from datetime import timedelta
     customers = db.query(Customer).order_by(Customer.created_at.desc()).all()
@@ -809,7 +1024,7 @@ def customers_page(
     })
 
 
-@router.post("/admin/customers/create")
+@router.post("/esk/customers/create")
 def create_customer(
     request: Request,
     name: str = Form(...),
@@ -822,7 +1037,7 @@ def create_customer(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     db.add(Customer(
         name=name, country=country or None, email=email or None,
@@ -830,10 +1045,10 @@ def create_customer(
         notes=notes or None
     ))
     db.commit()
-    return RedirectResponse("/admin/customers", status_code=302)
+    return RedirectResponse("/esk/customers", status_code=302)
 
 
-@router.get("/admin/customers/edit/{customer_id}", response_class=HTMLResponse)
+@router.get("/esk/customers/edit/{customer_id}", response_class=HTMLResponse)
 def edit_customer_page(
     customer_id: int,
     request: Request,
@@ -841,11 +1056,11 @@ def edit_customer_page(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if not customer:
-        return RedirectResponse("/admin/customers", status_code=302)
+        return RedirectResponse("/esk/customers", status_code=302)
 
     # Cari hesap bakiyesi hesapla
     account_data = _calculate_account_balance(db, customer_id=customer_id)
@@ -869,7 +1084,7 @@ def edit_customer_page(
     })
 
 
-@router.post("/admin/customers/update/{customer_id}")
+@router.post("/esk/customers/update/{customer_id}")
 def update_customer(
     customer_id: int,
     name: str = Form(...),
@@ -882,7 +1097,7 @@ def update_customer(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if customer:
@@ -893,26 +1108,26 @@ def update_customer(
         customer.contact_person = contact_person or None
         customer.notes          = notes or None
         db.commit()
-    return RedirectResponse(f"/admin/customers/edit/{customer_id}", status_code=302)
+    return RedirectResponse(f"/esk/customers/edit/{customer_id}", status_code=302)
 
 
-@router.post("/admin/customers/delete/{customer_id}")
+@router.post("/esk/customers/delete/{customer_id}")
 def delete_customer(
     customer_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     customer = db.query(Customer).filter(Customer.id == customer_id).first()
     if customer:
         db.delete(customer)
         db.commit()
-    return RedirectResponse("/admin/customers", status_code=302)
+    return RedirectResponse("/esk/customers", status_code=302)
 
 
-@router.post("/admin/customers/{customer_id}/account/add")
+@router.post("/esk/customers/{customer_id}/account/add")
 def add_customer_account_transaction(
     customer_id: int,
     type: str = Form(...),
@@ -925,7 +1140,7 @@ def add_customer_account_transaction(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     # Tarih parse
     tx_date = datetime.utcnow()
@@ -947,40 +1162,40 @@ def add_customer_account_transaction(
     db.add(tx)
     db.commit()
     
-    return RedirectResponse(f"/admin/customers/edit/{customer_id}", status_code=302)
+    return RedirectResponse(f"/esk/customers/edit/{customer_id}", status_code=302)
 
 
-@router.post("/admin/customers/account/delete/{tx_id}")
+@router.post("/esk/customers/account/delete/{tx_id}")
 def delete_customer_account_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     tx = db.query(AccountTransaction).filter(AccountTransaction.id == tx_id).first()
     if tx and tx.customer_id:
         customer_id = tx.customer_id
         db.delete(tx)
         db.commit()
-        return RedirectResponse(f"/admin/customers/edit/{customer_id}", status_code=302)
+        return RedirectResponse(f"/esk/customers/edit/{customer_id}", status_code=302)
     
-    return RedirectResponse("/admin/customers", status_code=302)
+    return RedirectResponse("/esk/customers", status_code=302)
 
 
 # =========================================================
 # SUPPLIERS
 # =========================================================
 
-@router.get("/admin/suppliers", response_class=HTMLResponse)
+@router.get("/esk/suppliers", response_class=HTMLResponse)
 def suppliers_page(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     from datetime import timedelta
     suppliers  = db.query(Supplier).order_by(Supplier.created_at.desc()).all()
@@ -1009,7 +1224,7 @@ def suppliers_page(
     })
 
 
-@router.post("/admin/suppliers/create")
+@router.post("/esk/suppliers/create")
 def create_supplier(
     name: str = Form(...),
     contact_person: str = Form(""),
@@ -1024,7 +1239,7 @@ def create_supplier(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     db.add(Supplier(
         name=name,
@@ -1038,10 +1253,10 @@ def create_supplier(
         notes=notes or None,
     ))
     db.commit()
-    return RedirectResponse("/admin/suppliers", status_code=302)
+    return RedirectResponse("/esk/suppliers", status_code=302)
 
 
-@router.get("/admin/suppliers/edit/{supplier_id}", response_class=HTMLResponse)
+@router.get("/esk/suppliers/edit/{supplier_id}", response_class=HTMLResponse)
 def edit_supplier_page(
     supplier_id: int,
     request: Request,
@@ -1049,11 +1264,11 @@ def edit_supplier_page(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
     if not supplier:
-        return RedirectResponse("/admin/suppliers", status_code=302)
+        return RedirectResponse("/esk/suppliers", status_code=302)
 
     # Cari hesap bakiyesi hesapla
     account_data = _calculate_account_balance(db, supplier_id=supplier_id)
@@ -1077,7 +1292,7 @@ def edit_supplier_page(
     })
 
 
-@router.post("/admin/suppliers/update/{supplier_id}")
+@router.post("/esk/suppliers/update/{supplier_id}")
 def update_supplier(
     supplier_id: int,
     name: str = Form(...),
@@ -1093,7 +1308,7 @@ def update_supplier(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
     if supplier:
@@ -1107,26 +1322,26 @@ def update_supplier(
         supplier.district        = district or None
         supplier.notes           = notes or None
         db.commit()
-    return RedirectResponse(f"/admin/suppliers/edit/{supplier_id}", status_code=302)
+    return RedirectResponse(f"/esk/suppliers/edit/{supplier_id}", status_code=302)
 
 
-@router.post("/admin/suppliers/delete/{supplier_id}")
+@router.post("/esk/suppliers/delete/{supplier_id}")
 def delete_supplier(
     supplier_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     supplier = db.query(Supplier).filter(Supplier.id == supplier_id).first()
     if supplier:
         db.delete(supplier)
         db.commit()
-    return RedirectResponse("/admin/suppliers", status_code=302)
+    return RedirectResponse("/esk/suppliers", status_code=302)
 
 
-@router.post("/admin/suppliers/{supplier_id}/account/add")
+@router.post("/esk/suppliers/{supplier_id}/account/add")
 def add_supplier_account_transaction(
     supplier_id: int,
     type: str = Form(...),
@@ -1139,7 +1354,7 @@ def add_supplier_account_transaction(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     # Tarih parse
     tx_date = datetime.utcnow()
@@ -1161,40 +1376,40 @@ def add_supplier_account_transaction(
     db.add(tx)
     db.commit()
     
-    return RedirectResponse(f"/admin/suppliers/edit/{supplier_id}", status_code=302)
+    return RedirectResponse(f"/esk/suppliers/edit/{supplier_id}", status_code=302)
 
 
-@router.post("/admin/suppliers/account/delete/{tx_id}")
+@router.post("/esk/suppliers/account/delete/{tx_id}")
 def delete_supplier_account_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     tx = db.query(AccountTransaction).filter(AccountTransaction.id == tx_id).first()
     if tx and tx.supplier_id:
         supplier_id = tx.supplier_id
         db.delete(tx)
         db.commit()
-        return RedirectResponse(f"/admin/suppliers/edit/{supplier_id}", status_code=302)
+        return RedirectResponse(f"/esk/suppliers/edit/{supplier_id}", status_code=302)
     
-    return RedirectResponse("/admin/suppliers", status_code=302)
+    return RedirectResponse("/esk/suppliers", status_code=302)
 
 
 # =========================================================
 # REQUESTS (Teklif Talepleri)
 # =========================================================
 
-@router.get("/admin/requests", response_class=HTMLResponse)
+@router.get("/esk/requests", response_class=HTMLResponse)
 def requests_page(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     import json
     rates = get_rates()
@@ -1214,14 +1429,14 @@ def requests_page(
     })
 
 
-@router.post("/admin/requests/approve/{req_id}")
+@router.post("/esk/requests/approve/{req_id}")
 def approve_request(
     req_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     quote = db.query(QuoteRequest).filter(QuoteRequest.id == req_id).first()
     if quote:
@@ -1237,23 +1452,23 @@ def approve_request(
             ))
         db.delete(quote)
         db.commit()
-    return RedirectResponse("/admin/requests", status_code=302)
+    return RedirectResponse("/esk/requests", status_code=302)
 
 
-@router.post("/admin/requests/delete/{req_id}")
+@router.post("/esk/requests/delete/{req_id}")
 def delete_request(
     req_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     quote = db.query(QuoteRequest).filter(QuoteRequest.id == req_id).first()
     if quote:
         db.delete(quote)
         db.commit()
-    return RedirectResponse("/admin/requests", status_code=302)
+    return RedirectResponse("/esk/requests", status_code=302)
 
 
 
@@ -1262,7 +1477,7 @@ def delete_request(
 # FINANCE
 # =========================================================
 
-@router.get("/admin/finance", response_class=HTMLResponse)
+@router.get("/esk/finance", response_class=HTMLResponse)
 def finance_page(
     request: Request,
     period: str = "month",
@@ -1270,7 +1485,7 @@ def finance_page(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     from datetime import timedelta, date
     import calendar
@@ -1404,7 +1619,7 @@ def finance_page(
     })
 
 
-@router.post("/admin/finance/create")
+@router.post("/esk/finance/create")
 def create_transaction(
     request: Request,
     type:             str  = Form(...),
@@ -1422,7 +1637,7 @@ def create_transaction(
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     # Tarih parse
     tx_date = datetime.utcnow()
@@ -1489,11 +1704,11 @@ def create_transaction(
         db.add(account_tx)
         db.commit()
     
-    return RedirectResponse("/admin/finance", status_code=302)
+    return RedirectResponse("/esk/finance", status_code=302)
 
 
 
-@router.post("/admin/finance/transfer")
+@router.post("/esk/finance/transfer")
 def create_transfer(
     request: Request,
     amount:           float = Form(...),
@@ -1507,7 +1722,7 @@ def create_transfer(
 ):
     """Hesaplar arası transfer: çift kayıt yazar ve birbirine bağlar."""
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     tx_date = datetime.utcnow()
     if transaction_date:
@@ -1551,28 +1766,28 @@ def create_transfer(
     tx_out.transfer_pair_id = tx_in.id
     db.commit()
 
-    return RedirectResponse("/admin/finance", status_code=302)
+    return RedirectResponse("/esk/finance", status_code=302)
 
-@router.post("/admin/finance/delete/{tx_id}")
+@router.post("/esk/finance/delete/{tx_id}")
 def delete_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required)
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
 
     tx = db.query(FinanceTransaction).filter(FinanceTransaction.id == tx_id).first()
     if tx:
         db.delete(tx)
         db.commit()
-    return RedirectResponse("/admin/finance", status_code=302)
+    return RedirectResponse("/esk/finance", status_code=302)
 
 # =========================================================
 # CMS — MEDYA YÜKLEME (TinyMCE için)
 # =========================================================
 
-@router.post("/admin/upload-image")
+@router.post("/esk/upload-image")
 async def upload_image(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
@@ -1607,7 +1822,7 @@ async def upload_image(
     return JSONResponse({"location": f"/static/upload/images/{fname}"})
 
 
-@router.post("/admin/upload-homepage-image")
+@router.post("/esk/upload-homepage-image")
 async def upload_homepage_image(
     file: UploadFile = File(...),
     admin: str = Depends(admin_required),
@@ -1644,6 +1859,197 @@ async def upload_homepage_image(
 
 
 # =========================================================
+# MEDYA KÜTÜPHANESİ
+# =========================================================
+
+# Desteklenen dosya türleri ve kategorileri
+_MEDIA_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg", ".bmp"}
+_MEDIA_VIDEO_EXTS = {".mp4", ".webm", ".mov", ".avi", ".mkv"}
+_MEDIA_DOC_EXTS   = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv"}
+
+# Maksimum yüklenebilir dosya boyutu (50 MB)
+_MEDIA_MAX_SIZE_BYTES = 50 * 1024 * 1024
+
+
+def _list_media_files() -> list[dict]:
+    """
+    Üç upload klasöründeki tüm dosyaları tarayıp metadata listesi döner.
+    Her öğe: {name, url, path, size, size_str, ext, media_type, modified}
+    """
+    klasorler = [
+        (UPLOAD_DIR_IMAGES, "/static/upload/images"),
+        (UPLOAD_DIR_VIDEOS, "/static/upload/videos"),
+        (UPLOAD_DIR_DOCS,   "/static/upload/doc"),
+    ]
+    dosyalar = []
+    for dizin, url_prefix in klasorler:
+        if not os.path.isdir(dizin):
+            continue
+        for dosya_adi in os.listdir(dizin):
+            tam_yol = os.path.join(dizin, dosya_adi)
+            if not os.path.isfile(tam_yol):
+                continue
+            ext = os.path.splitext(dosya_adi)[1].lower()
+            # Medya türünü belirle
+            if ext in _MEDIA_IMAGE_EXTS:
+                media_type = "image"
+            elif ext in _MEDIA_VIDEO_EXTS:
+                media_type = "video"
+            elif ext in _MEDIA_DOC_EXTS:
+                media_type = "doc"
+            else:
+                media_type = "other"
+
+            boyut = os.path.getsize(tam_yol)
+            # Okunabilir boyut formatı
+            if boyut < 1024:
+                boyut_str = f"{boyut} B"
+            elif boyut < 1024 * 1024:
+                boyut_str = f"{boyut / 1024:.1f} KB"
+            else:
+                boyut_str = f"{boyut / (1024*1024):.1f} MB"
+
+            degistirme = datetime.fromtimestamp(os.path.getmtime(tam_yol))
+            dosyalar.append({
+                "name": dosya_adi,
+                "url": f"{url_prefix}/{dosya_adi}",
+                "dir": dizin,
+                "size": boyut,
+                "size_str": boyut_str,
+                "ext": ext.lstrip(".").upper(),
+                "media_type": media_type,
+                "modified": degistirme.strftime("%d.%m.%Y %H:%M"),
+            })
+
+    # En yeni dosyalar önce
+    dosyalar.sort(key=lambda x: x["modified"], reverse=True)
+    return dosyalar
+
+
+@router.get("/esk/media", response_class=HTMLResponse)
+async def media_library(
+    request: Request,
+    tip: str = "all",
+    db: Session = Depends(get_db),
+    admin: str = Depends(admin_required),
+):
+    """Medya kütüphanesi: tüm upload dosyalarını listeler."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=303)
+
+    dosyalar = _list_media_files()
+
+    # Filtrele
+    if tip in ("image", "video", "doc"):
+        filtreli = [d for d in dosyalar if d["media_type"] == tip]
+    else:
+        filtreli = dosyalar
+
+    # Sayım
+    sayimlar = {
+        "all":   len(dosyalar),
+        "image": sum(1 for d in dosyalar if d["media_type"] == "image"),
+        "video": sum(1 for d in dosyalar if d["media_type"] == "video"),
+        "doc":   sum(1 for d in dosyalar if d["media_type"] == "doc"),
+    }
+
+    return templates.TemplateResponse("admin_media.html", {
+        "request": request,
+        "dosyalar": filtreli,
+        "aktif_tip": tip,
+        "sayimlar": sayimlar,
+    })
+
+
+@router.post("/esk/media/upload")
+async def media_upload(
+    request: Request,
+    files: list[UploadFile] = File(...),
+    admin: str = Depends(admin_required),
+):
+    """Medya kütüphanesine yeni dosya(lar) yükler."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz erişim"}, status_code=401)
+
+    import uuid
+    import mimetypes
+
+    yuklenenler = []
+    hatalar = []
+
+    for file in files:
+        icerik = await file.read()
+        boyut = len(icerik)
+
+        if boyut > _MEDIA_MAX_SIZE_BYTES:
+            hatalar.append(f"{file.filename}: Dosya çok büyük (maks 50 MB)")
+            continue
+
+        ext = os.path.splitext(file.filename or "")[1].lower()
+        if not ext:
+            hatalar.append(f"{file.filename}: Geçersiz dosya uzantısı")
+            continue
+
+        # Hedef klasörü belirle
+        if ext in _MEDIA_IMAGE_EXTS:
+            hedef_dir = UPLOAD_DIR_IMAGES
+            url_prefix = "/static/upload/images"
+        elif ext in _MEDIA_VIDEO_EXTS:
+            hedef_dir = UPLOAD_DIR_VIDEOS
+            url_prefix = "/static/upload/videos"
+        elif ext in _MEDIA_DOC_EXTS:
+            hedef_dir = UPLOAD_DIR_DOCS
+            url_prefix = "/static/upload/doc"
+        else:
+            hatalar.append(f"{file.filename}: Desteklenmeyen dosya türü")
+            continue
+
+        # Benzersiz dosya adı oluştur
+        guvenli_ad = f"media_{uuid.uuid4().hex[:12]}{ext}"
+        tam_yol = os.path.join(hedef_dir, guvenli_ad)
+
+        with open(tam_yol, "wb") as f:
+            f.write(icerik)
+
+        yuklenenler.append({"name": guvenli_ad, "url": f"{url_prefix}/{guvenli_ad}"})
+
+    return JSONResponse({
+        "uploaded": yuklenenler,
+        "errors": hatalar,
+        "count": len(yuklenenler),
+    })
+
+
+@router.post("/esk/media/delete")
+async def media_delete(
+    request: Request,
+    admin: str = Depends(admin_required),
+):
+    """Medya kütüphanesinden dosya siler (sunucudan da kaldırır)."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz erişim"}, status_code=401)
+
+    veri = await request.json()
+    dosya_adi = veri.get("name", "").strip()
+
+    if not dosya_adi:
+        return JSONResponse({"error": "Dosya adı gerekli"}, status_code=400)
+
+    # Path traversal saldırısını önle: sadece dosya adına izin ver
+    if "/" in dosya_adi or "\\" in dosya_adi or ".." in dosya_adi:
+        return JSONResponse({"error": "Geçersiz dosya adı"}, status_code=400)
+
+    # Üç klasörde ara ve sil
+    for dizin in (UPLOAD_DIR_IMAGES, UPLOAD_DIR_VIDEOS, UPLOAD_DIR_DOCS):
+        tam_yol = os.path.join(dizin, dosya_adi)
+        if os.path.isfile(tam_yol):
+            os.remove(tam_yol)
+            return JSONResponse({"ok": True, "deleted": dosya_adi})
+
+    return JSONResponse({"error": "Dosya bulunamadı"}, status_code=404)
+
+
+# =========================================================
 # CMS — SITE AYARLARI (Logo, Favicon, İletişim, Sosyal)
 # =========================================================
 
@@ -1675,10 +2081,10 @@ def _settings_i18n_seed(s):
     return data
 
 
-@router.get("/admin/settings")
+@router.get("/esk/settings")
 def settings_get(request: Request, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     s = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
     if not s:
         s = SiteSettings(id=1)
@@ -1695,7 +2101,7 @@ def settings_get(request: Request, db: Session = Depends(get_db), admin: str = D
     })
 
 
-@router.post("/admin/settings")
+@router.post("/esk/settings")
 async def settings_post(
     request: Request,
     i18n_json: str = Form("{}"),
@@ -1713,7 +2119,7 @@ async def settings_post(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     import json
     s = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
     if not s:
@@ -1741,8 +2147,8 @@ async def settings_post(
                 s.logo_url = f"/static/upload/images/{optimized_fname}"
             except ValueError as e:
                 if "too large" in str(e).lower():
-                    return RedirectResponse("/admin/settings?error=image_too_large", status_code=302)
-                return RedirectResponse("/admin/settings?saved=0", status_code=302)
+                    return RedirectResponse("/esk/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/settings?saved=0", status_code=302)
         else:
             ext = os.path.splitext(logo.filename)[1]
             fname = f"logo{ext}"
@@ -1759,8 +2165,8 @@ async def settings_post(
                 s.logo_white_url = f"/static/upload/images/{optimized_fname}"
             except ValueError as e:
                 if "too large" in str(e).lower():
-                    return RedirectResponse("/admin/settings?error=image_too_large", status_code=302)
-                return RedirectResponse("/admin/settings?saved=0", status_code=302)
+                    return RedirectResponse("/esk/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/settings?saved=0", status_code=302)
         else:
             ext = os.path.splitext(logo_white.filename)[1]
             fname = f"logo_white{ext}"
@@ -1777,8 +2183,8 @@ async def settings_post(
                 s.favicon_url = f"/static/upload/images/{optimized_fname}"
             except ValueError as e:
                 if "too large" in str(e).lower():
-                    return RedirectResponse("/admin/settings?error=image_too_large", status_code=302)
-                return RedirectResponse("/admin/settings?saved=0", status_code=302)
+                    return RedirectResponse("/esk/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/settings?saved=0", status_code=302)
         else:
             ext = os.path.splitext(favicon.filename)[1]
             fname = f"favicon{ext}"
@@ -1796,8 +2202,8 @@ async def settings_post(
                 s.footer_bg_image_url = f"/static/upload/images/{optimized_fname}"
             except ValueError as e:
                 if "too large" in str(e).lower():
-                    return RedirectResponse("/admin/settings?error=image_too_large", status_code=302)
-                return RedirectResponse("/admin/settings?saved=0", status_code=302)
+                    return RedirectResponse("/esk/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/settings?saved=0", status_code=302)
         else:
             ext = os.path.splitext(footer_bg_image.filename)[1]
             fname = f"footer_bg{ext}"
@@ -1807,17 +2213,17 @@ async def settings_post(
             s.footer_bg_image_url = f"/static/upload/images/{fname}"
 
     db.commit()
-    return RedirectResponse("/admin/settings?saved=1", status_code=302)
+    return RedirectResponse("/esk/settings?saved=1", status_code=302)
 
 
 # =========================================================
 # CMS — SAYFALAR LİSTESİ
 # =========================================================
 
-@router.get("/admin/pages")
+@router.get("/esk/pages")
 def pages_list(request: Request, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     pages = db.query(Page).order_by(Page.sort_order, Page.id).all()
     return templates.TemplateResponse("admin_pages.html", {
         "request": request,
@@ -1827,7 +2233,7 @@ def pages_list(request: Request, db: Session = Depends(get_db), admin: str = Dep
     })
 
 
-@router.post("/admin/pages/new")
+@router.post("/esk/pages/new")
 def page_new(
     request: Request,
     slug: str = Form(...),
@@ -1836,10 +2242,10 @@ def page_new(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     existing = db.query(Page).filter(Page.slug == slug).first()
     if existing:
-        return RedirectResponse(f"/admin/pages/{existing.id}/edit?error=slug_exists", status_code=302)
+        return RedirectResponse(f"/esk/pages/{existing.id}/edit?error=slug_exists", status_code=302)
     page = Page(slug=slug, template=template)
     db.add(page)
     db.flush()
@@ -1847,25 +2253,25 @@ def page_new(
     trans = PageTranslation(page_id=page.id, lang="en", slug=slug, title=slug.replace("-", " ").title())
     db.add(trans)
     db.commit()
-    return RedirectResponse(f"/admin/pages/{page.id}/edit", status_code=302)
+    return RedirectResponse(f"/esk/pages/{page.id}/edit", status_code=302)
 
 
-@router.post("/admin/pages/{page_id}/delete")
+@router.post("/esk/pages/{page_id}/delete")
 def page_delete(page_id: int, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     page = db.query(Page).filter(Page.id == page_id).first()
     if page:
         db.delete(page)
         db.commit()
-    return RedirectResponse("/admin/pages", status_code=302)
+    return RedirectResponse("/esk/pages", status_code=302)
 
 
 # =========================================================
 # CMS — SAYFA DÜZENLEME (çok dilli + FAQ)
 # =========================================================
 
-@router.get("/admin/pages/{page_id}/edit")
+@router.get("/esk/pages/{page_id}/edit")
 def page_edit_get(
     page_id: int,
     lang: str = "en",
@@ -1874,10 +2280,10 @@ def page_edit_get(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     page = db.query(Page).filter(Page.id == page_id).first()
     if not page:
-        return RedirectResponse("/admin/pages", status_code=302)
+        return RedirectResponse("/esk/pages", status_code=302)
     if lang not in SUPPORTED_LANGS:
         lang = "en"
     trans = next((t for t in page.translations if t.lang == lang), None)
@@ -1894,7 +2300,7 @@ def page_edit_get(
     })
 
 
-@router.post("/admin/pages/{page_id}/edit")
+@router.post("/esk/pages/{page_id}/edit")
 def page_edit_post(
     page_id: int,
     request: Request,
@@ -1913,10 +2319,10 @@ def page_edit_post(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     page = db.query(Page).filter(Page.id == page_id).first()
     if not page:
-        return RedirectResponse("/admin/pages", status_code=302)
+        return RedirectResponse("/esk/pages", status_code=302)
 
     page.is_published = is_published
     page.show_in_nav  = show_in_nav
@@ -1940,14 +2346,14 @@ def page_edit_post(
     trans.og_description   = og_description
 
     db.commit()
-    return RedirectResponse(f"/admin/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
+    return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
 
 
 # =========================================================
 # CMS — FAQ CRUD (sayfa + dil bazlı)
 # =========================================================
 
-@router.post("/admin/pages/{page_id}/faq/add")
+@router.post("/esk/pages/{page_id}/faq/add")
 def faq_add(
     page_id: int,
     lang: str = Form("en"),
@@ -1958,17 +2364,17 @@ def faq_add(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = FaqItem(
         page_id=page_id, lang=lang,
         question=question, answer=answer, sort_order=sort_order,
     )
     db.add(faq)
     db.commit()
-    return RedirectResponse(f"/admin/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 
-@router.post("/admin/pages/{page_id}/faq/{faq_id}/edit")
+@router.post("/esk/pages/{page_id}/faq/{faq_id}/edit")
 def faq_edit(
     page_id: int,
     faq_id: int,
@@ -1980,17 +2386,17 @@ def faq_edit(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = db.query(FaqItem).filter(FaqItem.id == faq_id, FaqItem.page_id == page_id).first()
     if faq:
         faq.question   = question
         faq.answer     = answer
         faq.sort_order = sort_order
         db.commit()
-    return RedirectResponse(f"/admin/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 
-@router.post("/admin/pages/{page_id}/faq/{faq_id}/delete")
+@router.post("/esk/pages/{page_id}/faq/{faq_id}/delete")
 def faq_delete(
     page_id: int,
     faq_id: int,
@@ -1999,26 +2405,26 @@ def faq_delete(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = db.query(FaqItem).filter(FaqItem.id == faq_id, FaqItem.page_id == page_id).first()
     if faq:
         db.delete(faq)
         db.commit()
-    return RedirectResponse(f"/admin/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 
 # =========================================================
 # KATEGORİ İÇERİK YÖNETİMİ
 # =========================================================
 
-@router.get("/admin/categories")
+@router.get("/esk/categories")
 def admin_categories(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     from .routes_showroom import CATEGORY_SLUGS, CATEGORY_LABELS
     cats = db.query(CategoryContent).order_by(CategoryContent.sort_order, CategoryContent.id).all()
     # Henüz DB'de olmayan kategorileri oluştur
@@ -2038,7 +2444,7 @@ def admin_categories(
     })
 
 
-@router.get("/admin/categories/{cat_id}/edit")
+@router.get("/esk/categories/{cat_id}/edit")
 def admin_category_edit(
     cat_id: int,
     request: Request,
@@ -2048,11 +2454,11 @@ def admin_category_edit(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     from .routes_showroom import CATEGORY_LABELS
     cat = db.query(CategoryContent).filter(CategoryContent.id == cat_id).first()
     if not cat:
-        return RedirectResponse("/admin/categories", status_code=302)
+        return RedirectResponse("/esk/categories", status_code=302)
     trans = next((t for t in cat.translations if t.lang == lang), None)
     faqs  = [f for f in cat.faqs if f.lang == lang]
     faqs.sort(key=lambda x: x.sort_order)
@@ -2070,7 +2476,7 @@ def admin_category_edit(
     })
 
 
-@router.post("/admin/categories/{cat_id}/save")
+@router.post("/esk/categories/{cat_id}/save")
 def admin_category_save(
     cat_id: int,
     lang: str = Form("tr"),
@@ -2086,10 +2492,10 @@ def admin_category_save(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     cat = db.query(CategoryContent).filter(CategoryContent.id == cat_id).first()
     if not cat:
-        return RedirectResponse("/admin/categories", status_code=302)
+        return RedirectResponse("/esk/categories", status_code=302)
     trans = next((t for t in cat.translations if t.lang == lang), None)
     if not trans:
         trans = CategoryTranslation(category_id=cat_id, lang=lang)
@@ -2103,10 +2509,10 @@ def admin_category_save(
     trans.og_description   = og_description or None
     cat.updated_at         = datetime.utcnow()
     db.commit()
-    return RedirectResponse(f"/admin/categories/{cat_id}/edit?lang={lang}&tab={tab}", status_code=302)
+    return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab={tab}", status_code=302)
 
 
-@router.post("/admin/categories/{cat_id}/faq/add")
+@router.post("/esk/categories/{cat_id}/faq/add")
 def admin_category_faq_add(
     cat_id: int,
     lang: str = Form("tr"),
@@ -2117,17 +2523,17 @@ def admin_category_faq_add(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = CategoryFaq(
         category_id=cat_id, lang=lang,
         question=question, answer=answer, sort_order=sort_order,
     )
     db.add(faq)
     db.commit()
-    return RedirectResponse(f"/admin/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 
-@router.post("/admin/categories/{cat_id}/faq/{faq_id}/edit")
+@router.post("/esk/categories/{cat_id}/faq/{faq_id}/edit")
 def admin_category_faq_edit(
     cat_id: int,
     faq_id: int,
@@ -2139,17 +2545,17 @@ def admin_category_faq_edit(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = db.query(CategoryFaq).filter(CategoryFaq.id == faq_id, CategoryFaq.category_id == cat_id).first()
     if faq:
         faq.question   = question
         faq.answer     = answer
         faq.sort_order = sort_order
         db.commit()
-    return RedirectResponse(f"/admin/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 
-@router.post("/admin/categories/{cat_id}/faq/{faq_id}/delete")
+@router.post("/esk/categories/{cat_id}/faq/{faq_id}/delete")
 def admin_category_faq_delete(
     cat_id: int,
     faq_id: int,
@@ -2158,12 +2564,12 @@ def admin_category_faq_delete(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     faq = db.query(CategoryFaq).filter(CategoryFaq.id == faq_id, CategoryFaq.category_id == cat_id).first()
     if faq:
         db.delete(faq)
         db.commit()
-    return RedirectResponse(f"/admin/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
+    return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab=faq", status_code=302)
 
 # =========================================================
 # ANASAYFA İÇERİK YÖNETİMİ
@@ -2214,7 +2620,7 @@ def _get_shared_svc_image(idx: int, current_data: dict, db, lang: str) -> str:
     return tr_svcs[idx].get("image", "") if idx < len(tr_svcs) else ""
 
 
-@router.get("/admin/homepage")
+@router.get("/esk/homepage")
 def admin_homepage(
     request: Request,
     lang: str = "tr",
@@ -2223,9 +2629,9 @@ def admin_homepage(
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     if tab not in ("hero", "services", "raw_materials", "private_label", "export", "certification", "nav", "cta", "seo"):
-        return RedirectResponse(f"/admin/homepage?lang={lang}&tab=hero", status_code=302)
+        return RedirectResponse(f"/esk/homepage?lang={lang}&tab=hero", status_code=302)
     hp = db.query(HomepageContent).filter(HomepageContent.lang == lang).first()
     if not hp:
         hp = HomepageContent(lang=lang)
@@ -2254,7 +2660,7 @@ def admin_homepage(
     })
 
 
-@router.post("/admin/homepage/sync-image")
+@router.post("/esk/homepage/sync-image")
 async def admin_homepage_sync_image(
     request: Request,
     db: Session = Depends(get_db),
@@ -2324,14 +2730,14 @@ async def admin_homepage_sync_image(
     return JSONResponse({"ok": True, "synced_to": updated, "value": image_value})
 
 
-@router.post("/admin/homepage/save")
+@router.post("/esk/homepage/save")
 async def admin_homepage_save(
     request: Request,
     db: Session = Depends(get_db),
     admin: str = Depends(admin_required),
 ):
     if not admin:
-        return RedirectResponse("/admin/login", status_code=302)
+        return RedirectResponse("/esk/login", status_code=302)
     try:
         form   = await request.form()
         lang   = form.get("lang", "tr")
@@ -2482,7 +2888,7 @@ async def admin_homepage_save(
         traceback.print_exc()
         err_msg = str(e)[:150].replace('"', '').replace("'", '')
         return RedirectResponse(
-            f"/admin/homepage?lang={lang}&tab={tab}&save_error={err_msg}",
+            f"/esk/homepage?lang={lang}&tab={tab}&save_error={err_msg}",
             status_code=302
         )
-    return RedirectResponse(f"/admin/homepage?lang={lang}&tab={tab}&saved=1", status_code=302)
+    return RedirectResponse(f"/esk/homepage?lang={lang}&tab={tab}&saved=1", status_code=302)

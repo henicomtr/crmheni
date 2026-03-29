@@ -548,7 +548,7 @@
         <h2>Yeni Tedarikçi</h2>
     </div>
     <div class="add-card-body">
-        <form method="POST" action="/admin/suppliers/create">
+        <form method="POST" action="/esk/suppliers/create">
 
             <div class="form-section-title">Firma Bilgileri</div>
             <div class="form-grid-2">
@@ -706,8 +706,8 @@
                     </td>
                     <td>
                         <div class="row-actions">
-                            <a href="/admin/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
-                            <form method="POST" action="/admin/suppliers/delete/{{ s.id }}" style="margin:0;">
+                            <a href="/esk/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
+                            <form method="POST" action="/esk/suppliers/delete/{{ s.id }}" style="margin:0;">
                                 <button type="submit" class="btn-delete-sm"
                                     onclick="return confirm('{{ s.name }} silinsin mi?')">Sil</button>
                             </form>
@@ -754,8 +754,8 @@
                 {{ s.created_at.strftime('%d %b %Y') }}
             </span>
             <div class="row-actions">
-                <a href="/admin/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
-                <form method="POST" action="/admin/suppliers/delete/{{ s.id }}" style="margin:0;">
+                <a href="/esk/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
+                <form method="POST" action="/esk/suppliers/delete/{{ s.id }}" style="margin:0;">
                     <button type="submit" class="btn-delete-sm" onclick="return confirm('Silinsin mi?')">Sil</button>
                 </form>
             </div>

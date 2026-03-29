@@ -395,6 +395,203 @@
             .card-title { font-size: 11px; }
             .card-disc-overlay { width: 34px; height: 34px; font-size: 10px; }
         }
+
+        /* ── Sayfa hero responsive ── */
+        @media (max-width: 640px) {
+            .page-hero { padding: 48px 20px 40px; }
+        }
+    </style>
+
+    <style>
+        /* ══════════════════════════════════════
+           SAYFA HERO — page_generic ile aynı stil
+        ══════════════════════════════════════ */
+        .page-hero {
+            background: var(--navy);
+            padding: 72px 48px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        .page-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(30,58,138,0.4) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .page-hero-inner {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .page-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 20px;
+        }
+        .page-breadcrumb a {
+            color: rgba(255,255,255,0.55);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .page-breadcrumb a:hover { color: rgba(255,255,255,0.9); }
+        .page-breadcrumb svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .page-hero h1 {
+            font-size: clamp(28px, 4vw, 46px);
+            font-weight: 800;
+            color: var(--white);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+        .page-hero .cat-intro-text {
+            margin: 14px 0 0;
+            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            max-width: 680px;
+            line-height: 1.6;
+        }
+    </style>
+
+    <style>
+        /* ══════════════════════════════════════
+           FİLTRE & SIRALAMA ÇUBUĞU
+        ══════════════════════════════════════ */
+        .filter-bar {
+            position: sticky;
+            top: 60px; /* navbar yüksekliği */
+            z-index: 40;
+            background: #fff;
+            border-bottom: 1px solid var(--gray-200);
+            box-shadow: 0 2px 8px rgba(15,23,42,.06);
+        }
+        .filter-bar-inner {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 10px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── Kategori pilleri ── */
+        .filter-cats {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            flex: 1;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .filter-cats::-webkit-scrollbar { display: none; }
+        .cat-pill {
+            white-space: nowrap;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1.5px solid var(--gray-200);
+            background: transparent;
+            color: var(--gray-500);
+            cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s;
+            font-family: var(--font);
+        }
+        .cat-pill:hover {
+            border-color: var(--metallic);
+            color: var(--metallic);
+            background: rgba(30,58,138,.05);
+        }
+        .cat-pill.active {
+            background: var(--navy);
+            border-color: var(--navy);
+            color: #fff;
+        }
+
+        /* ── Sağ taraf: sonuç sayısı + sıralama ── */
+        .filter-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .filter-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-400);
+            white-space: nowrap;
+        }
+        .filter-count strong { color: var(--navy); }
+
+        /* Sort select — özel stil */
+        .sort-wrap {
+            position: relative;
+        }
+        .sort-wrap::after {
+            content: '';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 5px solid var(--gray-400);
+            pointer-events: none;
+        }
+        .sort-select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding: 7px 32px 7px 12px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: var(--r-sm);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--navy);
+            background: #fff;
+            cursor: pointer;
+            font-family: var(--font);
+            transition: border-color .15s;
+        }
+        .sort-select:hover, .sort-select:focus {
+            border-color: var(--metallic);
+            outline: none;
+        }
+
+        /* ── Ürün sayısı yok mesajı ── */
+        .no-results-msg {
+            display: none;
+            text-align: center;
+            padding: 80px 24px;
+            color: var(--gray-500);
+            grid-column: 1 / -1;
+        }
+        .no-results-msg .nr-icon { font-size: 48px; margin-bottom: 16px; }
+        .no-results-msg p { font-size: 16px; font-weight: 600; color: var(--navy); }
+
+        /* ── Mobil responsive ── */
+        @media (max-width: 768px) {
+            .filter-bar { top: 54px; } /* mobil navbar yüksekliği */
+            .filter-bar-inner {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 8px 14px;
+            }
+            .filter-cats { gap: 5px; }
+            .cat-pill { padding: 5px 12px; font-size: 12px; }
+            .filter-right {
+                justify-content: space-between;
+            }
+            .sort-select { font-size: 12px; padding: 6px 28px 6px 10px; }
+        }
     </style>
 </head>
 
@@ -402,18 +599,30 @@
 
     {% include 'partials/site_header.html' %}
 
-    {# Hero — sadece kategori sayfalarında göster; ana showroom doğrudan ürün gridine geçer #}
-    {% if is_category_page %}
-    <section class="hero hero-site">
-        <div style="font-size:12px;margin-bottom:8px;">
-            <a href="{{ showroom_url }}" style="color:var(--text-muted);text-decoration:none;">← {{ ui.all_products }}</a>
+    <!-- ═══ HERO: Breadcrumb + Sayfa Başlığı ═══ -->
+    <section class="page-hero">
+        <div class="page-hero-inner">
+            <nav class="page-breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ home_url }}">{{ ui.home }}</a>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+                {% if is_category_page %}
+                    <a href="{{ showroom_url }}">{{ ui.all_products }}</a>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                    <span>{% if cat_trans and cat_trans.title %}{{ cat_trans.title }}{% else %}{{ page_title }}{% endif %}</span>
+                {% else %}
+                    <span>{{ ui.all_products }}</span>
+                {% endif %}
+            </nav>
+            <h1>{% if is_category_page %}{% if cat_trans and cat_trans.title %}{{ cat_trans.title }}{% else %}{{ page_title }}{% endif %}{% else %}{{ ui.hero_title }}{% endif %}</h1>
+            {% if is_category_page and cat_trans and cat_trans.intro %}
+            <p class="cat-intro-text">{{ cat_trans.intro }}</p>
+            {% endif %}
         </div>
-        <h1>{% if cat_trans and cat_trans.title %}{{ cat_trans.title }}{% else %}{{ page_title }}{% endif %}</h1>
-        {% if cat_trans and cat_trans.intro %}
-        <p class="cat-intro-text">{{ cat_trans.intro }}</p>
-        {% endif %}
     </section>
-    {% endif %}
 
     {# Arama yapıldıysa ve sonuç yoksa bildir #}
     {% if search_query and not products_ctx %}
@@ -428,7 +637,33 @@
     </div>
     {% endif %}
 
-    <section class="product-grid">
+    <!-- ═══ FİLTRE & SIRALAMA ÇUBUĞU ═══ -->
+    {% if products_ctx %}
+    <div class="filter-bar" id="filterBar">
+        <div class="filter-bar-inner">
+            <!-- Kategori pilleri — JS tarafından doldurulur -->
+            <div class="filter-cats" id="filterCats" role="group" aria-label="{{ ui.category_label }}"></div>
+
+            <!-- Sağ: sonuç sayısı + sıralama -->
+            <div class="filter-right">
+                <span class="filter-count" id="filterCount">
+                    <strong id="filterCountNum">{{ products_ctx|length }}</strong>&nbsp;{{ ui.filter_results | default('products') }}
+                </span>
+                <div class="sort-wrap">
+                    <select class="sort-select" id="sortSelect" aria-label="{{ ui.sort_label | default('Sort') }}">
+                        <option value="">{{ ui.sort_label | default('Sort') }}: {{ ui.sort_default | default('Default') }}</option>
+                        <option value="price-asc">{{ ui.sort_price_asc | default('Price: Low → High') }}</option>
+                        <option value="price-desc">{{ ui.sort_price_desc | default('Price: High → Low') }}</option>
+                        <option value="rating-desc">{{ ui.sort_rating_desc | default('Rating: High → Low') }}</option>
+                        <option value="rating-asc">{{ ui.sort_rating_asc | default('Rating: Low → High') }}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <section class="product-grid" id="productGrid">
 
         {% for pc in products_ctx %}
         {% set product = pc.product %}
@@ -439,7 +674,11 @@
         {% set qty_in_cart = pc.qty_in_cart %}
         {% set cart_info = pc.cart_info %}
 
-        <div class="product-card">
+        <div class="product-card"
+             data-category="{{ product.category or '' }}"
+             data-cat-label="{{ pc.category_label or '' }}"
+             data-price="{{ product.unit_price or 0 }}"
+             data-rating="{{ product.rating or 0 }}">
 
             <!-- Görsel alanı -->
             <a href="{{ pc.product_url }}" class="card-img-link">
@@ -499,6 +738,12 @@
         </div>
         {% endfor %}
 
+        <!-- Filtre sonucu boş gelirse göster -->
+        <div class="no-results-msg" id="noResultsMsg">
+            <div class="nr-icon">🔍</div>
+            <p>{{ ui.no_results | default('No results found') }}</p>
+        </div>
+
     </section>
 
     {# ── Kategori SEO içerik bloku ── #}
@@ -536,6 +781,8 @@
         discount_next:   "{{ ui.discount_next   | default('') }}",
         discount_max:    "{{ ui.discount_max    | default('') }}",
         lang:            "{{ lang }}",
+        filter_all:      "{{ ui.filter_all | default('All') }}",
+        filter_results:  "{{ ui.filter_results | default('products') }}",
         // Döviz kurları — JS tarafında anlık hesap için
         rates: {
             USD_TRY: {{ rates.USD_TRY }},
@@ -547,6 +794,128 @@
     };
     </script>
     <script src="{{ url_for('static', path='js/showroom.js') }}?v=3"></script>
+
+    <script>
+    /* ══════════════════════════════════════════
+       FİLTRE & SIRALAMA — İstemci taraflı
+    ══════════════════════════════════════════ */
+    (function () {
+        const grid      = document.getElementById('productGrid');
+        const catsEl    = document.getElementById('filterCats');
+        const sortSel   = document.getElementById('sortSelect');
+        const countNum  = document.getElementById('filterCountNum');
+        const noMsg     = document.getElementById('noResultsMsg');
+
+        if (!grid || !catsEl) return; // ürün yoksa çık
+
+        // Tüm ürün kartlarını al ve orijinal sırayı kaydet
+        const allCards = Array.from(grid.querySelectorAll('.product-card'));
+        allCards.forEach((card, i) => card.dataset.origIndex = i);
+
+        let activeCat  = '';  // '' = tümü
+        let activeSort = '';  // '' = varsayılan
+
+        /* ── Benzersiz kategorileri topla ── */
+        const catMap = {}; // { category_key: label }
+        allCards.forEach(card => {
+            const key   = card.dataset.category || '';
+            const label = card.dataset.catLabel  || '';
+            if (key && label && !catMap[key]) catMap[key] = label;
+        });
+
+        /* ── Kategori pillerini oluştur ── */
+        function buildCatPills() {
+            catsEl.innerHTML = '';
+
+            // "Tümü" pili
+            const allPill = document.createElement('button');
+            allPill.type      = 'button';
+            allPill.className = 'cat-pill active';
+            allPill.dataset.cat = '';
+            allPill.textContent = window.SHOWROOM_UI.filter_all || 'All';
+            allPill.addEventListener('click', () => selectCat(''));
+            catsEl.appendChild(allPill);
+
+            // Kategori pilleri — alfabetik sırala
+            Object.entries(catMap)
+                .sort((a, b) => a[1].localeCompare(b[1]))
+                .forEach(([key, label]) => {
+                    const pill = document.createElement('button');
+                    pill.type        = 'button';
+                    pill.className   = 'cat-pill';
+                    pill.dataset.cat = key;
+                    pill.textContent = label;
+                    pill.addEventListener('click', () => selectCat(key));
+                    catsEl.appendChild(pill);
+                });
+        }
+
+        /* ── Kategori seç ── */
+        function selectCat(cat) {
+            activeCat = cat;
+            catsEl.querySelectorAll('.cat-pill').forEach(p => {
+                p.classList.toggle('active', p.dataset.cat === cat);
+            });
+            applyFilterSort();
+        }
+
+        /* ── Sıralama değişince ── */
+        sortSel && sortSel.addEventListener('change', () => {
+            activeSort = sortSel.value;
+            applyFilterSort();
+        });
+
+        /* ── Filtre + sıralamayı uygula ── */
+        function applyFilterSort() {
+            // 1. Kategori filtresi
+            let visible = allCards.filter(card => {
+                if (!activeCat) return true;
+                return card.dataset.category === activeCat;
+            });
+
+            // 2. Sıralama
+            if (activeSort) {
+                visible.sort((a, b) => {
+                    if (activeSort === 'price-asc')
+                        return parseFloat(a.dataset.price) - parseFloat(b.dataset.price);
+                    if (activeSort === 'price-desc')
+                        return parseFloat(b.dataset.price) - parseFloat(a.dataset.price);
+                    if (activeSort === 'rating-asc')
+                        return parseFloat(a.dataset.rating) - parseFloat(b.dataset.rating);
+                    if (activeSort === 'rating-desc')
+                        return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+                    return 0;
+                });
+            } else {
+                // Varsayılan sıra — orijinal index ile
+                visible.sort((a, b) => parseInt(a.dataset.origIndex) - parseInt(b.dataset.origIndex));
+            }
+
+            // 3. Tüm kartları gizle
+            allCards.forEach(card => card.style.display = 'none');
+
+            // 4. Görünür kartları sıralı ekle
+            visible.forEach(card => {
+                card.style.display = '';
+                grid.appendChild(card); // grid'in sonuna taşı (sıralama için)
+            });
+
+            // 5. Sonuç sayısını güncelle
+            if (countNum) countNum.textContent = visible.length;
+
+            // 6. Sonuç yok mesajını göster/gizle
+            if (noMsg) noMsg.style.display = visible.length === 0 ? 'block' : 'none';
+        }
+
+        /* ── Başlat ── */
+        buildCatPills();
+        // Eğer sayfa kategori URL ile açıldıysa o kategoriyi aktif et
+        {% if is_category_page and current_category %}
+        selectCat("{{ current_category }}");
+        {% endif %}
+
+    })();
+    </script>
 
     {% include 'partials/site_footer.html' %}
 </body>

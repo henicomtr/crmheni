@@ -10,7 +10,18 @@
       "Bash(python -c \"import reportlab; print\\(''ok''\\)\")",
       "Bash(python generate_pdf.py)",
       "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/**)",
-      "Bash(venv/Scripts/python -c \":*)"
+      "Bash(venv/Scripts/python -c \":*)",
+      "Bash(for f:*)",
+      "Bash(do sed:*)",
+      "Bash(done)",
+      "Read(//c/Users/**)",
+      "Bash(python -c \"import app.routes_admin\")",
+      "Bash(python -c \"from app.routes_admin import router; print\\(''OK''\\)\")",
+      "Bash(python -c \"from app.main import app; print\\(''App import OK''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"from app.routes_showroom import UI; print\\(''EN keys:'', list\\(UI[''en''].keys\\(\\)\\)[-6:]\\); print\\(''TR keys:'', list\\(UI[''tr''].keys\\(\\)\\)[-6:]\\)\")",
+      "Bash(python -c \"from app.routes_showroom import UI; print\\(''filter_all:'', UI[''en''].get\\(''filter_all''\\)\\); print\\(''sort_label:'', UI[''en''].get\\(''sort_label''\\)\\); print\\(''sort_price_asc:'', UI[''en''].get\\(''sort_price_asc''\\)\\)\")",
+      "Bash(python -c \"from app.routes_showroom import UI; print\\(''filter_all:'', UI[''en''].get\\(''filter_all''\\)\\); print\\(''sort_label:'', UI[''en''].get\\(''sort_label''\\)\\); print\\(''ok:'', ''sort_price_asc'' in UI[''en'']\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\ACER NİTRO\\Desktop\\projeler\\crmheni\\app"
