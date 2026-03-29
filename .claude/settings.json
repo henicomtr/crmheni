@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(python -c \":*)",
-      "Bash(ls templates/*.html)"
+      "Bash(ls templates/*.html)",
+      "Bash(python -c \"from app.models import ProductRating; from app.main import *; print\\(''OK''\\)\")",
+      "Bash(python -m py_compile app/models.py)",
+      "Bash(python -m py_compile app/main.py)",
+      "Bash(python -m py_compile app/routes_showroom.py)"
     ]
   }
 }

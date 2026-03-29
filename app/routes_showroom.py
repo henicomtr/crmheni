@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 import os, math, json
 
 from app.database import get_db
-from app.models import Product, ProductTranslation, QuoteRequest, Page, PageTranslation, FaqItem
+from app.models import Product, ProductTranslation, ProductRating, QuoteRequest, Page, PageTranslation, FaqItem
+from pydantic import BaseModel
 from app.config import CATEGORIES
 from app.currency_service import get_rates, format_price, LANG_CURRENCY
 
@@ -1034,6 +1035,62 @@ def _showroom(request: Request, lang: str, db: Session):
 # /es/producto/{slug}      → ES
 # =========================================================
 
+# =========================================================
+# ÜRÜN DEĞERLENDİRME API
+# =========================================================
+
+class _RatingPayload(BaseModel):
+    browser_id: str
+    rating: int
+
+@router.post("/api/rate-product/{product_id}")
+def api_rate_product(product_id: int, payload: _RatingPayload, db: Session = Depends(get_db)):
+    """Tarayıcı başına bir kez ürün değerlendirmesi kaydeder ve güncel ortalamayı döner."""
+    # Gelen değerleri doğrula
+    if not payload.browser_id or not (1 <= payload.rating <= 5):
+        raise HTTPException(status_code=400, detail="Geçersiz istek")
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Ürün bulunamadı")
+
+    # Aynı tarayıcı daha önce oy kullandıysa engelle
+    existing = db.query(ProductRating).filter(
+        ProductRating.product_id == product_id,
+        ProductRating.browser_id == payload.browser_id,
+    ).first()
+    if existing:
+        return JSONResponse({
+            "ok": False,
+            "already_voted": True,
+            "rating": round(product.rating or 0, 1),
+            "count": product.rating_count or 0,
+        })
+
+    # Yeni oyu kaydet
+    db.add(ProductRating(
+        product_id=product_id,
+        browser_id=payload.browser_id,
+        rating=payload.rating,
+    ))
+    db.flush()
+
+    # Tüm oylardan ortalama hesapla
+    all_ratings = db.query(ProductRating).filter(ProductRating.product_id == product_id).all()
+    count = len(all_ratings)
+    avg   = sum(r.rating for r in all_ratings) / count
+
+    product.rating       = round(avg, 2)
+    product.rating_count = count
+    db.commit()
+
+    return JSONResponse({
+        "ok":     True,
+        "rating": round(avg, 1),
+        "count":  count,
+    })
+
+
 @router.get("/product/{slug}")
 def product_en(slug: str, request: Request, db: Session = Depends(get_db)):
     return _product_detail(request, "en", slug, db)
@@ -1120,6 +1177,38 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
     increment = (product.pieces_per_box or 1) * (product.boxes_per_pallet or 1)  # 1 palet artış birimi
     canonical = product_url(lang, product.get_slug_for(lang))
 
+    # Aynı kategorideki ilgili ürünleri çek (mevcut ürün hariç, en fazla 4 adet)
+    related_ctx = []
+    if product.category:
+        related_products = (
+            db.query(Product)
+            .filter(Product.category == product.category, Product.id != product.id)
+            .limit(4)
+            .all()
+        )
+        for rp in related_products:
+            rp_trans    = rp.get_translation(lang)
+            rp_slug     = rp.get_slug_for(lang)
+            rp_pid_str  = str(rp.id)
+            rp_cart_info = {}
+            if rp_pid_str in cart:
+                rp_item = compute_basket_item(rp, cart[rp_pid_str])
+                if rp_item:
+                    rp_cart_info = {
+                        "unit_price":    rp_item["unit_price"],
+                        "discount_rate": rp_item["discount_rate"],
+                    }
+            related_ctx.append({
+                "product":         rp,
+                "trans":           rp_trans,
+                "cart_info":       rp_cart_info,
+                "qty_in_cart":     cart.get(rp_pid_str, 0),
+                "min_qty":         (rp.pieces_per_box or 1) * (rp.boxes_per_pallet or 1),
+                "increment":       (rp.pieces_per_box or 1) * (rp.boxes_per_pallet or 1),
+                "update_cart_url": update_cart_url(lang),
+                "product_url":     product_url(lang, rp_slug) if rp_slug else "#",
+            })
+
     ctx = common_ctx(request, lang, product=product, db=db)
     ctx["active_page"] = "showroom"
     ctx.update({
@@ -1138,6 +1227,7 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
         "update_cart_url":  update_cart_url(lang),
         "category_label":   get_category_label(product.category or "", lang),
         "category_url":     category_url(lang, product.category or "") if product.category else None,
+        "related_ctx":      related_ctx,
     })
     return templates.TemplateResponse("product_detail.html", ctx)
 

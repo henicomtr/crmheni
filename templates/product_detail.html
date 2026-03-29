@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- SEO META -->
-    {% if site.seo_title_template and '%s' in site.seo_title_template %}{% set _page_title = site.seo_title_template|replace('%s', meta_title) %}{% elif site.seo_title_template %}{% set _page_title = site.seo_title_template %}{% else %}{% set _page_title = meta_title %}{% endif %}
+    <!-- Ürün sayfasında meta_title her zaman önceliklidir.
+         seo_title_template yalnızca %s içerdiğinde sarmalayıcı olarak kullanılır. -->
+    {% if site.seo_title_template and '%s' in site.seo_title_template %}{% set _page_title = site.seo_title_template|replace('%s', meta_title) %}{% else %}{% set _page_title = meta_title %}{% endif %}
     <title>{{ _page_title }}</title>
     <meta name="description" content="{{ meta_description }}">
     <meta property="og:title" content="{{ _page_title }}">
@@ -614,7 +616,315 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ── İlgili Ürünler Bölümü ── */
+        .related-section {
+            margin-top: 56px;
+            padding-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .related-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .related-title {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -.02em;
+            color: var(--text-primary);
+        }
+
+        .related-see-all {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color .15s;
+        }
+
+        .related-see-all:hover { color: var(--text-primary); }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .related-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow .18s, transform .18s;
+        }
+
+        .related-card:hover {
+            box-shadow: var(--shadow-md, 0 8px 24px rgba(15,23,42,.10));
+            transform: translateY(-2px);
+        }
+
+        .related-img-link {
+            display: block;
+            aspect-ratio: 1/1;
+            background: var(--surface-2);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .related-img-link img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 16px;
+            transition: transform .22s;
+        }
+
+        .related-card:hover .related-img-link img {
+            transform: scale(1.04);
+        }
+
+        .related-img-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            opacity: .2;
+        }
+
+        /* İndirim rozeti — sağ üst */
+        .related-disc-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 20px;
+            letter-spacing: -.01em;
+            box-shadow: 0 2px 8px rgba(21,128,61,.35);
+        }
+
+        .related-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .related-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-decoration: none;
+        }
+
+        .related-name:hover { color: var(--text-secondary); }
+
+        /* Küçük yıldız göstergesi */
+        .related-stars {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .related-stars-wrap {
+            position: relative;
+            display: inline-block;
+            font-size: 12px;
+            line-height: 1;
+            color: #d1d5db;
+        }
+
+        .related-stars-filled {
+            position: absolute;
+            top: 0; left: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            color: #f59e0b;
+            width: var(--pct, 0%);
+        }
+
+        .related-stars-bg { white-space: nowrap; }
+
+        .related-stars-val {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .related-price-row {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-top: auto;
+        }
+
+        .related-price {
+            font-size: 16px;
+            font-weight: 700;
+            font-family: var(--mono);
+            letter-spacing: -.02em;
+            color: var(--text-primary);
+        }
+
+        .related-old-price {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-decoration: line-through;
+            font-family: var(--mono);
+        }
+
+        /* Sepete ekle butonu */
+        .related-add-btn {
+            width: 100%;
+            padding: 9px;
+            background: var(--dark, #0f172a);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm, 6px);
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .15s;
+            margin-top: 4px;
+        }
+
+        .related-add-btn:hover { background: #1e293b; }
+
+        @media (max-width: 900px) {
+            .related-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .related-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .related-body { padding: 10px; gap: 6px; }
+            .related-name { font-size: 12px; }
+            .related-price { font-size: 14px; }
+        }
     </style>
+    <!-- Google Zengin Sonuçlar — Product + AggregateRating schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "{{ (trans.name if trans else product.slug) | e }}",
+      {% if product.image %}"image": "{{ product.image }}",{% endif %}
+      "description": "{{ ((trans.short_description if trans else '') or '') | e }}",
+      "brand": { "@type": "Brand", "name": "Heni" }
+      {% if product.rating_count and product.rating_count > 0 %}
+      ,"aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "{{ product.rating | round(1) }}",
+        "bestRating":  "5",
+        "worstRating": "1",
+        "ratingCount": "{{ product.rating_count }}"
+      }
+      {% endif %}
+    }
+    </script>
+
+    <style>
+        /* ── Yıldız değerlendirme widget'ı ── */
+        .star-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stars-wrap {
+            position: relative;
+            display: inline-block;
+            font-size: 18px;
+            line-height: 1;
+            color: #d1d5db;
+        }
+        .stars-filled {
+            position: absolute;
+            top: 0; left: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            color: #f59e0b;
+            width: var(--pct, 0%);
+        }
+        .stars-bg { white-space: nowrap; }
+
+        /* Etkileşimli oy formu */
+        .rating-section {
+            margin-top: 4px;
+            padding: 16px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+        }
+        .rating-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .star-input {
+            display: flex;
+            gap: 4px;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+        .star-input input { display: none; }
+        .star-input label {
+            font-size: 28px;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: color .1s;
+        }
+        .star-input label:hover,
+        .star-input label:hover ~ label,
+        .star-input input:checked ~ label {
+            color: #f59e0b;
+        }
+        .rating-submit-btn {
+            margin-top: 10px;
+            padding: 8px 18px;
+            background: #0f172a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .rating-submit-btn:hover { background: #1e293b; }
+        .rating-submit-btn:disabled { opacity: .5; cursor: default; }
+        .rating-feedback {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            min-height: 16px;
+        }
+        .rating-feedback.success { color: #16a34a; font-weight: 600; }
+        .rating-feedback.error   { color: #dc2626; }
+    </style>
+
     {% if site and site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
     {% if site and site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
 </head>
@@ -657,6 +967,35 @@
                 {% endif %}
 
                 <h1 class="detail-title">{{ trans.name if trans else '—' }}</h1>
+
+                <!-- YILDIZ GÖSTERGESİ -->
+                {% set _pct = ((product.rating or 0) / 5 * 100)|int %}
+                <div class="star-display" id="starDisplay">
+                    <span class="stars-wrap" style="--pct: {{ _pct }}%">
+                        <span class="stars-bg">★★★★★</span>
+                        <span class="stars-filled">★★★★★</span>
+                    </span>
+                    <span id="ratingText">
+                        {{ product.rating | round(1) }}
+                        {% if product.rating_count and product.rating_count > 0 %}
+                        ({{ product.rating_count }})
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- DEĞERLENDİRME FORMU (JS ile doldurulur) -->
+                <div class="rating-section" id="ratingSection">
+                    <div class="rating-section-title" id="ratingTitle">Rate this product</div>
+                    <div class="star-input" id="starInput">
+                        <input type="radio" id="s5" name="star" value="5"><label for="s5">★</label>
+                        <input type="radio" id="s4" name="star" value="4"><label for="s4">★</label>
+                        <input type="radio" id="s3" name="star" value="3"><label for="s3">★</label>
+                        <input type="radio" id="s2" name="star" value="2"><label for="s2">★</label>
+                        <input type="radio" id="s1" name="star" value="1"><label for="s1">★</label>
+                    </div>
+                    <button class="rating-submit-btn" id="ratingSubmit" disabled>Submit</button>
+                    <div class="rating-feedback" id="ratingFeedback"></div>
+                </div>
 
                 {% if trans and trans.short_description %}
                 <p class="detail-short-desc">{{ trans.short_description }}</p>
@@ -909,6 +1248,95 @@
 
         </div><!-- /detail-tabs -->
 
+        {% if related_ctx %}
+        <!-- İLGİLİ ÜRÜNLER -->
+        <section class="related-section">
+            <div class="related-header">
+                <h2 class="related-title">
+                    {% if lang == 'tr' %}Benzer Ürünler
+                    {% elif lang == 'de' %}Ähnliche Produkte
+                    {% elif lang == 'fr' %}Produits similaires
+                    {% elif lang == 'ar' %}منتجات مشابهة
+                    {% elif lang == 'ru' %}Похожие товары
+                    {% elif lang == 'es' %}Productos similares
+                    {% else %}Related Products{% endif %}
+                </h2>
+                {% if category_url %}
+                <a href="{{ category_url }}" class="related-see-all">
+                    {% if lang == 'tr' %}Tümünü gör →
+                    {% elif lang == 'de' %}Alle anzeigen →
+                    {% elif lang == 'fr' %}Voir tout →
+                    {% elif lang == 'ar' %}عرض الكل →
+                    {% elif lang == 'ru' %}Смотреть все →
+                    {% elif lang == 'es' %}Ver todo →
+                    {% else %}See all →{% endif %}
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="related-grid">
+                {% for rc in related_ctx %}
+                {% set rp = rc.product %}
+                {% set rt = rc.trans %}
+                {% set rpct = ((rp.rating or 0) / 5 * 100)|int %}
+
+                <div class="related-card">
+                    <!-- Görsel -->
+                    <a href="{{ rc.product_url }}" class="related-img-link">
+                        {% if rp.image %}
+                        <img src="{{ rp.image }}" alt="{{ rt.name if rt else '' }}" loading="lazy">
+                        {% else %}
+                        <div class="related-img-placeholder">📦</div>
+                        {% endif %}
+                        {% if rc.cart_info and rc.cart_info.discount_rate > 0 %}
+                        <span class="related-disc-badge">-{{ (rc.cart_info.discount_rate * 100)|int }}%</span>
+                        {% endif %}
+                    </a>
+
+                    <div class="related-body">
+                        <!-- Ürün adı -->
+                        <a href="{{ rc.product_url }}" class="related-name">{{ rt.name if rt else '—' }}</a>
+
+                        <!-- Yıldız göstergesi -->
+                        <div class="related-stars">
+                            <span class="related-stars-wrap" style="--pct: {{ rpct }}%">
+                                <span class="related-stars-bg">★★★★★</span>
+                                <span class="related-stars-filled">★★★★★</span>
+                            </span>
+                            <span class="related-stars-val">{{ rp.rating | round(1) }}</span>
+                        </div>
+
+                        <!-- Fiyat -->
+                        <div class="related-price-row">
+                            {% if rc.cart_info and rc.cart_info.discount_rate > 0 %}
+                            <span class="related-price">{{ price(rc.cart_info.unit_price) }}</span>
+                            <span class="related-old-price">{{ price(rp.unit_price) }}</span>
+                            {% else %}
+                            <span class="related-price">{{ price(rp.unit_price) }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Sepete ekle formu -->
+                        <form method="post" action="{{ rc.update_cart_url }}" class="card-form">
+                            <input type="hidden" name="product_id" value="{{ rp.id }}">
+                            <input type="hidden" name="quantity"   value="{{ rc.min_qty }}">
+                            <button type="submit" class="related-add-btn">
+                                {% if lang == 'tr' %}Sepete Ekle
+                                {% elif lang == 'de' %}In den Warenkorb
+                                {% elif lang == 'fr' %}Ajouter au panier
+                                {% elif lang == 'ar' %}أضف إلى السلة
+                                {% elif lang == 'ru' %}В корзину
+                                {% elif lang == 'es' %}Añadir al carrito
+                                {% else %}Add to Cart{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
     </div><!-- /detail-page -->
 
     <script>
@@ -934,6 +1362,130 @@
                 document.getElementById('tab-' + target).classList.add('active');
             });
         });
+    </script>
+
+    <script>
+    (function() {
+        // Ürün ID ve dil bilgisi
+        const PRODUCT_ID = {{ product.id }};
+        const LANG       = "{{ lang }}";
+
+        // Dile göre UI metinleri
+        const UI_TEXTS = {
+            en: { title: "Rate this product", submit: "Submit", thanks: "Thank you for rating!", already: "You already rated this product.", error: "An error occurred." },
+            tr: { title: "Bu ürünü değerlendirin", submit: "Gönder", thanks: "Değerlendirmeniz için teşekkürler!", already: "Bu ürünü zaten değerlendirdiniz.", error: "Bir hata oluştu." },
+            de: { title: "Produkt bewerten", submit: "Senden", thanks: "Danke für Ihre Bewertung!", already: "Sie haben dieses Produkt bereits bewertet.", error: "Ein Fehler ist aufgetreten." },
+            fr: { title: "Évaluer ce produit", submit: "Envoyer", thanks: "Merci pour votre évaluation!", already: "Vous avez déjà évalué ce produit.", error: "Une erreur s'est produite." },
+            ar: { title: "قيّم هذا المنتج", submit: "إرسال", thanks: "شكراً على تقييمك!", already: "لقد قيّمت هذا المنتج مسبقاً.", error: "حدث خطأ." },
+            ru: { title: "Оценить товар", submit: "Отправить", thanks: "Спасибо за оценку!", already: "Вы уже оценили этот товар.", error: "Произошла ошибка." },
+            es: { title: "Calificar este producto", submit: "Enviar", thanks: "¡Gracias por tu calificación!", already: "Ya calificaste este producto.", error: "Ocurrió un error." },
+        };
+        const t = UI_TEXTS[LANG] || UI_TEXTS.en;
+
+        const section   = document.getElementById('ratingSection');
+        const titleEl   = document.getElementById('ratingTitle');
+        const starInput = document.getElementById('starInput');
+        const submitBtn = document.getElementById('ratingSubmit');
+        const feedback  = document.getElementById('ratingFeedback');
+
+        titleEl.textContent  = t.title;
+        submitBtn.textContent = t.submit;
+
+        // LocalStorage'dan tarayıcı UUID'sini al ya da oluştur
+        function getBrowserId() {
+            let id = localStorage.getItem('heni_browser_id');
+            if (!id) {
+                id = crypto.randomUUID ? crypto.randomUUID() :
+                    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                        const r = Math.random() * 16 | 0;
+                        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                    });
+                localStorage.setItem('heni_browser_id', id);
+            }
+            return id;
+        }
+
+        // Daha önce oy kullandıysa formu gizle
+        const voted = JSON.parse(localStorage.getItem('heni_rated') || '{}');
+        if (voted[PRODUCT_ID]) {
+            starInput.style.display = 'none';
+            submitBtn.style.display = 'none';
+            feedback.textContent    = t.already;
+            feedback.className      = 'rating-feedback';
+        }
+
+        // Yıldız seçilince gönder butonunu aktif et
+        document.querySelectorAll('.star-input input').forEach(radio => {
+            radio.addEventListener('change', () => {
+                submitBtn.disabled = false;
+            });
+        });
+
+        // Yıldız göstergesini günceller
+        function updateStarDisplay(ratingVal, count) {
+            const pct = (ratingVal / 5 * 100).toFixed(0) + '%';
+            document.querySelector('.stars-wrap').style.setProperty('--pct', pct);
+            const countStr = count > 0 ? ` (${count})` : '';
+            document.getElementById('ratingText').textContent = ratingVal.toFixed(1) + countStr;
+
+            // JSON-LD'yi de güncelle (Google cache'lemeden önce)
+            const ld = document.querySelector('script[type="application/ld+json"]');
+            if (ld) {
+                try {
+                    const obj = JSON.parse(ld.textContent);
+                    obj.aggregateRating = {
+                        "@type": "AggregateRating",
+                        ratingValue: ratingVal.toFixed(1),
+                        bestRating: "5", worstRating: "1",
+                        ratingCount: String(count)
+                    };
+                    ld.textContent = JSON.stringify(obj);
+                } catch(e) {}
+            }
+        }
+
+        // Oy gönderme
+        submitBtn.addEventListener('click', async () => {
+            const selected = document.querySelector('.star-input input:checked');
+            if (!selected) return;
+
+            submitBtn.disabled = true;
+            feedback.textContent = '';
+
+            try {
+                const res = await fetch(`/api/rate-product/${PRODUCT_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ browser_id: getBrowserId(), rating: parseInt(selected.value) })
+                });
+                const data = await res.json();
+
+                if (data.already_voted) {
+                    feedback.textContent = t.already;
+                    feedback.className   = 'rating-feedback';
+                } else if (data.ok) {
+                    // Oyu localStorage'a kaydet
+                    const r = JSON.parse(localStorage.getItem('heni_rated') || '{}');
+                    r[PRODUCT_ID] = parseInt(selected.value);
+                    localStorage.setItem('heni_rated', JSON.stringify(r));
+
+                    feedback.textContent = t.thanks;
+                    feedback.className   = 'rating-feedback success';
+                    starInput.style.display = 'none';
+                    submitBtn.style.display = 'none';
+                    updateStarDisplay(data.rating, data.count);
+                } else {
+                    feedback.textContent = t.error;
+                    feedback.className   = 'rating-feedback error';
+                    submitBtn.disabled   = false;
+                }
+            } catch(e) {
+                feedback.textContent = t.error;
+                feedback.className   = 'rating-feedback error';
+                submitBtn.disabled   = false;
+            }
+        });
+    })();
     </script>
 
     {% include 'partials/site_footer.html' %}

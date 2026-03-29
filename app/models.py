@@ -47,8 +47,16 @@ class Product(Base):
     discount_4_pallet      = Column(Float, default=0.0)
     discount_5_plus_pallet = Column(Float, default=0.0)
 
+    # Kullanıcı değerlendirme sayısı (ProductRating tablosundan hesaplanır)
+    rating_count = Column(Integer, default=0)
+
     translations = relationship(
         "ProductTranslation",
+        back_populates="product",
+        cascade="all, delete-orphan"
+    )
+    ratings = relationship(
+        "ProductRating",
         back_populates="product",
         cascade="all, delete-orphan"
     )
@@ -101,6 +109,24 @@ class ProductTranslation(Base):
     meta_description  = Column(String)
 
     product = relationship("Product", back_populates="translations")
+
+
+class ProductRating(Base):
+    """Tarayıcı başına bir kez oy kullanılan ürün değerlendirmesi."""
+    __tablename__ = "product_ratings"
+    __table_args__ = (
+        UniqueConstraint("product_id", "browser_id", name="uq_rating_product_browser"),
+    )
+
+    id         = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    # Tarayıcıya özgü UUID — localStorage'da saklanır, sunucuya gönderilir
+    browser_id = Column(String, nullable=False)
+    # 1–5 arası tam sayı puan
+    rating     = Column(Integer, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    product = relationship("Product", back_populates="ratings")
 
 
 class QuoteRequest(Base):

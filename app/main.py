@@ -1,4 +1,4 @@
-from .models import User, CategoryContent, HomepageContent
+from .models import User, CategoryContent, HomepageContent, ProductRating
 from .auth import hash_password
 from .database import SessionLocal
 
@@ -83,6 +83,26 @@ def _migrate_quote_requests():
         conn.commit()
 
 _migrate_quote_requests()
+
+# ── Products tablo migrasyonu ────────────────────────────────────────
+def _migrate_products():
+    """
+    Eski SQLite kurulumları için products tablosuna rating_count sütunu ekler.
+    PostgreSQL'de Alembic migration'ında zaten mevcut.
+    """
+    insp = inspect(engine)
+    if "products" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("products")}
+    with engine.connect() as conn:
+        if "rating_count" not in existing:
+            try:
+                conn.execute(text("ALTER TABLE products ADD COLUMN rating_count INTEGER DEFAULT 0"))
+            except Exception:
+                pass
+        conn.commit()
+
+_migrate_products()
 
 # ── CategoryContent seed ────────────────────────────────────────────
 def _seed_categories():

@@ -213,6 +213,38 @@
 
         .card-title a:hover { color: var(--metallic); }
 
+        /* ── Kart yıldız göstergesi ── */
+        .card-stars {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .card-stars-wrap {
+            position: relative;
+            display: inline-block;
+            font-size: 13px;
+            line-height: 1;
+            color: #d1d5db;
+        }
+        .card-stars-filled {
+            position: absolute;
+            top: 0; left: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            color: #f59e0b;
+            width: var(--pct, 0%);
+        }
+        .card-stars-bg { white-space: nowrap; }
+        .card-stars-val {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray-500);
+        }
+        .card-stars-count {
+            font-size: 10px;
+            color: var(--gray-400);
+        }
+
         /* ══ FİYAT SATIRI ══ */
         .price-area {
             display: flex;
@@ -707,6 +739,19 @@
                 <h3 class="card-title">
                     <a href="{{ pc.product_url }}">{{ trans.name if trans else '—' }}</a>
                 </h3>
+
+                <!-- Yıldız değerlendirme göstergesi -->
+                {% set _cpct = ((product.rating or 0) / 5 * 100)|int %}
+                <div class="card-stars">
+                    <span class="card-stars-wrap" style="--pct: {{ _cpct }}%">
+                        <span class="card-stars-bg">★★★★★</span>
+                        <span class="card-stars-filled">★★★★★</span>
+                    </span>
+                    <span class="card-stars-val">{{ product.rating | round(1) }}</span>
+                    {% if product.rating_count and product.rating_count > 0 %}
+                    <span class="card-stars-count">({{ product.rating_count }})</span>
+                    {% endif %}
+                </div>
 
                 <div class="price-area">
                     {% if cart_info and cart_info.discount_rate > 0 %}
