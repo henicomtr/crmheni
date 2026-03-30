@@ -425,8 +425,8 @@
 
             <span class="nav-section-label">Genel</span>
 
+            <!-- Durum: Her zaman görünür -->
             <a href="/esk/dashboard" class="sidebar-link {% if request.url.path == '/esk/dashboard' %}active{% endif %}">
-                <!-- Durum / Dashboard ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7" rx="1"/>
                     <rect x="14" y="3" width="7" height="7" rx="1"/>
@@ -436,27 +436,31 @@
                 Durum
             </a>
 
+            {% if current_user and current_user.has_permission("anasayfa") %}
             <a href="/esk/homepage" class="sidebar-link {% if request.url.path == '/esk/homepage' %}active{% endif %}">
-                <!-- Anasayfa ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 12L12 3L21 12V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V12Z"/>
                 </svg>
                 Anasayfa
             </a>
+            {% endif %}
 
+            {% if current_user and (current_user.has_permission("urunler") or current_user.has_permission("sayfalar") or current_user.has_permission("kategoriler") or current_user.has_permission("medya")) %}
             <span class="nav-section-label">İçerik</span>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("urunler") %}
             <a href="/esk/products" class="sidebar-link {% if '/esk/products' in request.url.path %}active{% endif %}">
-                <!-- Ürünler ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 7L12 3L4 7V17L12 21L20 17V7Z"/>
                     <path d="M12 3V21M4 7L12 11L20 7"/>
                 </svg>
                 Ürünler
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("sayfalar") %}
             <a href="/esk/pages" class="sidebar-link {% if '/esk/pages' in request.url.path %}active{% endif %}">
-                <!-- Sayfalar ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6C5.46 2 4.96 2.21 4.59 2.59C4.21 2.96 4 3.46 4 4V20C4 20.55 4.45 21 5 21H19C19.55 21 20 20.55 20 20V8L14 2Z"/>
                     <polyline points="14 2 14 8 20 8"/>
@@ -465,9 +469,10 @@
                 </svg>
                 Sayfalar
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("kategoriler") %}
             <a href="/esk/categories" class="sidebar-link {% if '/esk/categories' in request.url.path %}active{% endif %}">
-                <!-- Kategoriler ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M10 3H3V10H10V3Z"/>
                     <path d="M21 3H14V10H21V3Z"/>
@@ -476,9 +481,10 @@
                 </svg>
                 Kategoriler
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("medya") %}
             <a href="/esk/media" class="sidebar-link {% if '/esk/media' in request.url.path %}active{% endif %}">
-                <!-- Medya Kütüphanesi ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -486,19 +492,23 @@
                 </svg>
                 Medya
             </a>
+            {% endif %}
 
+            {% if current_user and (current_user.has_permission("talepler") or current_user.has_permission("musteriler") or current_user.has_permission("tedarikciler") or current_user.has_permission("finans")) %}
             <span class="nav-section-label">İş</span>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("talepler") %}
             <a href="/esk/requests" class="sidebar-link {% if '/esk/requests' in request.url.path %}active{% endif %}">
-                <!-- Talepler ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15C21 15.55 20.78 16.08 20.37 16.37C19.97 16.77 19.44 17 18.89 17H6L3 21V5C3 4.45 3.22 3.92 3.63 3.63C4.03 3.22 4.56 3 5.11 3H18.89C19.44 3 19.97 3.22 20.37 3.63C20.78 4.03 21 4.56 21 5V15Z"/>
                 </svg>
                 Talepler
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("musteriler") %}
             <a href="/esk/customers" class="sidebar-link {% if '/esk/customers' in request.url.path %}active{% endif %}">
-                <!-- Müşteriler ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 21V19C17 17.9 16.55 16.92 15.83 16.17C15.08 15.45 14.1 15 13 15H5C3.9 15 2.92 15.45 2.17 16.17C1.45 16.92 1 17.9 1 19V21"/>
                     <circle cx="9" cy="7" r="4"/>
@@ -507,9 +517,10 @@
                 </svg>
                 Müşteriler
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("tedarikciler") %}
             <a href="/esk/suppliers" class="sidebar-link {% if '/esk/suppliers' in request.url.path %}active{% endif %}">
-                <!-- Tedarikçiler ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="1" y="3" width="15" height="13" rx="1"/>
                     <path d="M16 8H20L23 11V16H16V8Z"/>
@@ -518,26 +529,43 @@
                 </svg>
                 Tedarikçiler
             </a>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("finans") %}
             <a href="/esk/finance" class="sidebar-link {% if '/esk/finance' in request.url.path %}active{% endif %}">
-                <!-- Finans ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="1" x2="12" y2="23"/>
                     <path d="M17 5H9.5C8.57 5 7.68 5.37 7.02 6.02C6.37 6.68 6 7.57 6 8.5C6 9.43 6.37 10.32 7.02 10.98C7.68 11.63 8.57 12 9.5 12H14.5C15.43 12 16.32 12.37 16.98 13.02C17.63 13.68 18 14.57 18 15.5C18 16.43 17.63 17.32 16.98 17.98C16.32 18.63 15.43 19 14.5 19H6"/>
                 </svg>
                 Finans
             </a>
+            {% endif %}
 
+            {% if current_user and (current_user.has_permission("site_ayarlari") or current_user.is_superadmin) %}
             <span class="nav-section-label">Sistem</span>
+            {% endif %}
 
+            {% if current_user and current_user.has_permission("site_ayarlari") %}
             <a href="/esk/settings" class="sidebar-link {% if '/esk/settings' in request.url.path %}active{% endif %}">
-                <!-- Ayarlar ikonu -->
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"/>
                     <path d="M19.07 4.93L17.66 6.34M6.34 17.66L4.93 19.07M19.07 19.07L17.66 17.66M6.34 6.34L4.93 4.93M12 2V4M12 20V22M2 12H4M20 12H22"/>
                 </svg>
                 Site Ayarları
             </a>
+            {% endif %}
+
+            {% if current_user and current_user.is_superadmin %}
+            <a href="/esk/users" class="sidebar-link {% if '/esk/users' in request.url.path %}active{% endif %}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21V19C17 17.9 16.55 16.92 15.83 16.17C15.08 15.45 14.1 15 13 15H5C3.9 15 2.92 15.45 2.17 16.17C1.45 16.92 1 17.9 1 19V21"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <line x1="19" y1="8" x2="19" y2="14"/>
+                    <line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+                Kullanıcılar
+            </a>
+            {% endif %}
 
         </nav>
 

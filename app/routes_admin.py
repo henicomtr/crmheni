@@ -13,7 +13,7 @@ import hmac
 import hashlib
 
 from .database import get_db
-from .auth import verify_password, create_token
+from .auth import verify_password, create_token, hash_password
 from .currency_service import get_rates, FALLBACK_RATES, format_price, LANG_CURRENCY
 from .models import (
     User, Product, ProductTranslation, Customer, Supplier,
@@ -332,15 +332,25 @@ async def optimize_and_save_image(file: UploadFile, upload_folder: str, is_logo:
 # AUTH GUARD
 # =========================================================
 
-def admin_required(token: Optional[str] = Cookie(None)):
+def admin_required(token: Optional[str] = Cookie(None), db: Session = Depends(get_db)):
+    """Token doğrular ve kullanıcı nesnesini döner; geçersizse None döner."""
     if not token:
         return None
-
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("sub")
+        email = payload.get("sub")
+        if not email:
+            return None
+        return db.query(User).filter(User.email == email).first()
     except JWTError:
         return None
+
+
+def _permission_redirect(user, perm: str):
+    """Kullanıcının belirtilen izni yoksa dashboard'a yönlendirir; varsa None döner."""
+    if not user.has_permission(perm):
+        return RedirectResponse("/esk/dashboard", status_code=302)
+    return None
 
 
 # =========================================================
@@ -607,7 +617,7 @@ def logout():
 def admin_dashboard(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
 
     if not admin:
@@ -647,6 +657,7 @@ def admin_dashboard(
         "admin_dashboard.html",
         {
             "request": request,
+            "current_user": admin,
             "total_products": total_products,
             "total_stock": total_stock,
             "sold_products": sold_products,
@@ -669,11 +680,14 @@ def admin_dashboard(
 def products_page(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
 
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "urunler")
+    if redirect:
+        return redirect
 
     products = db.query(Product).all()
 
@@ -681,6 +695,7 @@ def products_page(
         "admin_products.html",
         {
             "request":       request,
+            "current_user":  admin,
             "products":      products,
             "categories":    CATEGORIES,
             "categories_ui": _categories_ui(),
@@ -692,7 +707,7 @@ def products_page(
 async def create_product(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -814,7 +829,7 @@ async def create_product(
 def delete_product(
     product_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
 
     if not admin:
@@ -841,7 +856,7 @@ def edit_product_page(
     product_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -853,7 +868,7 @@ def edit_product_page(
     categories_ui = _categories_ui()
     return templates.TemplateResponse(
         "admin_product_edit.html",
-        {"request": request, "product": product, "categories_ui": categories_ui}
+        {"request": request, "current_user": admin, "product": product, "categories_ui": categories_ui}
     )
 
 
@@ -866,7 +881,7 @@ async def update_product(
     product_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -992,10 +1007,13 @@ async def update_product(
 def customers_page(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "musteriler")
+    if redirect:
+        return redirect
 
     from datetime import timedelta
     customers = db.query(Customer).order_by(Customer.created_at.desc()).all()
@@ -1017,6 +1035,7 @@ def customers_page(
 
     return templates.TemplateResponse("admin_customers.html", {
         "request": request,
+        "current_user": admin,
         "customers": customers,
         "weekly_new": weekly_new,
         "country_count": country_count,
@@ -1034,7 +1053,7 @@ def create_customer(
     contact_person: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1053,7 +1072,7 @@ def edit_customer_page(
     customer_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1072,6 +1091,7 @@ def edit_customer_page(
 
     return templates.TemplateResponse("admin_customer_edit.html", {
         "request":              request,
+        "current_user":         admin,
         "customer":             customer,
         "account_balance":      account_data["balance_usd"],
         "account_transactions": account_data["transactions"],
@@ -1094,7 +1114,7 @@ def update_customer(
     contact_person: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1115,7 +1135,7 @@ def update_customer(
 def delete_customer(
     customer_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1137,7 +1157,7 @@ def add_customer_account_transaction(
     reference_no: str = Form(""),
     transaction_date: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1169,7 +1189,7 @@ def add_customer_account_transaction(
 def delete_customer_account_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1192,10 +1212,13 @@ def delete_customer_account_transaction(
 def suppliers_page(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "tedarikciler")
+    if redirect:
+        return redirect
 
     from datetime import timedelta
     suppliers  = db.query(Supplier).order_by(Supplier.created_at.desc()).all()
@@ -1217,6 +1240,7 @@ def suppliers_page(
 
     return templates.TemplateResponse("admin_suppliers.html", {
         "request": request,
+        "current_user": admin,
         "suppliers": suppliers,
         "weekly_new": weekly_new,
         "city_count": city_count,
@@ -1236,7 +1260,7 @@ def create_supplier(
     district: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1261,7 +1285,7 @@ def edit_supplier_page(
     supplier_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1280,6 +1304,7 @@ def edit_supplier_page(
 
     return templates.TemplateResponse("admin_suppliers_edit.html", {
         "request":              request,
+        "current_user":         admin,
         "supplier":             supplier,
         "account_balance":      account_data["balance_usd"],
         "account_transactions": account_data["transactions"],
@@ -1305,7 +1330,7 @@ def update_supplier(
     district: str = Form(""),
     notes: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1329,7 +1354,7 @@ def update_supplier(
 def delete_supplier(
     supplier_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1351,7 +1376,7 @@ def add_supplier_account_transaction(
     reference_no: str = Form(""),
     transaction_date: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1383,7 +1408,7 @@ def add_supplier_account_transaction(
 def delete_supplier_account_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1406,10 +1431,13 @@ def delete_supplier_account_transaction(
 def requests_page(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "talepler")
+    if redirect:
+        return redirect
 
     import json
     rates = get_rates()
@@ -1425,7 +1453,7 @@ def requests_page(
         req.price_display = format_price(req.total_price, lang_for_fmt, rates)
 
     return templates.TemplateResponse("admin_requests.html", {
-        "request": request, "requests": quote_requests
+        "request": request, "current_user": admin, "requests": quote_requests
     })
 
 
@@ -1433,7 +1461,7 @@ def requests_page(
 def approve_request(
     req_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1459,7 +1487,7 @@ def approve_request(
 def delete_request(
     req_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1482,10 +1510,13 @@ def finance_page(
     request: Request,
     period: str = "month",
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "finans")
+    if redirect:
+        return redirect
 
     from datetime import timedelta, date
     import calendar
@@ -1596,6 +1627,7 @@ def finance_page(
 
     return templates.TemplateResponse("admin_finance.html", {
         "request":            request,
+        "current_user":       admin,
         "period":             period,
         "transactions":       txs,
         "total_income":       total_income_usd,
@@ -1634,7 +1666,7 @@ def create_transaction(
     supplier_id:      str  = Form(""),
     account_source:   str  = Form("official"),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1718,7 +1750,7 @@ def create_transfer(
     description:      str   = Form(""),
     transaction_date: str   = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     """Hesaplar arası transfer: çift kayıt yazar ve birbirine bağlar."""
     if not admin:
@@ -1772,7 +1804,7 @@ def create_transfer(
 def delete_transaction(
     tx_id: int,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required)
+    admin = Depends(admin_required)
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -1791,7 +1823,7 @@ def delete_transaction(
 async def upload_image(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """TinyMCE editörü için görsel yükleme endpoint'i."""
     if not admin:
@@ -1825,7 +1857,7 @@ async def upload_image(
 @router.post("/esk/upload-homepage-image")
 async def upload_homepage_image(
     file: UploadFile = File(...),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """Anasayfa düzenleyicide PC'den görsel yükler; static/upload/images'a kaydeder."""
     if not admin:
@@ -1931,11 +1963,14 @@ async def media_library(
     request: Request,
     tip: str = "all",
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """Medya kütüphanesi: tüm upload dosyalarını listeler."""
     if not admin:
         return RedirectResponse("/esk/login", status_code=303)
+    redirect = _permission_redirect(admin, "medya")
+    if redirect:
+        return redirect
 
     dosyalar = _list_media_files()
 
@@ -1955,6 +1990,7 @@ async def media_library(
 
     return templates.TemplateResponse("admin_media.html", {
         "request": request,
+        "current_user": admin,
         "dosyalar": filtreli,
         "aktif_tip": tip,
         "sayimlar": sayimlar,
@@ -1965,7 +2001,7 @@ async def media_library(
 async def media_upload(
     request: Request,
     files: list[UploadFile] = File(...),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """Medya kütüphanesine yeni dosya(lar) yükler."""
     if not admin:
@@ -2054,7 +2090,7 @@ async def media_upload(
 @router.post("/esk/media/delete")
 async def media_delete(
     request: Request,
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """Medya kütüphanesinden dosya siler (sunucudan da kaldırır)."""
     if not admin:
@@ -2113,9 +2149,12 @@ def _settings_i18n_seed(s):
 
 
 @router.get("/esk/settings")
-def settings_get(request: Request, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
+def settings_get(request: Request, db: Session = Depends(get_db), admin = Depends(admin_required)):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "site_ayarlari")
+    if redirect:
+        return redirect
     s = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
     if not s:
         s = SiteSettings(id=1)
@@ -2125,6 +2164,7 @@ def settings_get(request: Request, db: Session = Depends(get_db), admin: str = D
     i18n = _settings_i18n_seed(s)
     return templates.TemplateResponse("admin_settings.html", {
         "request": request,
+        "current_user": admin,
         "s": s,
         "i18n": i18n,
         "supported_langs": SUPPORTED_LANGS,
@@ -2147,7 +2187,7 @@ async def settings_post(
     favicon: UploadFile = File(None),
     footer_bg_image: UploadFile = File(None),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2252,12 +2292,16 @@ async def settings_post(
 # =========================================================
 
 @router.get("/esk/pages")
-def pages_list(request: Request, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
+def pages_list(request: Request, db: Session = Depends(get_db), admin = Depends(admin_required)):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "sayfalar")
+    if redirect:
+        return redirect
     pages = db.query(Page).order_by(Page.sort_order, Page.id).all()
     return templates.TemplateResponse("admin_pages.html", {
         "request": request,
+        "current_user": admin,
         "pages": pages,
         "langs": SUPPORTED_LANGS,
         "lang_labels": LANG_LABELS,
@@ -2270,7 +2314,7 @@ def page_new(
     slug: str = Form(...),
     template: str = Form("page_generic.html"),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2288,7 +2332,7 @@ def page_new(
 
 
 @router.post("/esk/pages/{page_id}/delete")
-def page_delete(page_id: int, db: Session = Depends(get_db), admin: str = Depends(admin_required)):
+def page_delete(page_id: int, db: Session = Depends(get_db), admin = Depends(admin_required)):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
     page = db.query(Page).filter(Page.id == page_id).first()
@@ -2308,7 +2352,7 @@ def page_edit_get(
     lang: str = "en",
     request: Request = None,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2322,6 +2366,7 @@ def page_edit_get(
     faqs.sort(key=lambda x: x.sort_order)
     return templates.TemplateResponse("admin_page_edit.html", {
         "request": request,
+        "current_user": admin,
         "page": page,
         "trans": trans,
         "faqs": faqs,
@@ -2347,7 +2392,7 @@ def page_edit_post(
     show_in_nav: int = Form(0),
     sort_order: int = Form(0),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2392,7 +2437,7 @@ def faq_add(
     answer: str = Form(...),
     sort_order: int = Form(0),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2414,7 +2459,7 @@ def faq_edit(
     answer: str = Form(...),
     sort_order: int = Form(0),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2433,7 +2478,7 @@ def faq_delete(
     faq_id: int,
     lang: str = Form("en"),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2452,10 +2497,13 @@ def faq_delete(
 def admin_categories(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "kategoriler")
+    if redirect:
+        return redirect
     from .routes_showroom import CATEGORY_SLUGS, CATEGORY_LABELS
     cats = db.query(CategoryContent).order_by(CategoryContent.sort_order, CategoryContent.id).all()
     # Henüz DB'de olmayan kategorileri oluştur
@@ -2467,10 +2515,10 @@ def admin_categories(
     db.commit()
     cats = db.query(CategoryContent).order_by(CategoryContent.sort_order, CategoryContent.id).all()
     return templates.TemplateResponse("admin_categories.html", {
-        "request":       request,
-        "admin":         admin,
-        "cats":          cats,
-        "cat_labels":    CATEGORY_LABELS,
+        "request":         request,
+        "current_user":    admin,
+        "cats":            cats,
+        "cat_labels":      CATEGORY_LABELS,
         "supported_langs": SUPPORTED_LANGS,
     })
 
@@ -2482,7 +2530,7 @@ def admin_category_edit(
     lang: str = "tr",
     tab: str = "content",
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2495,7 +2543,7 @@ def admin_category_edit(
     faqs.sort(key=lambda x: x.sort_order)
     return templates.TemplateResponse("admin_category_edit.html", {
         "request":         request,
-        "admin":           admin,
+        "current_user":    admin,
         "cat":             cat,
         "trans":           trans,
         "faqs":            faqs,
@@ -2520,7 +2568,7 @@ def admin_category_save(
     og_title: str = Form(""),
     og_description: str = Form(""),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2551,7 +2599,7 @@ def admin_category_faq_add(
     answer: str = Form(...),
     sort_order: int = Form(0),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2573,7 +2621,7 @@ def admin_category_faq_edit(
     answer: str = Form(...),
     sort_order: int = Form(0),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2592,7 +2640,7 @@ def admin_category_faq_delete(
     faq_id: int,
     lang: str = Form("tr"),
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2657,10 +2705,13 @@ def admin_homepage(
     lang: str = "tr",
     tab: str = "hero",
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "anasayfa")
+    if redirect:
+        return redirect
     if tab not in ("hero", "services", "raw_materials", "private_label", "export", "certification", "nav", "cta", "seo"):
         return RedirectResponse(f"/esk/homepage?lang={lang}&tab=hero", status_code=302)
     hp = db.query(HomepageContent).filter(HomepageContent.lang == lang).first()
@@ -2680,7 +2731,7 @@ def admin_homepage(
 
     return templates.TemplateResponse("admin_homepage.html", {
         "request":         request,
-        "admin":           admin,
+        "current_user":    admin,
         "hp":              hp,
         "data":            data,
         "lang":            lang,
@@ -2695,7 +2746,7 @@ def admin_homepage(
 async def admin_homepage_sync_image(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     """
     Belirtilen görsel alanını src_lang'dan tüm diğer dil kayıtlarına kopyalar.
@@ -2765,7 +2816,7 @@ async def admin_homepage_sync_image(
 async def admin_homepage_save(
     request: Request,
     db: Session = Depends(get_db),
-    admin: str = Depends(admin_required),
+    admin = Depends(admin_required),
 ):
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
@@ -2923,3 +2974,147 @@ async def admin_homepage_save(
             status_code=302
         )
     return RedirectResponse(f"/esk/homepage?lang={lang}&tab={tab}&saved=1", status_code=302)
+
+
+# =========================================================
+# KULLANICI YÖNETİMİ — Sadece superadmin erişebilir
+# =========================================================
+
+import json as _json
+
+# Sidebar'daki tüm izin seçenekleri ve etiketleri
+PERMISSION_OPTIONS = [
+    ("anasayfa",     "Anasayfa"),
+    ("urunler",      "Ürünler"),
+    ("sayfalar",     "Sayfalar"),
+    ("kategoriler",  "Kategoriler"),
+    ("medya",        "Medya"),
+    ("talepler",     "Talepler"),
+    ("musteriler",   "Müşteriler"),
+    ("tedarikciler", "Tedarikçiler"),
+    ("finans",       "Finans"),
+    ("site_ayarlari","Site Ayarları"),
+]
+
+
+@router.get("/esk/users", response_class=HTMLResponse)
+def users_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """Kullanıcı listesi — sadece superadmin erişebilir."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    if not admin.is_superadmin:
+        return RedirectResponse("/esk/dashboard", status_code=302)
+
+    users = db.query(User).order_by(User.id).all()
+    return templates.TemplateResponse("admin_users.html", {
+        "request":            request,
+        "current_user":       admin,
+        "users":              users,
+        "permission_options": PERMISSION_OPTIONS,
+    })
+
+
+@router.post("/esk/users/create")
+def create_user(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """Yeni sub-admin kullanıcı oluşturur."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    if not admin.is_superadmin:
+        return RedirectResponse("/esk/dashboard", status_code=302)
+
+    # Aynı e-posta zaten varsa hata
+    exists = db.query(User).filter(User.email == email).first()
+    if exists:
+        return RedirectResponse("/esk/users?error=email_exists", status_code=302)
+
+    new_user = User(
+        email=email,
+        password=hash_password(password),
+        role="admin",
+        is_superadmin=False,
+        permissions="[]"
+    )
+    db.add(new_user)
+    db.commit()
+    return RedirectResponse("/esk/users?created=1", status_code=302)
+
+
+@router.post("/esk/users/{user_id}/permissions")
+def update_user_permissions(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+    anasayfa: str = Form(None),
+    urunler: str = Form(None),
+    sayfalar: str = Form(None),
+    kategoriler: str = Form(None),
+    medya: str = Form(None),
+    talepler: str = Form(None),
+    musteriler: str = Form(None),
+    tedarikciler: str = Form(None),
+    finans: str = Form(None),
+    site_ayarlari: str = Form(None),
+):
+    """Kullanıcının izinlerini günceller."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    if not admin.is_superadmin:
+        return RedirectResponse("/esk/dashboard", status_code=302)
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user or target_user.is_superadmin:
+        # Superadmin'in izinleri değiştirilemez
+        return RedirectResponse("/esk/users", status_code=302)
+
+    # Form'dan gönderilen izinleri topla (checkbox işaretli ise değer var)
+    perm_map = {
+        "anasayfa":     anasayfa,
+        "urunler":      urunler,
+        "sayfalar":     sayfalar,
+        "kategoriler":  kategoriler,
+        "medya":        medya,
+        "talepler":     talepler,
+        "musteriler":   musteriler,
+        "tedarikciler": tedarikciler,
+        "finans":       finans,
+        "site_ayarlari":site_ayarlari,
+    }
+    granted_perms = [key for key, val in perm_map.items() if val is not None]
+    target_user.permissions = _json.dumps(granted_perms, ensure_ascii=False)
+    db.commit()
+    return RedirectResponse("/esk/users?saved=1", status_code=302)
+
+
+@router.post("/esk/users/{user_id}/delete")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """Kullanıcıyı siler (superadmin kendini silemez)."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    if not admin.is_superadmin:
+        return RedirectResponse("/esk/dashboard", status_code=302)
+
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        return RedirectResponse("/esk/users", status_code=302)
+    # Superadmin hesabı silinemez
+    if target_user.is_superadmin:
+        return RedirectResponse("/esk/users?error=cant_delete_superadmin", status_code=302)
+
+    db.delete(target_user)
+    db.commit()
+    return RedirectResponse("/esk/users?deleted=1", status_code=302)

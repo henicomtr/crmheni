@@ -143,9 +143,40 @@ def _seed_homepage():
 
 _seed_homepage()
 
+# ── Users tablo migrasyonu ──────────────────────────────────────────
+def _migrate_users():
+    """
+    users tablosuna is_superadmin ve permissions kolonlarını ekler.
+    Her ALTER TABLE ayrı transaction'da çalışır — PostgreSQL uyumlu.
+    """
+    insp = inspect(engine)
+    if "users" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("users")}
+
+    # Her kolon için bağımsız transaction: biri başarısız olsa diğeri çalışır
+    if "is_superadmin" not in existing:
+        try:
+            with engine.connect() as conn:
+                # PostgreSQL'de BOOLEAN DEFAULT FALSE; SQLite'da da geçerli
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_superadmin BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+        except Exception:
+            pass  # Kolon zaten varsa hatayı yut
+
+    if "permissions" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN permissions TEXT DEFAULT '[]'"))
+                conn.commit()
+        except Exception:
+            pass  # Kolon zaten varsa hatayı yut
+
+_migrate_users()
+
 # ── Admin kullanıcı seed ────────────────────────────────────────────
 def _seed_admin():
-    """Varsayılan admin kullanıcısını oluşturur (yoksa)."""
+    """Varsayılan admin kullanıcısını oluşturur (yoksa) veya superadmin olarak işaretler."""
     admin_email    = os.getenv("ADMIN_EMAIL", "henicomtr@gmail.com")
     admin_password = os.getenv("ADMIN_PASSWORD", "123456")
     _db = SessionLocal()
@@ -155,9 +186,15 @@ def _seed_admin():
             new_admin = User(
                 email=admin_email,
                 password=hash_password(admin_password),
-                role="admin"
+                role="admin",
+                is_superadmin=True,
+                permissions="[]"
             )
             _db.add(new_admin)
+            _db.commit()
+        elif not admin.is_superadmin:
+            # Mevcut admin varsa superadmin yap
+            admin.is_superadmin = True
             _db.commit()
     finally:
         _db.close()

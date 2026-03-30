@@ -1,0 +1,273 @@
+{% extends "admin_layout.html" %}
+{% block topbar_title %}Kullanıcı Yönetimi{% endblock %}
+
+{% block content %}
+<style>
+    .users-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+        align-items: start;
+    }
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1d1d1f;
+        margin: 0 0 16px;
+    }
+    .user-card {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .user-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0ee;
+        background: #fafaf9;
+    }
+    .user-email {
+        font-weight: 600;
+        font-size: 14px;
+        color: #1d1d1f;
+    }
+    .user-badge {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: #e8f4e8;
+        color: #2d7a2d;
+    }
+    .user-badge.superadmin {
+        background: #e8eaf6;
+        color: #3949ab;
+    }
+    .perms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 8px;
+        padding: 16px 20px;
+    }
+    .perm-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: background 0.15s;
+        font-size: 13px;
+        color: #444;
+    }
+    .perm-item:hover {
+        background: #f4f5f7;
+    }
+    .perm-item input[type="checkbox"] {
+        accent-color: #0d1239;
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+    }
+    .user-card-footer {
+        padding: 12px 20px;
+        border-top: 1px solid #f0f0ee;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+    .btn-primary {
+        background: #0d1239;
+        color: white;
+    }
+    .btn-primary:hover { background: #1a2060; }
+    .btn-danger {
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid #e8c4c0;
+    }
+    .btn-danger:hover {
+        background: #fdf0ee;
+    }
+    .create-card {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 14px;
+        padding: 24px;
+        position: sticky;
+        top: 80px;
+    }
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: #666;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 13.5px;
+        outline: none;
+        transition: border-color 0.15s;
+        box-sizing: border-box;
+    }
+    .form-input:focus {
+        border-color: #0d1239;
+    }
+    .alert {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        margin-bottom: 16px;
+    }
+    .alert-success { background: #e8f4e8; color: #2d7a2d; }
+    .alert-error   { background: #fdf0ee; color: #c0392b; }
+    .superadmin-note {
+        font-size: 12px;
+        color: #999;
+        font-style: italic;
+        padding: 16px 20px;
+    }
+    @media (max-width: 900px) {
+        .users-grid { grid-template-columns: 1fr; }
+        .create-card { position: static; }
+    }
+</style>
+
+<div style="max-width:1100px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+        <div>
+            <h1 style="font-size:22px;font-weight:700;color:#1d1d1f;margin:0 0 4px;">Kullanıcı Yönetimi</h1>
+            <p style="font-size:13px;color:#888;margin:0;">Alt kullanıcı hesaplarını ve izinlerini yönetin</p>
+        </div>
+    </div>
+
+    {% if request.query_params.get('saved') %}
+    <div class="alert alert-success">İzinler başarıyla güncellendi.</div>
+    {% endif %}
+    {% if request.query_params.get('created') %}
+    <div class="alert alert-success">Kullanıcı başarıyla oluşturuldu.</div>
+    {% endif %}
+    {% if request.query_params.get('deleted') %}
+    <div class="alert alert-success">Kullanıcı silindi.</div>
+    {% endif %}
+    {% if request.query_params.get('error') == 'email_exists' %}
+    <div class="alert alert-error">Bu e-posta adresi zaten kullanımda.</div>
+    {% endif %}
+    {% if request.query_params.get('error') == 'cant_delete_superadmin' %}
+    <div class="alert alert-error">Superadmin hesabı silinemez.</div>
+    {% endif %}
+
+    <div class="users-grid">
+
+        <!-- Sol: Kullanıcı Listesi -->
+        <div>
+            <h2 class="section-title">Kullanıcılar</h2>
+
+            {% for user in users %}
+            <div class="user-card">
+                <div class="user-card-header">
+                    <span class="user-email">{{ user.email }}</span>
+                    {% if user.is_superadmin %}
+                    <span class="user-badge superadmin">Superadmin</span>
+                    {% else %}
+                    <span class="user-badge">Alt Kullanıcı</span>
+                    {% endif %}
+                </div>
+
+                {% if user.is_superadmin %}
+                <div class="superadmin-note">Superadmin — tüm bölümlere tam erişim, izinler değiştirilemez.</div>
+                {% else %}
+                <!-- İzin formu -->
+                <form method="post" action="/esk/users/{{ user.id }}/permissions" id="perm-form-{{ user.id }}">
+                    <div class="perms-grid">
+                        {% set user_perms = user.get_permissions() %}
+                        {% for perm_key, perm_label in permission_options %}
+                        <label class="perm-item">
+                            <input type="checkbox" name="{{ perm_key }}" value="1"
+                                {% if perm_key in user_perms %}checked{% endif %}>
+                            {{ perm_label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="user-card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            İzinleri Kaydet
+                        </button>
+                        <!-- Sil butonu ayrı form (iç içe form HTML hatası) -->
+                        <button type="button" class="btn btn-danger"
+                                onclick="if(confirm('Bu kullanıcıyı silmek istediğinizden emin misiniz?')) document.getElementById('del-form-{{ user.id }}').submit()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            Sil
+                        </button>
+                    </div>
+                </form>
+                <!-- Silme formu dışarıda -->
+                <form method="post" action="/esk/users/{{ user.id }}/delete" id="del-form-{{ user.id }}" style="display:none;"></form>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if users|length == 0 %}
+            <div style="text-align:center;padding:40px;color:#aaa;font-size:14px;">
+                Henüz kullanıcı yok. Sağdaki formla yeni kullanıcı ekleyin.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sağ: Yeni Kullanıcı Formu -->
+        <div class="create-card">
+            <h2 class="section-title" style="font-size:15px;">Yeni Kullanıcı Ekle</h2>
+            <form method="post" action="/esk/users/create">
+                <div class="form-group">
+                    <label class="form-label" for="new_email">E-posta</label>
+                    <input class="form-input" type="email" id="new_email" name="email"
+                           placeholder="kullanici@firma.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="new_pass">Şifre</label>
+                    <input class="form-input" type="password" id="new_pass" name="password"
+                           placeholder="En az 6 karakter" minlength="6" required>
+                </div>
+                <p style="font-size:12px;color:#999;margin:0 0 16px;">
+                    Kullanıcı oluşturulduktan sonra izinlerini sol taraftan ayarlayabilirsiniz.
+                    Varsayılan olarak hiçbir bölüme erişim yoktur (sadece Durum ve Çıkış).
+                </p>
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                    Kullanıcı Oluştur
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

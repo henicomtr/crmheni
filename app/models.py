@@ -10,10 +10,26 @@ DEFAULT_LANG    = "en"
 
 class User(Base):
     __tablename__ = "users"
-    id       = Column(Integer, primary_key=True)
-    email    = Column(String, unique=True)
-    password = Column(String)
-    role     = Column(String)
+    id            = Column(Integer, primary_key=True)
+    email         = Column(String, unique=True)
+    password      = Column(String)
+    role          = Column(String)
+    is_superadmin = Column(Boolean, default=False)
+    permissions   = Column(Text, default="[]")  # JSON: ["urunler", "musteriler", ...]
+
+    def get_permissions(self) -> list:
+        """İzin listesini JSON'dan çözer."""
+        import json
+        try:
+            return json.loads(self.permissions or "[]")
+        except Exception:
+            return []
+
+    def has_permission(self, perm: str) -> bool:
+        """Superadmin her şeye erişir; diğerleri izin listesine göre."""
+        if self.is_superadmin:
+            return True
+        return perm in self.get_permissions()
 
 
 class Product(Base):

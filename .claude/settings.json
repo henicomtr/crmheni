@@ -7,7 +7,13 @@
       "Bash(python -m py_compile app/models.py)",
       "Bash(python -m py_compile app/main.py)",
       "Bash(python -m py_compile app/routes_showroom.py)",
-      "Read(//^@router.post/\\(/\"\"\"\"\"\"\"\"/esk/products/**)"
+      "Read(//^@router.post/\\(/\"\"\"\"\"\"\"\"/esk/products/**)",
+      "WebFetch(domain:pagespeed.web.dev)",
+      "Bash(curl -s \"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https://henib2b.com&strategy=mobile\")",
+      "Bash(curl -s --max-time 30 \"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https%3A%2F%2Fhenib2b.com&strategy=mobile\")",
+      "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/{print $2, int\\($1/**)",
+      "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/**)",
+      "Bash(python -m py_compile app/routes_admin.py)"
     ]
   }
 }
