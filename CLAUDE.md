@@ -24,7 +24,7 @@ Bu projede henüz build adımı, linting konfigürasyonu veya test altyapısı y
 ## Proje Özeti
 
 **HENİ CRM**, güzellik ve temizlik ürünleri sektörüne yönelik çok dilli B2B e-ticaret/CRM platformudur.
-**Stack:** FastAPI + SQLAlchemy + Jinja2 + SQLite (PostgreSQL geçişi planlanmaktadır)
+**Stack:** FastAPI + SQLAlchemy + Jinja2 + PostgreSQL
 **Geliştirici:** Tek kişi (solo proje)
 **Desteklenen Diller:** EN, TR, DE, FR, AR, RU, ES
 

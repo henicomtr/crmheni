@@ -554,3 +554,183 @@ class SiteSettings(Base):
             except Exception:
                 pass
         return {}
+
+
+# ─────────────────────────────────────────────────────────────────────
+# STOK YÖNETİMİ — Ham madde ve malzeme stok takibi
+# ─────────────────────────────────────────────────────────────────────
+
+class StockItem(Base):
+    """
+    Stok kalemi — ham madde, ambalaj, sarf malzemesi vb.
+    quantity: Mevcut stok miktarı (float, sarf edildikçe azalır)
+    """
+    __tablename__ = "stock_items"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    name       = Column(String, nullable=False)          # Kalem adı (ör. SLES)
+    unit       = Column(String, nullable=False)          # Birim (ör. kg, litre, adet)
+    quantity   = Column(Float, nullable=False, default=0.0)  # Mevcut stok
+    unit_price = Column(Float, nullable=True)            # Birim fiyat
+    currency   = Column(String, default="USD")           # Para birimi
+    category   = Column(String, nullable=True)           # Kategori (ör. hammadde, ambalaj)
+    notes      = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    consumptions = relationship(
+        "StockConsumption",
+        back_populates="stock_item",
+        cascade="all, delete-orphan",
+        order_by="StockConsumption.created_at.desc()",
+    )
+
+
+class StockConsumption(Base):
+    """
+    Sarf kaydı — hangi stok kaleminden ne kadar kullanıldığı.
+    Stok miktarı bu kayıt üzerinden düşülür.
+    """
+    __tablename__ = "stock_consumptions"
+
+    id            = Column(Integer, primary_key=True, index=True)
+    stock_item_id = Column(Integer, ForeignKey("stock_items.id", ondelete="CASCADE"), nullable=False)
+    quantity_used = Column(Float, nullable=False)        # Kullanılan miktar
+    note          = Column(String, nullable=True)        # Açıklama (ör. "Ocak üretimi")
+    created_at    = Column(DateTime, default=datetime.utcnow)
+
+    stock_item = relationship("StockItem", back_populates="consumptions")
+
+
+# ─────────────────────────────────────────────────────────────────────
+# FİYATLANDIRMA MOTORU — 3 aşamalı maliyet ve satış fiyatı hesaplama
+# ─────────────────────────────────────────────────────────────────────
+
+class PricingProduct(Base):
+    """
+    Fiyatlandırma sistemine özel ürün tanımı.
+    Mevcut Product tablosundan bağımsızdır; formülasyon ve maliyet takibine yöneliktir.
+    """
+    __tablename__ = "pricing_products"
+
+    id           = Column(Integer, primary_key=True, index=True)
+    name         = Column(String, nullable=False)        # Ürün adı (title case)
+    notes        = Column(String, nullable=True)
+    created_at   = Column(DateTime, default=datetime.utcnow)
+    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    formula_items     = relationship(
+        "FormulaItem",
+        back_populates="pricing_product",
+        cascade="all, delete-orphan",
+    )
+    finished_products = relationship(
+        "FinishedProduct",
+        back_populates="pricing_product",
+        cascade="all, delete-orphan",
+    )
+
+
+class FormulaItem(Base):
+    """
+    Formül satırı — bir PricingProduct için hangi StockItem'dan kaç kg/ton kullanılacağı.
+    kg_per_ton: 1 ton ürün üretimi için gereken miktar (kg cinsinden).
+    Toplam formül ağırlığı ~1000 kg olmalıdır.
+    """
+    __tablename__ = "formula_items"
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    pricing_product_id = Column(Integer, ForeignKey("pricing_products.id", ondelete="CASCADE"), nullable=False)
+    stock_item_id      = Column(Integer, ForeignKey("stock_items.id", ondelete="RESTRICT"), nullable=False)
+    kg_per_ton         = Column(Float, nullable=False, default=0.0)  # ton başına kg miktarı
+    created_at         = Column(DateTime, default=datetime.utcnow)
+
+    pricing_product = relationship("PricingProduct", back_populates="formula_items")
+    stock_item      = relationship("StockItem")
+
+
+class FinishedProduct(Base):
+    """
+    Ambalajlı son ürün — belirli hacimde (litre) paketlenmiş PricingProduct.
+    Aşama 2 hesaplamasının çıktısıdır.
+    """
+    __tablename__ = "finished_products"
+
+    id                 = Column(Integer, primary_key=True, index=True)
+    pricing_product_id = Column(Integer, ForeignKey("pricing_products.id", ondelete="CASCADE"), nullable=False)
+    volume_liters      = Column(Float, nullable=False)   # Ambalaj hacmi (litre)
+    label              = Column(String, nullable=True)   # Görüntülenecek etiket (ör. "5L")
+    created_at         = Column(DateTime, default=datetime.utcnow)
+    updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    pricing_product  = relationship("PricingProduct", back_populates="finished_products")
+    packaging_items  = relationship(
+        "PackagingItem",
+        back_populates="finished_product",
+        cascade="all, delete-orphan",
+    )
+    pricing_results  = relationship(
+        "PricingResult",
+        back_populates="finished_product",
+        cascade="all, delete-orphan",
+    )
+
+
+class PackagingItem(Base):
+    """
+    Ambalaj bileşeni — FinishedProduct için kullanılan ambalaj malzemesi.
+    component_type: şişe, kapak, etiket, koli, bant, streç
+    units_per_box: kolide kaç adet olduğu (koli bileşeni için maliyet paylaştırma).
+    quantity_per_unit: birim başına kullanım miktarı (genellikle 1.0).
+    """
+    __tablename__ = "packaging_items"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    finished_product_id = Column(Integer, ForeignKey("finished_products.id", ondelete="CASCADE"), nullable=False)
+    stock_item_id       = Column(Integer, ForeignKey("stock_items.id", ondelete="RESTRICT"), nullable=False)
+    component_type      = Column(String, nullable=False)   # sise, kapak, etiket, koli, bant, strec
+    quantity_per_unit   = Column(Float, nullable=False, default=1.0)  # birim ürün başına adet
+    units_per_box       = Column(Integer, nullable=True)   # koli bileşeni için: kolide kaç adet
+    created_at          = Column(DateTime, default=datetime.utcnow)
+
+    finished_product = relationship("FinishedProduct", back_populates="packaging_items")
+    stock_item       = relationship("StockItem")
+
+
+class PricingResult(Base):
+    """
+    Nihai fiyat snapshot'ı — hesaplama anındaki tüm maliyet detaylarını JSON olarak saklar.
+    Dinamik yeniden hesaplama için is_snapshot=True, güncel hesap için recalculate butonu kullanılır.
+    """
+    __tablename__ = "pricing_results"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    finished_product_id = Column(Integer, ForeignKey("finished_products.id", ondelete="CASCADE"), nullable=False)
+    # Maliyet kırılımı
+    internal_cost_per_ton = Column(Float, nullable=True)  # Aşama 1 çıktısı (USD/ton)
+    raw_material_cost     = Column(Float, nullable=True)  # Birim ürün ham madde maliyeti
+    packaging_cost        = Column(Float, nullable=True)  # Birim ürün ambalaj maliyeti
+    total_unit_cost       = Column(Float, nullable=True)  # Aşama 2 çıktısı (USD/birim)
+    overhead_rate         = Column(Float, default=0.20)   # Genel gider oranı
+    profit_rate           = Column(Float, default=0.25)   # Kâr marjı oranı
+    final_price           = Column(Float, nullable=True)  # Aşama 3 çıktısı (USD/birim)
+    # Detaylı kırılım JSON olarak saklanır
+    breakdown_json        = Column(Text, nullable=True)
+    calculated_at         = Column(DateTime, default=datetime.utcnow)
+
+    finished_product = relationship("FinishedProduct", back_populates="pricing_results")
+
+    def get_breakdown(self) -> dict:
+        """breakdown_json'u dict olarak döner."""
+        import json
+        if self.breakdown_json:
+            try:
+                return json.loads(self.breakdown_json)
+            except Exception:
+                return {}
+        return {}
+
+    def set_breakdown(self, d: dict):
+        """breakdown'ı JSON olarak saklar."""
+        import json
+        self.breakdown_json = json.dumps(d, ensure_ascii=False)

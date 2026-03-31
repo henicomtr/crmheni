@@ -13,7 +13,12 @@
       "Bash(curl -s --max-time 30 \"https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=https%3A%2F%2Fhenib2b.com&strategy=mobile\")",
       "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/{print $2, int\\($1/**)",
       "Read(//c/Users/ACER NİTRO/Desktop/projeler/crmheni/**)",
-      "Bash(python -m py_compile app/routes_admin.py)"
+      "Bash(python -m py_compile app/routes_admin.py)",
+      "Bash(python -c \"from app.models import StockItem, StockConsumption; print\\(''OK''\\)\")",
+      "Bash(python -c \"from app.models import PricingProduct, FormulaItem, FinishedProduct, PackagingItem, PricingResult; print\\(''models OK''\\)\")",
+      "Bash(python -c \"from app.services.pricing_service import calculate_internal_cost, calculate_finished_cost, calculate_final_price, save_pricing_result, format_product_name; print\\(''services OK''\\)\")",
+      "Bash(python -c \"from app.routes_pricing import router; print\\(''routes_pricing OK, routes:'', len\\(router.routes\\)\\)\")",
+      "Bash(python -c \"from app.main import app; print\\(''app startup OK, total routes:'', len\\(app.routes\\)\\)\")"
     ]
   }
 }

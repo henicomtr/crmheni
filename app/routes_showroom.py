@@ -9,7 +9,7 @@ from app.database import get_db
 from app.models import Product, ProductTranslation, ProductRating, QuoteRequest, Page, PageTranslation, FaqItem
 from pydantic import BaseModel
 from app.config import CATEGORIES
-from app.currency_service import get_rates, format_price, LANG_CURRENCY
+from app.services.currency_service import get_rates, format_price, LANG_CURRENCY
 
 router = APIRouter()
 

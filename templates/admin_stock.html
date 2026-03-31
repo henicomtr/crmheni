@@ -1,0 +1,779 @@
+{% extends "admin_layout.html" %}
+{% block topbar_title %}Stok Yönetimi{% endblock %}
+{% block content %}
+
+<style>
+    /* ── Genel başlık ──────────────────────────── */
+    .admin-page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .admin-page-title {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -.02em;
+        color: #1d1d1f;
+    }
+
+    /* ── Sekmeler ───────────────────────────────── */
+    .tab-bar {
+        display: flex;
+        gap: 6px;
+        background: #f4f5f7;
+        border: 1px solid #e5e5e3;
+        border-radius: 10px;
+        padding: 4px;
+        margin-bottom: 28px;
+        width: fit-content;
+    }
+
+    .tab-btn {
+        padding: 8px 20px;
+        border-radius: 8px;
+        font-size: 13.5px;
+        font-weight: 600;
+        border: none;
+        background: none;
+        cursor: pointer;
+        color: #6e6e73;
+        text-decoration: none;
+        transition: all 0.15s;
+    }
+
+    .tab-btn.active {
+        background: white;
+        color: #1d1d1f;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* ── Kartlar ────────────────────────────────── */
+    .stock-card {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .stock-card-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1d1d1f;
+        margin: 0 0 16px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cat-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f0f0f5;
+        color: #6e6e73;
+        margin-left: 4px;
+    }
+
+    /* ── Tablo ──────────────────────────────────── */
+    .stock-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13.5px;
+    }
+
+    .stock-table th {
+        text-align: left;
+        padding: 10px 12px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #9a9a9a;
+        border-bottom: 1px solid #e5e5e3;
+    }
+
+    .stock-table td {
+        padding: 12px 12px;
+        border-bottom: 1px solid #f4f5f7;
+        color: #1d1d1f;
+        vertical-align: middle;
+    }
+
+    .stock-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .stock-table tr:hover td {
+        background: #fafafa;
+    }
+
+    .qty-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 700;
+        color: #1d1d1f;
+    }
+
+    .qty-badge.low {
+        color: #d93025;
+    }
+
+    /* ── Formlar ────────────────────────────────── */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6e6e73;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .form-control {
+        height: 38px;
+        border: 1px solid #d1d1d6;
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 13.5px;
+        color: #1d1d1f;
+        background: #fff;
+        transition: border-color 0.15s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0a0a0a;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 38px;
+        padding: 0 18px;
+        border-radius: 8px;
+        background: #0a0a0a;
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.15s;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.85;
+    }
+
+    .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        height: 30px;
+        padding: 0 12px;
+        border-radius: 6px;
+        background: #fff0ef;
+        color: #d93025;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid #ffd5d3;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .btn-danger:hover {
+        background: #ffd5d3;
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 38px;
+        padding: 0 18px;
+        border-radius: 8px;
+        background: #f4f5f7;
+        color: #1d1d1f;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid #e5e5e3;
+        cursor: pointer;
+        text-decoration: none;
+        transition: background 0.15s;
+    }
+
+    .btn-secondary:hover {
+        background: #e9eaec;
+    }
+
+    /* ── Sarf satır seçici ───────────────────────── */
+    .consumption-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 2fr auto;
+        gap: 10px;
+        align-items: end;
+        padding: 12px;
+        background: #f9f9fb;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #e5e5e3;
+    }
+
+    .consumption-rows-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        margin-bottom: 16px;
+    }
+
+    .remove-row-btn {
+        height: 38px;
+        width: 38px;
+        border-radius: 8px;
+        border: 1px solid #ffd5d3;
+        background: #fff0ef;
+        color: #d93025;
+        cursor: pointer;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+
+    .remove-row-btn:hover {
+        background: #ffd5d3;
+    }
+
+    .add-row-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 8px;
+        background: #f4f5f7;
+        color: #1d1d1f;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px dashed #c7c7cc;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    .add-row-btn:hover {
+        background: #e9eaec;
+    }
+
+    /* ── Bildirim banner ─────────────────────────── */
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    .alert-success {
+        background: #e9f7ef;
+        color: #1a7d45;
+        border: 1px solid #b7dfc9;
+    }
+
+    .alert-error {
+        background: #fff0ef;
+        color: #d93025;
+        border: 1px solid #ffd5d3;
+    }
+
+    /* ── Sarf geçmişi ────────────────────────────── */
+    .history-card {
+        background: white;
+        border: 1px solid #e5e5e3;
+        border-radius: 14px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .history-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f4f5f7;
+    }
+
+    .history-item:last-child {
+        border-bottom: none;
+    }
+
+    .history-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #6e6e73;
+        flex-shrink: 0;
+        margin-top: 5px;
+    }
+
+    .history-detail {
+        flex: 1;
+        font-size: 13px;
+        color: #1d1d1f;
+    }
+
+    .history-meta {
+        font-size: 11px;
+        color: #9a9a9a;
+        margin-top: 2px;
+    }
+
+    .history-qty {
+        font-size: 13px;
+        font-weight: 700;
+        color: #d93025;
+        flex-shrink: 0;
+    }
+
+    /* ── Boş durum ───────────────────────────────── */
+    .empty-state {
+        text-align: center;
+        padding: 48px 24px;
+        color: #9a9a9a;
+    }
+
+    .empty-state svg {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 12px;
+        opacity: 0.3;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        margin: 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+        .consumption-row {
+            grid-template-columns: 1fr 1fr;
+        }
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .consumption-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- ── Başlık ─────────────────────────────────────────────────── -->
+<div class="admin-page-header">
+    <h1 class="admin-page-title">Stok Yönetimi</h1>
+</div>
+
+<!-- ── Bildirimler ───────────────────────────────────────────── -->
+{% if request.query_params.get('success') %}
+<div class="alert alert-success">Sarf kaydı başarıyla eklendi. Stok güncellendi.</div>
+{% endif %}
+{% if request.query_params.get('error') %}
+<div class="alert alert-error">{{ request.query_params.get('error') }}</div>
+{% endif %}
+
+<!-- ── Sekmeler ───────────────────────────────────────────────── -->
+<div class="tab-bar">
+    <a href="/esk/stock"
+       class="tab-btn {% if active_tab == 'stok' %}active{% endif %}">
+        Stok Listesi
+    </a>
+    <a href="/esk/stock/consumption"
+       class="tab-btn {% if active_tab == 'sarf' %}active{% endif %}">
+        Sarf Ekle
+    </a>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEKME 1 — STOK LİSTESİ
+════════════════════════════════════════════════════════════════ -->
+{% if active_tab == 'stok' %}
+
+<!-- Yeni kalem ekleme formu -->
+<div class="stock-card">
+    <p class="stock-card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="width:17px;height:17px;flex-shrink:0">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Yeni Kalem Ekle
+    </p>
+    <form method="post" action="/esk/stock/add">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Ürün Adı *</label>
+                <input class="form-control" type="text" name="name"
+                       placeholder="SLES" required>
+            </div>
+            <div class="form-group">
+                <label>Kategori *</label>
+                <select class="form-control" name="category" id="addCategory" onchange="onCategoryChange(this)" required>
+                    <option value="">— Seçin —</option>
+                    <option value="ŞİŞE">ŞİŞE</option>
+                    <option value="KAPAK">KAPAK</option>
+                    <option value="ETİKET">ETİKET</option>
+                    <option value="KOLİ">KOLİ</option>
+                    <option value="HAMMADDE">HAMMADDE</option>
+                    <option value="DİĞER">DİĞER</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Birim *</label>
+                <input class="form-control" type="text" name="unit"
+                       id="addUnit" placeholder="Kategoriden otomatik" required readonly
+                       style="background:#f9f9fb;cursor:default">
+            </div>
+            <div class="form-group">
+                <label>Miktar *</label>
+                <input class="form-control" type="number" name="quantity"
+                       step="0.001" min="0" placeholder="440" required>
+            </div>
+            <div class="form-group">
+                <label>Birim Fiyat</label>
+                <input class="form-control" type="number" name="unit_price"
+                       step="0.0001" min="0" placeholder="2.75">
+            </div>
+            <div class="form-group">
+                <label>Para Birimi</label>
+                <select class="form-control" name="currency">
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="TRY">TRY</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notlar</label>
+                <input class="form-control" type="text" name="notes"
+                       placeholder="Opsiyonel açıklama">
+            </div>
+        </div>
+        <button type="submit" class="btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 style="width:14px;height:14px">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Ekle
+        </button>
+    </form>
+</div>
+
+<!-- Stok tablosu (agrega görünüm) -->
+{% if grouped_items %}
+  {% for category, groups in grouped_items.items() %}
+  <div class="stock-card">
+      <p class="stock-card-title">
+          {{ category }}
+          <span class="cat-badge">{{ groups | length }} ürün</span>
+      </p>
+      <div style="overflow-x:auto">
+      <table class="stock-table">
+          <thead>
+              <tr>
+                  <th>Ürün Adı</th>
+                  <th>Toplam Stok</th>
+                  <th>Ort. Birim Fiyat</th>
+                  <th>Toplam Değer</th>
+                  <th>Girişler</th>
+                  <th></th>
+              </tr>
+          </thead>
+          <tbody>
+          {% for group in groups %}
+              <tr>
+                  <td><strong>{{ group.name }}</strong></td>
+                  <td>
+                      <span class="qty-badge {% if group.total_quantity < 50 %}low{% endif %}">
+                          {{ (group.total_quantity | int) if group.total_quantity % 1 == 0 else (group.total_quantity | round(3)) }} {{ group.unit }}
+                      </span>
+                  </td>
+                  <td>
+                      {% if group.avg_price is not none %}
+                          {{ "%.4f" | format(group.avg_price) | float | round(4) }} {{ group.currency }}
+                      {% else %}
+                          <span style="color:#c7c7cc">—</span>
+                      {% endif %}
+                  </td>
+                  <td>
+                      {% if group.total_value > 0 %}
+                          {{ "%.2f" | format(group.total_value) }} {{ group.currency }}
+                      {% else %}
+                          <span style="color:#c7c7cc">—</span>
+                      {% endif %}
+                  </td>
+                  <td>
+                      {% if group.batches | length > 1 %}
+                      <details style="font-size:12px;color:#6e6e73;cursor:pointer">
+                          <summary style="list-style:none;cursor:pointer;color:#0a0a0a;font-weight:600">
+                              {{ group.batches | length }} giriş
+                          </summary>
+                          <table style="margin-top:8px;width:100%;font-size:12px;border-collapse:collapse">
+                              <tr style="color:#9a9a9a">
+                                  <th style="padding:3px 8px;text-align:left">Tarih</th>
+                                  <th style="padding:3px 8px;text-align:left">Miktar</th>
+                                  <th style="padding:3px 8px;text-align:left">Birim Fiyat</th>
+                                  <th></th>
+                              </tr>
+                              {% for batch in group.batches %}
+                              <tr style="border-top:1px solid #f4f5f7">
+                                  <td style="padding:4px 8px;color:#9a9a9a">{{ batch.created_at.strftime("%d.%m.%Y") }}</td>
+                                  <td style="padding:4px 8px">{{ (batch.quantity | int) if batch.quantity % 1 == 0 else (batch.quantity | round(3)) }} {{ batch.unit }}</td>
+                                  <td style="padding:4px 8px">
+                                      {% if batch.unit_price %}{{ "%.4f" | format(batch.unit_price) | float | round(4) }} {{ batch.currency }}{% else %}—{% endif %}
+                                  </td>
+                                  <td style="padding:4px 8px">
+                                      <form method="post" action="/esk/stock/delete/{{ batch.id }}"
+                                            onsubmit="return confirm('Bu giriş silinsin mi?')"
+                                            style="display:inline">
+                                          <button type="submit" style="background:none;border:none;color:#d93025;font-size:11px;cursor:pointer;padding:0">Sil</button>
+                                      </form>
+                                  </td>
+                              </tr>
+                              {% endfor %}
+                          </table>
+                      </details>
+                      {% else %}
+                          <span style="font-size:12px;color:#9a9a9a">{{ group.batches[0].created_at.strftime("%d.%m.%Y") }}</span>
+                      {% endif %}
+                  </td>
+                  <td style="white-space:nowrap">
+                      <form method="post" action="/esk/stock/delete-by-name"
+                            onsubmit="return confirm('{{ group.name }} ürününe ait tüm girişler ({{ group.batches | length }} adet) silinsin mi?')"
+                            style="display:inline">
+                          <input type="hidden" name="name" value="{{ group.name }}">
+                          <button type="submit" class="btn-danger">Sil</button>
+                      </form>
+                  </td>
+              </tr>
+          {% endfor %}
+          </tbody>
+      </table>
+      </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="stock-card">
+      <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M20 7H4C2.9 7 2 7.9 2 9V19C2 20.1 2.9 21 4 21H20C21.1 21 22 20.1 22 19V9C22 7.9 21.1 7 20 7Z"/>
+              <path d="M16 7V5C16 3.9 15.1 3 14 3H10C8.9 3 8 3.9 8 5V7"/>
+          </svg>
+          <p>Henüz stok kalemi eklenmemiş. Yukarıdaki formu kullanarak ilk kalemi ekleyin.</p>
+      </div>
+  </div>
+{% endif %}
+
+{% endif %}{# /stok sekmesi #}
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SEKME 2 — SARF EKLE
+════════════════════════════════════════════════════════════════ -->
+{% if active_tab == 'sarf' %}
+
+<div class="stock-card">
+    <p class="stock-card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="width:17px;height:17px;flex-shrink:0">
+            <path d="M5 12H19M19 12L13 6M19 12L13 18"/>
+        </svg>
+        Sarf Bilgisi Ekle
+    </p>
+    <p style="font-size:13px;color:#6e6e73;margin:0 0 20px">
+        Listeden kalem seçin, sarfedilen miktarı girin. Birden fazla kalem aynı anda sarfedilebilir.
+    </p>
+
+    {% if grouped_items %}
+    <form method="post" action="/esk/stock/consumption/add" id="consumptionForm">
+        <div class="consumption-rows-wrapper" id="consumptionRows">
+            <!-- İlk satır -->
+            <div class="consumption-row">
+                <div class="form-group">
+                    <label>Kalem</label>
+                    <select class="form-control" name="item_name" required>
+                        <option value="">— Seçin —</option>
+                        {% for category, groups in grouped_items.items() %}
+                            <optgroup label="{{ category }}">
+                                {% for group in groups %}
+                                <option value="{{ group.name }}">
+                                    {{ group.name }}
+                                    ({{ (group.total_quantity | int) if group.total_quantity % 1 == 0 else (group.total_quantity | round(3)) }} {{ group.unit }} mevcut)
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Miktar *</label>
+                    <input class="form-control" type="number" name="quantity_used"
+                           step="0.001" min="0.001" placeholder="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Açıklama</label>
+                    <input class="form-control" type="text" name="note"
+                           placeholder="Ör: Ocak üretimi">
+                </div>
+                <button type="button" class="remove-row-btn" onclick="removeRow(this)" title="Satırı kaldır">×</button>
+            </div>
+        </div>
+
+        <button type="button" class="add-row-btn" onclick="addRow()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 style="width:13px;height:13px">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Kalem Ekle
+        </button>
+
+        <div style="margin-top:20px;display:flex;gap:10px;align-items:center">
+            <button type="submit" class="btn-primary">
+                Sarfı Kaydet
+            </button>
+            <a href="/esk/stock" class="btn-secondary">İptal</a>
+        </div>
+    </form>
+    {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <p>
+                Sarf eklemek için önce
+                <a href="/esk/stock" style="color:#0a0a0a;font-weight:600">stok kalemi</a>
+                oluşturmanız gerekiyor.
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Sarf Geçmişi -->
+{% if recent_consumptions %}
+<div class="history-card">
+    <p class="stock-card-title" style="margin-bottom:16px">Son Sarf Kayıtları</p>
+    {% for c in recent_consumptions %}
+    <div class="history-item">
+        <div class="history-dot"></div>
+        <div class="history-detail">
+            <strong>{{ c.stock_item.name if c.stock_item else "Silinmiş kalem" }}</strong>
+            {% if c.note %} — {{ c.note }}{% endif %}
+            <div class="history-meta">
+                {{ c.created_at.strftime("%d.%m.%Y %H:%M") }}
+                {% if c.stock_item %}· {{ c.stock_item.unit }}{% endif %}
+            </div>
+        </div>
+        <div class="history-qty">
+            −{{ (c.quantity_used | int) if c.quantity_used % 1 == 0 else (c.quantity_used | round(3)) }}
+            {% if c.stock_item %} {{ c.stock_item.unit }}{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}{# /sarf sekmesi #}
+
+
+<!-- ── Kategori → Birim otomatik doldurma + Sarf satırı klonlama ── -->
+<script>
+(function () {
+    /* Kategori → birim eşlemesi */
+    const UNIT_MAP = {
+        'HAMMADDE': 'KG',
+        'ŞİŞE':    'ADET',
+        'KAPAK':   'ADET',
+        'ETİKET':  'ADET',
+        'KOLİ':    'ADET',
+        'DİĞER':   'ADET',
+    };
+
+    /* Yeni kalem formu: kategori seçince birimi otomatik doldur */
+    window.onCategoryChange = function (select) {
+        const unitInput = document.getElementById('addUnit');
+        if (!unitInput) return;
+        const unit = UNIT_MAP[select.value] || '';
+        unitInput.value = unit;
+    };
+
+    /* Sarf satırı klonlama */
+    const optionsHtml = document.querySelector('[name="item_name"]')
+        ? document.querySelector('[name="item_name"]').innerHTML
+        : '';
+
+    window.addRow = function () {
+        const wrapper = document.getElementById('consumptionRows');
+        const row = document.createElement('div');
+        row.className = 'consumption-row';
+        row.innerHTML = `
+            <div class="form-group">
+                <label>Kalem</label>
+                <select class="form-control" name="item_name" required>
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Miktar *</label>
+                <input class="form-control" type="number" name="quantity_used"
+                       step="0.001" min="0.001" placeholder="0" required>
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <input class="form-control" type="text" name="note"
+                       placeholder="Ör: Ocak üretimi">
+            </div>
+            <button type="button" class="remove-row-btn" onclick="removeRow(this)" title="Satırı kaldır">×</button>
+        `;
+        wrapper.appendChild(row);
+    };
+
+    window.removeRow = function (btn) {
+        const rows = document.querySelectorAll('#consumptionRows .consumption-row');
+        /* En az 1 satır kalmalı */
+        if (rows.length <= 1) return;
+        btn.closest('.consumption-row').remove();
+    };
+})();
+</script>
+
+{% endblock %}

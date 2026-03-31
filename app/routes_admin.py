@@ -14,13 +14,14 @@ import hashlib
 
 from .database import get_db
 from .auth import verify_password, create_token, hash_password
-from .currency_service import get_rates, FALLBACK_RATES, format_price, LANG_CURRENCY
+from .services.currency_service import get_rates, FALLBACK_RATES, format_price, LANG_CURRENCY
 from .models import (
     User, Product, ProductTranslation, Customer, Supplier,
     Lead, Order, FinanceTransaction, QuoteRequest, AccountTransaction,
     Page, PageTranslation, FaqItem, SiteSettings,
     CategoryContent, CategoryTranslation, CategoryFaq,
-    HomepageContent,
+    HomepageContent, StockItem, StockConsumption,
+    FormulaItem, PackagingItem,
 )
 from .config import SECRET_KEY, ALGORITHM, CATEGORIES
 
@@ -3462,3 +3463,325 @@ async def landing_sync_image(
     db.commit()
 
     return JSONResponse({"ok": True, "field": field, "value": value})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# STOK YÖNETİMİ
+# ═══════════════════════════════════════════════════════════════════════
+
+@router.get("/esk/stock", response_class=HTMLResponse)
+async def stock_list(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Stok listesi — kategorilere göre gruplandırılmış."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    # Tüm stok kalemlerini çek (FIFO sırası için created_at ASC)
+    items = db.query(StockItem).order_by(StockItem.category, StockItem.name, StockItem.created_at).all()
+
+    # Aynı isimdeki kalemleri agrega et (toplam miktar + ağırlıklı ort. fiyat)
+    _name_map: dict = {}
+    for item in items:
+        cat = item.category or "DİĞER"
+        key = (cat, item.name.strip())
+        if key not in _name_map:
+            _name_map[key] = {
+                "name": item.name,
+                "category": cat,
+                "unit": item.unit,
+                "currency": item.currency,
+                "total_quantity": 0.0,
+                "total_value": 0.0,
+                "avg_price": None,
+                "batches": [],
+            }
+        g = _name_map[key]
+        g["total_quantity"] += item.quantity
+        if item.unit_price is not None:
+            g["total_value"] += item.quantity * item.unit_price
+        g["batches"].append(item)
+
+    # Ağırlıklı ortalama birim fiyat hesapla
+    for g in _name_map.values():
+        priced_qty = sum(b.quantity for b in g["batches"] if b.unit_price is not None)
+        if priced_qty > 0:
+            g["avg_price"] = g["total_value"] / priced_qty
+
+    # Kategoriye göre dış grupla
+    grouped: dict = {}
+    for (cat, _name), g in _name_map.items():
+        grouped.setdefault(cat, []).append(g)
+
+    return templates.TemplateResponse("admin_stock.html", {
+        "request": request,
+        "current_user": admin,
+        "grouped_items": grouped,
+        "all_items": items,
+        "active_tab": "stok",
+    })
+
+
+@router.post("/esk/stock/add")
+async def stock_add(
+    request: Request,
+    name: str = Form(...),
+    unit: str = Form(...),
+    quantity: float = Form(...),
+    unit_price: Optional[float] = Form(None),
+    currency: str = Form("USD"),
+    category: str = Form(""),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Yeni stok kalemi ekle."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    item = StockItem(
+        name=name.strip(),
+        unit=unit.strip(),
+        quantity=quantity,
+        unit_price=unit_price,
+        currency=currency,
+        category=category.strip() or None,
+        notes=notes.strip() or None,
+    )
+    db.add(item)
+    db.commit()
+    return RedirectResponse("/esk/stock", status_code=303)
+
+
+@router.post("/esk/stock/delete/{item_id}")
+async def stock_delete(
+    item_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Stok kalemini sil (sarf kayıtları da cascade silinir)."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if item:
+        # Aynı isimdeki başka bir partiyi referans olarak bul
+        replacement = db.query(StockItem).filter(
+            StockItem.name == item.name,
+            StockItem.id   != item_id,
+        ).first()
+
+        if replacement:
+            # Formül ve ambalaj referanslarını başka partiye taşı
+            db.query(FormulaItem).filter(FormulaItem.stock_item_id == item_id)\
+                .update({"stock_item_id": replacement.id})
+            db.query(PackagingItem).filter(PackagingItem.stock_item_id == item_id)\
+                .update({"stock_item_id": replacement.id})
+        else:
+            # Bu malzemenin tek partisi — formül/ambalaj satırlarını sil
+            db.query(FormulaItem).filter(FormulaItem.stock_item_id == item_id).delete()
+            db.query(PackagingItem).filter(PackagingItem.stock_item_id == item_id).delete()
+
+        db.delete(item)
+        db.commit()
+    return RedirectResponse("/esk/stock", status_code=303)
+
+
+@router.get("/esk/stock/consumption", response_class=HTMLResponse)
+async def stock_consumption_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Sarf bilgisi ekleme sayfası — tüm stok kalemleri kategorili listelenir."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    items = db.query(StockItem).order_by(StockItem.category, StockItem.name, StockItem.created_at).all()
+
+    # Sarf için benzersiz ürün listesi (isim bazlı agrega, stok > 0 olanlar)
+    _name_map: dict = {}
+    for item in items:
+        cat = item.category or "DİĞER"
+        key = (cat, item.name.strip())
+        if key not in _name_map:
+            _name_map[key] = {
+                "name": item.name,
+                "category": cat,
+                "unit": item.unit,
+                "total_quantity": 0.0,
+            }
+        _name_map[key]["total_quantity"] += item.quantity
+
+    # Kategori bazlı grupla (sarf dropdown için)
+    grouped: dict = {}
+    for (cat, _name), g in _name_map.items():
+        if g["total_quantity"] > 0:
+            grouped.setdefault(cat, []).append(g)
+
+    # Son 50 sarf kaydını göster
+    recent_consumptions = (
+        db.query(StockConsumption)
+        .order_by(StockConsumption.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    return templates.TemplateResponse("admin_stock.html", {
+        "request": request,
+        "current_user": admin,
+        "grouped_items": grouped,
+        "all_items": items,
+        "recent_consumptions": recent_consumptions,
+        "active_tab": "sarf",
+    })
+
+
+@router.post("/esk/stock/delete-by-name")
+async def stock_delete_by_name(
+    request: Request,
+    name: str = Form(...),
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Belirli isimdeki tüm stok kalemlerini sil (sarf kayıtları cascade silinir)."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    matching_items = db.query(StockItem).filter(StockItem.name == name).all()
+    if matching_items:
+        item_ids = [i.id for i in matching_items]
+        # Bu malzemeye ait formül ve ambalaj satırlarını önce temizle (FK kısıtı)
+        db.query(FormulaItem).filter(FormulaItem.stock_item_id.in_(item_ids)).delete(synchronize_session=False)
+        db.query(PackagingItem).filter(PackagingItem.stock_item_id.in_(item_ids)).delete(synchronize_session=False)
+        for item in matching_items:
+            db.delete(item)
+        db.commit()
+    return RedirectResponse("/esk/stock", status_code=303)
+
+
+@router.post("/esk/stock/update-category/{item_id}")
+async def stock_update_category(
+    item_id: int,
+    category: str = Form(...),
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """Mevcut stok kaleminin kategorisini güncelle."""
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    # Geçerli kategori listesi
+    gecerli_kategoriler = {"ŞİŞE", "KAPAK", "ETİKET", "KOLİ", "HAMMADDE", "DİĞER"}
+    if category not in gecerli_kategoriler:
+        return RedirectResponse("/esk/stock", status_code=303)
+
+    item = db.query(StockItem).filter(StockItem.id == item_id).first()
+    if item:
+        # Kategori HAMMADDE ise birim KG, diğerleri ADET olarak güncelle
+        item.category = category
+        if category == "HAMMADDE":
+            item.unit = "KG"
+        else:
+            item.unit = "ADET"
+        db.commit()
+    return RedirectResponse("/esk/stock", status_code=303)
+
+
+@router.post("/esk/stock/consumption/add")
+async def stock_consumption_add(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """
+    Sarf kaydı ekle — birden fazla kalem aynı anda sarfedilebilir.
+    Form verisi: item_id[], quantity_used[], note[]
+    """
+    if not admin:
+        return RedirectResponse("/esk/login")
+    if not admin.has_permission("stok"):
+        return RedirectResponse("/esk/dashboard")
+
+    form = await request.form()
+
+    # Çoklu kalem için liste olarak al (artık ürün ismi kullanılır)
+    item_names  = form.getlist("item_name")
+    quantities  = form.getlist("quantity_used")
+    notes       = form.getlist("note")
+
+    errors = []
+    for i, item_name in enumerate(item_names):
+        try:
+            quantity_used = float(quantities[i]) if i < len(quantities) else 0.0
+            note_text     = notes[i].strip() if i < len(notes) else ""
+        except (ValueError, IndexError):
+            continue
+
+        if quantity_used <= 0 or not item_name:
+            continue
+
+        # Aynı isimli tüm stok kalemlerini FIFO sırası ile çek (en eski önce)
+        matching = (
+            db.query(StockItem)
+            .filter(StockItem.name == item_name)
+            .order_by(StockItem.created_at.asc())
+            .all()
+        )
+
+        if not matching:
+            errors.append(f"Ürün bulunamadı: {item_name}")
+            continue
+
+        unit = matching[0].unit
+        total_available = sum(si.quantity for si in matching)
+
+        # Toplam stok yeterli mi?
+        if total_available < quantity_used:
+            errors.append(
+                f"{item_name}: yetersiz stok "
+                f"(mevcut={total_available} {unit}, "
+                f"istenen={quantity_used} {unit})"
+            )
+            continue
+
+        # FIFO: en eski girişten başlayarak düş, sarf kaydı oluştur
+        remaining = quantity_used
+        for si in matching:
+            if remaining <= 0:
+                break
+            deduct = min(si.quantity, remaining)
+            si.quantity -= deduct
+            remaining -= deduct
+            if deduct > 0:
+                consumption = StockConsumption(
+                    stock_item_id=si.id,
+                    quantity_used=deduct,
+                    note=note_text or None,
+                )
+                db.add(consumption)
+
+    db.commit()
+
+    # Hata varsa query param ile ilet
+    if errors:
+        import urllib.parse
+        error_msg = urllib.parse.quote(" | ".join(errors))
+        return RedirectResponse(f"/esk/stock/consumption?error={error_msg}", status_code=303)
+
+    return RedirectResponse("/esk/stock/consumption?success=1", status_code=303)

@@ -8,6 +8,7 @@ from .database import Base, engine
 from .routes_admin import router as admin_router
 from .routes_showroom import router as showroom_router
 from .routes_webhook import router as webhook_router
+from .routes_pricing import router as pricing_router
 from sqlalchemy import text, inspect
 import os
 
@@ -209,6 +210,21 @@ def _migrate_pages():
 
 _migrate_pages()
 
+# ── Stok tabloları migrasyonu ───────────────────────────────────────
+def _migrate_stock():
+    """
+    stock_items ve stock_consumptions tablolarını oluşturur (yoksa).
+    Base.metadata.create_all zaten yeni tabloları ekler; bu fonksiyon
+    SQLite'da eski kurulumlar için güvencedir.
+    """
+    from .models import StockItem, StockConsumption  # noqa: F401 — modeli register et
+    Base.metadata.create_all(bind=engine, tables=[
+        StockItem.__table__,
+        StockConsumption.__table__,
+    ])
+
+_migrate_stock()
+
 # ── Admin kullanıcı seed ────────────────────────────────────────────
 def _seed_admin():
     """Varsayılan admin kullanıcısını oluşturur (yoksa) veya superadmin olarak işaretler."""
@@ -301,3 +317,4 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
 app.include_router(showroom_router)
 app.include_router(webhook_router)
+app.include_router(pricing_router)

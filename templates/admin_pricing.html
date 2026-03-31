@@ -1,0 +1,1238 @@
+{% extends "admin_layout.html" %}
+{% block topbar_title %}Fiyatlandırma Motoru{% endblock %}
+{% block content %}
+
+<style>
+/* ── Sayfa başlığı ── */
+.pricing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.pricing-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: #1d1d1f;
+}
+
+/* ── Sekmeler ── */
+.tab-bar {
+    display: flex;
+    gap: 4px;
+    background: #f4f5f7;
+    border: 1px solid #e5e5e3;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 28px;
+    width: fit-content;
+    flex-wrap: wrap;
+}
+.tab-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #6e6e73;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.tab-btn.active {
+    background: white;
+    color: #1d1d1f;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.tab-step-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e5e5e3;
+    color: #6e6e73;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.tab-btn.active .tab-step-badge {
+    background: #0071e3;
+    color: white;
+}
+
+/* ── Kartlar ── */
+.p-card {
+    background: white;
+    border: 1px solid #e5e5e3;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.p-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0 0 18px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Form elemanları ── */
+.p-form-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+}
+.p-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 140px;
+}
+.p-form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6e6e73;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.p-input, .p-select {
+    border: 1px solid #d1d1d6;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: #1d1d1f;
+    background: #fafafa;
+    transition: border-color 0.15s;
+    width: 100%;
+}
+.p-input:focus, .p-select:focus {
+    outline: none;
+    border-color: #0071e3;
+    background: white;
+}
+
+/* ── Düğmeler ── */
+.btn-primary {
+    background: #0071e3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.btn-primary:hover { background: #005bb5; }
+.btn-secondary {
+    background: #f4f5f7;
+    color: #1d1d1f;
+    border: 1px solid #e5e5e3;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+.btn-secondary:hover { background: #e5e5e3; }
+.btn-danger {
+    background: #ff3b30;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-danger:hover { background: #cc2e26; }
+.btn-calc {
+    background: #34c759;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-calc:hover { background: #28a745; }
+.btn-save-price {
+    background: #ff9500;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-save-price:hover { background: #cc7700; }
+
+/* ── Tablo ── */
+.p-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+.p-table th {
+    background: #f4f5f7;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6e6e73;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.p-table td {
+    padding: 10px 12px;
+    border-top: 1px solid #f0f0f0;
+    color: #1d1d1f;
+    vertical-align: middle;
+}
+.p-table tr:hover td { background: #fafafa; }
+
+/* ── Hesap sonucu kutusu ── */
+.calc-result-box {
+    background: #f0f7ff;
+    border: 1px solid #cce0ff;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 16px;
+    display: none;
+}
+.calc-result-box.visible { display: block; }
+.calc-result-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0071e3;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.calc-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e0eeff;
+}
+.calc-row:last-child { border-bottom: none; }
+.calc-row .label { color: #555; }
+.calc-row .value { font-weight: 600; color: #1d1d1f; }
+.calc-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 10px 0 0;
+    margin-top: 8px;
+    border-top: 2px solid #0071e3;
+    color: #0071e3;
+}
+.warning-banner {
+    background: #fff9e6;
+    border: 1px solid #ffd60a;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #7d5a00;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Son fiyat kutusu ── */
+.final-price-box {
+    background: linear-gradient(135deg, #1d1d1f 0%, #2d2d35 100%);
+    border-radius: 14px;
+    padding: 28px;
+    color: white;
+    text-align: center;
+    margin-top: 20px;
+    display: none;
+}
+.final-price-box.visible { display: block; }
+.final-price-label { font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.final-price-product { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.final-price-value { font-size: 48px; font-weight: 800; color: #ffd60a; line-height: 1; }
+.final-price-currency { font-size: 18px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+.final-price-breakdown {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+.fp-breakdown-item { text-align: center; }
+.fp-breakdown-item .fp-amount { font-size: 18px; font-weight: 700; color: #30d158; }
+.fp-breakdown-item .fp-label  { font-size: 11px; color: rgba(255,255,255,0.45); }
+
+/* ── Seçili ürün highlight ── */
+.product-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e3;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    color: #1d1d1f;
+}
+.product-list-item:hover { background: #f4f5f7; border-color: #d1d1d6; }
+.product-list-item.selected { background: #e8f0fe; border-color: #0071e3; }
+.product-list-item .pli-name { font-weight: 600; font-size: 14px; }
+.product-list-item .pli-meta { font-size: 12px; color: #6e6e73; }
+
+/* ── Sonuç listesi ── */
+.result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: white;
+    border: 1px solid #e5e5e3;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.result-row .rr-name { font-weight: 700; font-size: 15px; }
+.result-row .rr-price { font-size: 20px; font-weight: 800; color: #0071e3; }
+.result-row .rr-date { font-size: 11px; color: #6e6e73; }
+
+/* ── Oran ayarları ── */
+.rate-inputs {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.rate-inputs .p-form-group { flex: 0 0 140px; }
+
+/* ── Tab panel gizle/göster ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── İki sütun ── */
+.two-col {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+}
+@media(max-width: 900px) {
+    .two-col { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="pricing-header">
+    <div class="pricing-title">💰 Fiyatlandırma Motoru</div>
+    <a href="/esk/pricing/export" class="btn-secondary" style="text-decoration:none;">
+        📊 Fiyat Listesi
+    </a>
+</div>
+
+<!-- ── TAB BAR ── -->
+<div class="tab-bar">
+    <button class="tab-btn" data-tab="1" onclick="switchTab(1)">
+        <span class="tab-step-badge">1</span>
+        Formülasyon & İç Maliyet
+    </button>
+    <button class="tab-btn" data-tab="2" onclick="switchTab(2)">
+        <span class="tab-step-badge">2</span>
+        Son Ürün & Ambalaj
+    </button>
+    <button class="tab-btn" data-tab="3" onclick="switchTab(3)">
+        <span class="tab-step-badge">3</span>
+        Nihai Satış Fiyatı
+    </button>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     AŞAMA 1 — FORMÜLASYON & İÇ MALİYET
+════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-1">
+
+    <div class="two-col">
+
+        <!-- Sol: Ürün listesi + yeni ürün formu -->
+        <div>
+            <div class="p-card">
+                <div class="p-card-title">🧪 Ürünler</div>
+
+                {% for pp in pricing_products %}
+                <div class="product-list-item {% if request.query_params.get('product_id')|int == pp.id %}selected{% endif %}"
+                     id="pli-{{ pp.id }}"
+                     onclick="window.location='/esk/pricing?tab=1&product_id={{ pp.id }}'">
+                    <div>
+                        <div class="pli-name">{{ pp.name }}</div>
+                        <div class="pli-meta">{{ pp.formula_items|length }} malzeme</div>
+                    </div>
+                    <form method="post" action="/esk/pricing/products/{{ pp.id }}/delete"
+                          onsubmit="return confirm('Ürünü sil?')" style="margin:0;"
+                          onclick="event.stopPropagation()">
+                        <button class="btn-danger" type="submit">Sil</button>
+                    </form>
+                </div>
+                {% else %}
+                <p style="color:#6e6e73;font-size:13px;">Henüz ürün yok.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Yeni ürün ekle -->
+            <div class="p-card">
+                <div class="p-card-title">➕ Yeni Ürün</div>
+                <form method="post" action="/esk/pricing/products">
+                    <div class="p-form-row">
+                        <div class="p-form-group">
+                            <label>Ürün Adı</label>
+                            <input class="p-input" name="name" required
+                                   placeholder="ör. elde bulaşık deterjanı">
+                        </div>
+                    </div>
+                    <div class="p-form-row">
+                        <div class="p-form-group">
+                            <label>Notlar (opsiyonel)</label>
+                            <input class="p-input" name="notes" placeholder="...">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Ürün Oluştur</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sağ: Seçili ürünün formülü -->
+        {% set sel_id = request.query_params.get('product_id')|int %}
+        {% set ns1 = namespace(sel_product=None) %}
+        {% for pp in pricing_products %}
+            {% if pp.id == sel_id %}{% set ns1.sel_product = pp %}{% endif %}
+        {% endfor %}
+        {% set sel_product = ns1.sel_product %}
+
+        <div>
+            {% if sel_product %}
+            <div class="p-card">
+                <div class="p-card-title">
+                    🧬 {{ sel_product.name }} — Formül
+                    <span style="font-size:12px;font-weight:400;color:#6e6e73;margin-left:auto;">
+                        (1 ton üretim için kg)
+                    </span>
+                </div>
+
+                <!-- Formül tablosu -->
+                {% if sel_product.formula_items %}
+                <table class="p-table" style="margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th>Hammadde</th>
+                            <th>Birim Fiyat</th>
+                            <th>kg/ton</th>
+                            <th>Hat Maliyeti (USD)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fi in sel_product.formula_items %}
+                        {% set sname = fi.stock_item.name if fi.stock_item else None %}
+                        {% set sg = stock_avg_map.get(sname) if sname else None %}
+                        <tr>
+                            <td>{{ sname if sname else '— Silinmiş —' }}</td>
+                            <td>
+                                {% if sg and sg.avg_price %}
+                                    <span style="font-weight:600;">
+                                        {{ "%.2f"|format(sg.avg_price) }}
+                                        {{ sg.currency }}/{{ sg.unit }}
+                                    </span>
+                                    {% if sg.currency != 'USD' %}
+                                    <span style="font-size:11px;color:#6e6e73;display:block;">
+                                        ≈ USD (kur ile çevrilir)
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color:#ff3b30;">Fiyat yok</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ fi.kg_per_ton }}</td>
+                            <td style="color:#1d1d1f;font-weight:600;">
+                                {% if sg and sg.avg_price %}
+                                    <span style="font-size:11px;color:#6e6e73;">
+                                        ⚡ Hesapla'ya basın
+                                    </span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                <form method="post"
+                                      action="/esk/pricing/formula-items/{{ fi.id }}/delete"
+                                      onsubmit="return confirm('Satırı sil?')">
+                                    <button class="btn-danger" type="submit">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color:#6e6e73;font-size:13px;margin-bottom:16px;">
+                    Henüz malzeme eklenmedi.
+                </p>
+                {% endif %}
+
+                <!-- Malzeme ekle -->
+                <form method="post" action="/esk/pricing/products/{{ sel_product.id }}/formula">
+                    <div class="p-form-row">
+                        <div class="p-form-group">
+                            <label>Hammadde Seç</label>
+                            <select class="p-select" name="stock_item_id" required>
+                                <option value="">— Seçin —</option>
+                                {% for sg in stock_items %}
+                                <option value="{{ sg.representative_id }}">
+                                    {{ sg.name }}
+                                    {% if sg.avg_price %} — {{ "%.2f"|format(sg.avg_price) }} {{ sg.currency }}/{{ sg.unit }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="p-form-group" style="flex:0 0 120px;">
+                            <label>kg / ton</label>
+                            <input class="p-input" name="kg_per_ton" type="number"
+                                   step="0.01" min="0" required placeholder="ör. 150">
+                        </div>
+                        <div style="align-self:flex-end;">
+                            <button type="submit" class="btn-primary">+ Ekle</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Hesapla butonu -->
+                <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <button class="btn-calc"
+                            onclick="calcInternal({{ sel_product.id }})">
+                        ⚡ Dinamik Hesapla
+                    </button>
+                    <span style="font-size:12px;color:#6e6e73;">
+                        Anlık stok fiyatlarıyla hesaplanır
+                    </span>
+                </div>
+
+                <!-- Hesap sonucu -->
+                <div class="calc-result-box" id="internal-result">
+                    <div class="calc-result-title">📊 Ton Başına İç Maliyet</div>
+                    <div id="internal-result-body"></div>
+                    <div class="calc-total-row">
+                        <span>Toplam Maliyet / Ton</span>
+                        <span id="internal-total"></span>
+                    </div>
+                </div>
+                <div class="warning-banner" id="internal-warning" style="display:none;">
+                    ⚠️ <span id="internal-warning-text"></span>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="p-card" style="text-align:center;padding:48px 24px;color:#6e6e73;">
+                <div style="font-size:36px;margin-bottom:12px;">🔬</div>
+                <div style="font-weight:600;font-size:15px;margin-bottom:8px;">
+                    Bir ürün seçin
+                </div>
+                <div style="font-size:13px;">
+                    Soldaki listeden bir ürüne tıklayarak formülünü görüntüleyin veya düzenleyin.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     AŞAMA 2 — SON ÜRÜN & AMBALAJ
+════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-2">
+
+    <div class="two-col">
+
+        <!-- Sol: Son ürün listesi + yeni ekle -->
+        <div>
+            <div class="p-card">
+                <div class="p-card-title">📦 Ambalajlı Ürünler</div>
+
+                {% for fp in finished_products %}
+                <div class="product-list-item {% if request.query_params.get('finished_id')|int == fp.id %}selected{% endif %}"
+                     onclick="window.location='/esk/pricing?tab=2&finished_id={{ fp.id }}'">
+                    <div>
+                        <div class="pli-name">
+                            {{ fp.pricing_product.name if fp.pricing_product else '?' }} — {{ fp.label }}
+                        </div>
+                        <div class="pli-meta">{{ fp.packaging_items|length }} ambalaj bileşeni</div>
+                    </div>
+                    <form method="post" action="/esk/pricing/finished/{{ fp.id }}/delete"
+                          onsubmit="return confirm('Sil?')" style="margin:0;"
+                          onclick="event.stopPropagation()">
+                        <button class="btn-danger" type="submit">Sil</button>
+                    </form>
+                </div>
+                {% else %}
+                <p style="color:#6e6e73;font-size:13px;">Henüz son ürün yok.</p>
+                {% endfor %}
+            </div>
+
+            <!-- Yeni son ürün -->
+            <div class="p-card">
+                <div class="p-card-title">➕ Yeni Son Ürün</div>
+                <form method="post" action="/esk/pricing/finished">
+                    <div class="p-form-row">
+                        <div class="p-form-group">
+                            <label>Ürün (Aşama 1)</label>
+                            <select class="p-select" name="pricing_product_id" required>
+                                <option value="">— Seçin —</option>
+                                {% for pp in pricing_products %}
+                                <option value="{{ pp.id }}">{{ pp.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-form-row">
+                        <div class="p-form-group" style="flex:0 0 120px;">
+                            <label>Hacim (L)</label>
+                            <input class="p-input" name="volume_liters" type="number"
+                                   step="0.1" min="0.1" required placeholder="5">
+                        </div>
+                        <div class="p-form-group">
+                            <label>Etiket (opsiyonel)</label>
+                            <input class="p-input" name="label" placeholder="ör. 5L Premium">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Oluştur</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sağ: Seçili son ürünün ambalajı -->
+        {% set sel_fid = request.query_params.get('finished_id')|int %}
+        {% set ns2 = namespace(sel_finished=None) %}
+        {% for fp in finished_products %}
+            {% if fp.id == sel_fid %}{% set ns2.sel_finished = fp %}{% endif %}
+        {% endfor %}
+        {% set sel_finished = ns2.sel_finished %}
+
+        <div>
+            {% if sel_finished %}
+            <div class="p-card">
+                <div class="p-card-title">
+                    📦 {{ sel_finished.pricing_product.name if sel_finished.pricing_product else '?' }}
+                    — {{ sel_finished.label }}
+                </div>
+
+                <!-- Ambalaj tablosu -->
+                {% set component_labels = {
+                    'sise': '🧴 Şişe',
+                    'kapak': '🔴 Kapak',
+                    'etiket': '🏷️ Etiket',
+                    'koli': '📦 Koli',
+                    'bant': '🔖 Bant',
+                    'strec': '🌀 Streç'
+                } %}
+                {% if sel_finished.packaging_items %}
+                <table class="p-table" style="margin-bottom:16px;">
+                    <thead>
+                        <tr>
+                            <th>Bileşen</th>
+                            <th>Stok Kalemi</th>
+                            <th>Birim Fiyat</th>
+                            <th>Adet/Birim</th>
+                            <th>Kolide Adet</th>
+                            <th>Hat Maliyeti</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pi in sel_finished.packaging_items %}
+                        <tr>
+                            <td>{{ component_labels.get(pi.component_type, pi.component_type) }}</td>
+                            <td>{{ pi.stock_item.name if pi.stock_item else '— Silinmiş —' }}</td>
+                            <td>
+                                {% if pi.stock_item and pi.stock_item.unit_price %}
+                                    <span style="font-weight:600;">
+                                        {{ "%.2f"|format(pi.stock_item.unit_price) }}
+                                        {{ pi.stock_item.currency }}
+                                    </span>
+                                    {% if pi.stock_item.currency != 'USD' %}
+                                    <span style="font-size:11px;color:#6e6e73;display:block;">
+                                        ≈ USD (kur ile çevrilir)
+                                    </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="color:#ff3b30;">Fiyat yok</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ pi.quantity_per_unit }}</td>
+                            <td>{{ pi.units_per_box or '—' }}</td>
+                            <td style="color:#1d1d1f;font-weight:600;">
+                                {% if pi.stock_item and pi.stock_item.unit_price %}
+                                    <span style="font-size:11px;color:#6e6e73;">
+                                        ⚡ Hesapla'ya basın
+                                    </span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                <form method="post"
+                                      action="/esk/pricing/packaging-items/{{ pi.id }}/delete"
+                                      onsubmit="return confirm('Sil?')">
+                                    <button class="btn-danger" type="submit">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color:#6e6e73;font-size:13px;margin-bottom:16px;">
+                    Henüz ambalaj bileşeni eklenmedi.
+                </p>
+                {% endif %}
+
+                <!-- Ambalaj ekle -->
+                <form method="post" action="/esk/pricing/finished/{{ sel_finished.id }}/packaging">
+                    <div class="p-form-row">
+                        <div class="p-form-group">
+                            <label>Bileşen Tipi</label>
+                            <select class="p-select" name="component_type" required
+                                    id="component-type-sel" onchange="toggleUnitsPerBox()">
+                                <option value="">— Seçin —</option>
+                                <option value="sise">🧴 Şişe</option>
+                                <option value="kapak">🔴 Kapak</option>
+                                <option value="etiket">🏷️ Etiket</option>
+                                <option value="koli">📦 Koli</option>
+                                <option value="bant">🔖 Bant</option>
+                                <option value="strec">🌀 Streç</option>
+                            </select>
+                        </div>
+                        <div class="p-form-group">
+                            <label>Stok Kalemi</label>
+                            <select class="p-select" name="stock_item_id" required>
+                                <option value="">— Seçin —</option>
+                                {% for sg in stock_items %}
+                                <option value="{{ sg.representative_id }}">
+                                    {{ sg.name }}
+                                    {% if sg.avg_price %} — {{ "%.2f"|format(sg.avg_price) }} {{ sg.currency }}{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="p-form-row">
+                        <div class="p-form-group" style="flex:0 0 130px;">
+                            <label>Adet / Birim Ürün</label>
+                            <input class="p-input" name="quantity_per_unit" type="number"
+                                   step="0.001" min="0" value="1" required>
+                        </div>
+                        <div class="p-form-group" style="flex:0 0 140px;" id="upb-group">
+                            <label>Kolide Adet (koli için)</label>
+                            <input class="p-input" name="units_per_box" type="number"
+                                   min="1" placeholder="ör. 12" id="units-per-box-inp">
+                        </div>
+                        <div style="align-self:flex-end;">
+                            <button type="submit" class="btn-primary">+ Ekle</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Hesapla -->
+                <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <button class="btn-calc"
+                            onclick="calcFinished({{ sel_finished.id }})">
+                        ⚡ Son Ürün Maliyeti Hesapla
+                    </button>
+                </div>
+
+                <div class="calc-result-box" id="finished-result">
+                    <div class="calc-result-title">📊 Son Ürün Maliyet Kırılımı</div>
+                    <div id="finished-result-body"></div>
+                    <div class="calc-total-row">
+                        <span>Toplam Birim Maliyet</span>
+                        <span id="finished-total"></span>
+                    </div>
+                </div>
+                <div class="warning-banner" id="finished-warning" style="display:none;">
+                    ⚠️ <span id="finished-warning-text"></span>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="p-card" style="text-align:center;padding:48px 24px;color:#6e6e73;">
+                <div style="font-size:36px;margin-bottom:12px;">📦</div>
+                <div style="font-weight:600;font-size:15px;margin-bottom:8px;">
+                    Bir son ürün seçin
+                </div>
+                <div style="font-size:13px;">
+                    Soldaki listeden seçim yapın veya yeni oluşturun.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     AŞAMA 3 — NİHAİ SATIŞ FİYATI
+════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="panel-3">
+
+    <div class="p-card">
+        <div class="p-card-title">🎯 Nihai Satış Fiyatı Hesapla</div>
+
+        <div class="p-form-row" style="margin-bottom:20px;">
+            <div class="p-form-group">
+                <label>Son Ürün Seçin</label>
+                <select class="p-select" id="final-fp-select">
+                    <option value="">— Seçin —</option>
+                    {% for fp in finished_products %}
+                    <option value="{{ fp.id }}"
+                        {% if request.query_params.get('finished_id')|int == fp.id %}selected{% endif %}>
+                        {{ fp.pricing_product.name if fp.pricing_product else '?' }} — {{ fp.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="rate-inputs">
+            <div class="p-form-group">
+                <label>Genel Gider (%)</label>
+                <input class="p-input" id="overhead-rate" type="number"
+                       step="1" min="0" max="100" value="20"
+                       oninput="updateRateDisplay()">
+            </div>
+            <div class="p-form-group">
+                <label>Kâr Marjı (%)</label>
+                <input class="p-input" id="profit-rate" type="number"
+                       step="1" min="0" max="100" value="25"
+                       oninput="updateRateDisplay()">
+            </div>
+            <div style="align-self:flex-end;">
+                <button class="btn-calc" onclick="calcFinal()">
+                    ⚡ Hesapla
+                </button>
+            </div>
+        </div>
+
+        <p style="font-size:12px;color:#6e6e73;margin-top:-8px;margin-bottom:0;">
+            Formül: Maliyet × (1 + Genel Gider) × (1 + Kâr Marjı)
+        </p>
+    </div>
+
+    <!-- Nihai fiyat sonucu -->
+    <div class="final-price-box" id="final-price-box">
+        <div class="final-price-label">Tavsiye Satış Fiyatı</div>
+        <div class="final-price-product" id="fp-product-name"></div>
+        <div class="final-price-value" id="fp-price-value">—</div>
+        <div class="final-price-currency">USD / birim</div>
+        <div class="final-price-breakdown">
+            <div class="fp-breakdown-item">
+                <div class="fp-amount" id="fp-raw-cost"></div>
+                <div class="fp-label">Ham Madde</div>
+            </div>
+            <div class="fp-breakdown-item">
+                <div class="fp-amount" id="fp-pkg-cost"></div>
+                <div class="fp-label">Ambalaj</div>
+            </div>
+            <div class="fp-breakdown-item">
+                <div class="fp-amount" id="fp-overhead"></div>
+                <div class="fp-label">Genel Gider</div>
+            </div>
+            <div class="fp-breakdown-item">
+                <div class="fp-amount" id="fp-profit"></div>
+                <div class="fp-label">Kâr</div>
+            </div>
+        </div>
+
+        <!-- Kaydet formu -->
+        <form method="post" action="/esk/pricing/results" style="margin-top:24px;"
+              id="save-result-form">
+            <input type="hidden" name="finished_id" id="save-finished-id">
+            <input type="hidden" name="overhead_rate" id="save-overhead-rate">
+            <input type="hidden" name="profit_rate" id="save-profit-rate">
+            <button type="submit" class="btn-save-price">
+                💾 Fiyatı Kaydet (Snapshot)
+            </button>
+        </form>
+    </div>
+
+    <!-- Mevcut kayıtlı fiyatlar -->
+    {% if latest_results %}
+    <div class="p-card" style="margin-top:24px;">
+        <div class="p-card-title">📋 Kaydedilmiş Fiyatlar</div>
+        {% for fp in finished_products %}
+            {% if fp.id in latest_results %}
+            {% set res = latest_results[fp.id] %}
+            <div class="result-row">
+                <div>
+                    <div class="rr-name">
+                        {{ fp.pricing_product.name if fp.pricing_product else '?' }} — {{ fp.label }}
+                    </div>
+                    <div class="rr-date">
+                        Son hesap: {{ res.calculated_at.strftime('%d.%m.%Y %H:%M') }}
+                    </div>
+                    {% if fp.pricing_product %}
+                    <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+                        <a href="/esk/pricing?tab=1&product_id={{ fp.pricing_product_id }}"
+                           style="font-size:12px;color:#0a84ff;text-decoration:none;font-weight:600;">
+                            ✏️ Formülü Düzenle
+                        </a>
+                        <a href="/esk/pricing?tab=2&finished_id={{ fp.id }}"
+                           style="font-size:12px;color:#0a84ff;text-decoration:none;font-weight:600;">
+                            📦 Ambalajı Düzenle
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="rr-price">
+                    ${{ "%.4f"|format(res.final_price) }}
+                </div>
+                <div style="font-size:12px;color:#6e6e73;">
+                    Maliyet: ${{ "%.4f"|format(res.total_unit_cost) }}<br>
+                    G.Gider: %{{ (res.overhead_rate * 100)|int }} |
+                    Kâr: %{{ (res.profit_rate * 100)|int }}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     EXPORT MODU
+════════════════════════════════════════════════════ -->
+{% if export_mode is defined and export_mode %}
+<div class="p-card" style="margin-top:0;">
+    <div class="p-card-title">📋 Kaydedilmiş Tüm Fiyatlar</div>
+
+    {% if results %}
+    <table class="p-table">
+        <thead>
+            <tr>
+                <th>Ürün</th>
+                <th>Ambalaj</th>
+                <th>Ham Madde (USD)</th>
+                <th>Ambalaj (USD)</th>
+                <th>Toplam Maliyet</th>
+                <th>G.Gider</th>
+                <th>Kâr</th>
+                <th style="color:#0071e3;">Satış Fiyatı</th>
+                <th>Tarih</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for res in results %}
+            <tr>
+                <td style="font-weight:600;">
+                    {{ res.finished_product.pricing_product.name
+                       if res.finished_product and res.finished_product.pricing_product
+                       else '—' }}
+                </td>
+                <td>
+                    {{ res.finished_product.label if res.finished_product else '—' }}
+                </td>
+                <td>${{ "%.4f"|format(res.raw_material_cost) }}</td>
+                <td>${{ "%.4f"|format(res.packaging_cost) }}</td>
+                <td style="font-weight:600;">${{ "%.4f"|format(res.total_unit_cost) }}</td>
+                <td>%{{ (res.overhead_rate * 100)|int }}</td>
+                <td>%{{ (res.profit_rate * 100)|int }}</td>
+                <td style="font-size:16px;font-weight:800;color:#0071e3;">
+                    ${{ "%.4f"|format(res.final_price) }}
+                </td>
+                <td style="color:#6e6e73;font-size:12px;">
+                    {{ res.calculated_at.strftime('%d.%m.%Y %H:%M') }}
+                </td>
+                <td>
+                    <form method="post" action="/esk/pricing/results/{{ res.id }}/delete"
+                          onsubmit="return confirm('Bu fiyat kaydı silinsin mi?');"
+                          style="margin:0;">
+                        <button type="submit"
+                                style="background:none;border:none;cursor:pointer;color:#ff3b30;font-size:16px;padding:4px 8px;"
+                                title="Sil">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:#6e6e73;font-size:13px;text-align:center;padding:32px 0;">
+        Henüz kaydedilmiş fiyat yok. Aşama 3'ten fiyat hesaplayıp "Fiyatı Kaydet" butonuna basın.
+    </p>
+    {% endif %}
+
+    <div style="margin-top:20px;">
+        <a href="/esk/pricing?tab=3" class="btn-secondary" style="text-decoration:none;">
+            ← Fiyatlandırmaya Dön
+        </a>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+// ── Sekme yönetimi ──
+function switchTab(n) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + n).classList.add('active');
+    document.querySelector('[data-tab="' + n + '"]').classList.add('active');
+    // URL'yi güncelle (product_id ve finished_id parametrelerini koru)
+    const url = new URL(window.location);
+    url.searchParams.set('tab', n);
+    window.history.replaceState({}, '', url);
+}
+
+// ── Başlangıç sekmesi ──
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const tab    = parseInt(params.get('tab') || '1');
+    switchTab(tab);
+})();
+
+// ── Koli alanı göster/gizle ──
+function toggleUnitsPerBox() {
+    const ct  = document.getElementById('component-type-sel');
+    const grp = document.getElementById('upb-group');
+    const inp = document.getElementById('units-per-box-inp');
+    if (ct && ct.value === 'koli') {
+        grp.style.opacity = '1';
+        inp.required      = true;
+    } else if (grp) {
+        grp.style.opacity = '0.4';
+        if (inp) inp.required = false;
+    }
+}
+toggleUnitsPerBox();
+
+// ── Aşama 1: İç maliyet AJAX ──
+async function calcInternal(productId) {
+    const btn = event.currentTarget;
+    btn.textContent = '⏳ Hesaplanıyor...';
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch('/esk/pricing/products/' + productId + '/calculate');
+        const data = await res.json();
+
+        if (data.error) {
+            alert('Hata: ' + data.error);
+            return;
+        }
+
+        // Kur bilgisi satırı
+        const r = data.rates || {};
+        let rateInfo = '';
+        if (r.source === 'tcmb') {
+            rateInfo = '<div style="font-size:11px;color:#6e6e73;margin-bottom:10px;padding:6px 8px;' +
+                'background:#f0f7ff;border-radius:6px;">' +
+                '📡 TCMB Kur (' + r.updated + '): ' +
+                '1 USD = ' + r.USD_TRY + ' ₺ &nbsp;|&nbsp; ' +
+                '1 EUR = ' + r.EUR_USD + ' USD' +
+                '</div>';
+        } else if (r.source === 'fallback') {
+            rateInfo = '<div style="font-size:11px;color:#ff9500;margin-bottom:10px;padding:6px 8px;' +
+                'background:#fff9e6;border-radius:6px;">' +
+                '⚠️ TCMB\'ye ulaşılamadı — tahmini kur kullanıldı' +
+                '</div>';
+        }
+
+        // Satır detayları
+        let html = rateInfo;
+        (data.formula_items || []).forEach(function(fi) {
+            // Orijinal fiyat gösterimi
+            const origPrice = fi.unit_price_orig + ' ' + fi.currency;
+            // USD karşılığı — farklıysa göster
+            const usdNote = (fi.currency !== 'USD')
+                ? ' <span style="color:#6e6e73;font-size:11px;">(' + fi.unit_price_usd.toFixed(4) + ' USD)</span>'
+                : '';
+
+            html += '<div class="calc-row">' +
+                '<span class="label">' +
+                    fi.stock_item_name +
+                    ' &nbsp;<span style="color:#6e6e73;font-size:11px;">' +
+                        origPrice + usdNote + ' × ' + fi.kg_per_ton + ' kg' +
+                    '</span>' +
+                '</span>' +
+                '<span class="value">' + fi.line_cost_usd.toFixed(2) + ' USD</span>' +
+            '</div>';
+        });
+
+        document.getElementById('internal-result-body').innerHTML = html;
+
+        const totalTxt = data.total_cost_per_ton.toFixed(2) + ' USD/ton' +
+            ' (' + data.total_kg.toFixed(1) + ' kg formül)';
+        document.getElementById('internal-total').textContent = totalTxt;
+        document.getElementById('internal-result').classList.add('visible');
+
+        // Uyarı
+        const warnEl = document.getElementById('internal-warning');
+        if (data.warning) {
+            document.getElementById('internal-warning-text').textContent = data.warning;
+            warnEl.style.display = 'flex';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    } catch(e) {
+        alert('İstek hatası: ' + e.message);
+    } finally {
+        btn.textContent = '⚡ Dinamik Hesapla';
+        btn.disabled = false;
+    }
+}
+
+// ── Aşama 2: Son ürün maliyeti AJAX ──
+async function calcFinished(finishedId) {
+    const btn = event.currentTarget;
+    btn.textContent = '⏳ Hesaplanıyor...';
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch('/esk/pricing/finished/' + finishedId + '/calculate');
+        const data = await res.json();
+
+        if (data.error) {
+            alert('Hata: ' + data.error);
+            return;
+        }
+
+        let html = '';
+        html += '<div class="calc-row"><span class="label">Ton başına iç maliyet</span>' +
+            '<span class="value">' + data.internal_cost_per_ton.toFixed(2) + ' USD/ton</span></div>';
+        html += '<div class="calc-row"><span class="label">Ham madde maliyeti (' + data.volume_liters + 'L)</span>' +
+            '<span class="value">' + data.raw_material_cost.toFixed(4) + ' USD</span></div>';
+
+        (data.packaging_breakdown || []).forEach(function(pi) {
+            const origNote = (pi.currency !== 'USD')
+                ? ' <span style="font-size:11px;color:#6e6e73;">' + pi.unit_price_orig + ' ' + pi.currency + '</span>'
+                : '';
+            html += '<div class="calc-row"><span class="label">· ' + pi.component_type +
+                ' (' + pi.stock_item_name + ')' + origNote + '</span>' +
+                '<span class="value">' + pi.line_cost_usd.toFixed(4) + ' USD</span></div>';
+        });
+        html += '<div class="calc-row"><span class="label">Toplam ambalaj maliyeti</span>' +
+            '<span class="value">' + data.packaging_cost.toFixed(4) + ' USD</span></div>';
+
+        document.getElementById('finished-result-body').innerHTML = html;
+        document.getElementById('finished-total').textContent =
+            data.total_unit_cost.toFixed(4) + ' USD/birim';
+        document.getElementById('finished-result').classList.add('visible');
+
+        const warnEl = document.getElementById('finished-warning');
+        if (data.warning) {
+            document.getElementById('finished-warning-text').textContent = data.warning;
+            warnEl.style.display = 'flex';
+        } else {
+            warnEl.style.display = 'none';
+        }
+    } catch(e) {
+        alert('İstek hatası: ' + e.message);
+    } finally {
+        btn.textContent = '⚡ Son Ürün Maliyeti Hesapla';
+        btn.disabled = false;
+    }
+}
+
+// ── Aşama 3: Oran göster ──
+function updateRateDisplay() { /* oranlar input'lardan okunuyor */ }
+
+// ── Aşama 3: Nihai fiyat AJAX ──
+async function calcFinal() {
+    const finishedId  = document.getElementById('final-fp-select').value;
+    const overheadPct = parseFloat(document.getElementById('overhead-rate').value) || 20;
+    const profitPct   = parseFloat(document.getElementById('profit-rate').value)   || 25;
+
+    if (!finishedId) { alert('Lütfen bir son ürün seçin.'); return; }
+
+    const overhead = overheadPct / 100;
+    const profit   = profitPct   / 100;
+
+    const btn = event.currentTarget;
+    btn.textContent = '⏳ Hesaplanıyor...';
+    btn.disabled = true;
+
+    try {
+        const url = '/esk/pricing/finished/' + finishedId +
+            '/final-calculate?overhead_rate=' + overhead + '&profit_rate=' + profit;
+        const res  = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            alert('Hata: ' + data.error);
+            return;
+        }
+
+        const s2 = data.stage2;
+        const s3 = data.stage3;
+
+        document.getElementById('fp-product-name').textContent =
+            data.product_name + ' — ' + data.label;
+        document.getElementById('fp-price-value').textContent = '$' + s3.final_price.toFixed(4);
+        document.getElementById('fp-raw-cost').textContent    = '$' + s2.raw_material_cost.toFixed(4);
+        document.getElementById('fp-pkg-cost').textContent    = '$' + s2.packaging_cost.toFixed(4);
+        document.getElementById('fp-overhead').textContent    = '$' + s3.overhead_amount.toFixed(4);
+        document.getElementById('fp-profit').textContent      = '$' + s3.profit_amount.toFixed(4);
+
+        // Kaydet formunu doldur
+        document.getElementById('save-finished-id').value   = finishedId;
+        document.getElementById('save-overhead-rate').value = overhead;
+        document.getElementById('save-profit-rate').value   = profit;
+
+        document.getElementById('final-price-box').classList.add('visible');
+    } catch(e) {
+        alert('İstek hatası: ' + e.message);
+    } finally {
+        btn.textContent = '⚡ Hesapla';
+        btn.disabled = false;
+    }
+}
+
+// ── Tab 3 querystring kontrolü ──
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const fid    = params.get('finished_id');
+    if (fid) {
+        const sel = document.getElementById('final-fp-select');
+        if (sel) sel.value = fid;
+    }
+})();
+</script>
+
+{% endblock %}
