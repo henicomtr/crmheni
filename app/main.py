@@ -47,6 +47,7 @@ def _migrate_site_settings():
         ("footer_bg_image_url",   "VARCHAR"),
         ("i18n",                  "TEXT"),
         ("logo_white_url",        "VARCHAR"),
+        ("default_og_image",      "VARCHAR"),
     ]
     insp = inspect(engine)
     if "site_settings" not in insp.get_table_names():
@@ -173,6 +174,40 @@ def _migrate_users():
             pass  # Kolon zaten varsa hatayı yut
 
 _migrate_users()
+
+
+# ── pages / page_translations tablo migrasyonu ─────────────────────
+def _migrate_pages():
+    """
+    pages tablosuna shared_content,
+    page_translations tablosuna content kolonu ekler.
+    Her ALTER TABLE ayrı transaction'da çalışır — PostgreSQL uyumlu.
+    """
+    insp = inspect(engine)
+    tables = insp.get_table_names()
+
+    if "pages" in tables:
+        existing = {c["name"] for c in insp.get_columns("pages")}
+        if "shared_content" not in existing:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE pages ADD COLUMN shared_content TEXT"))
+                    conn.commit()
+            except Exception:
+                pass  # Kolon zaten varsa hatayı yut
+
+    if "page_translations" in tables:
+        existing = {c["name"] for c in insp.get_columns("page_translations")}
+        if "content" not in existing:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE page_translations ADD COLUMN content TEXT"))
+                    conn.commit()
+            except Exception:
+                pass  # Kolon zaten varsa hatayı yut
+
+
+_migrate_pages()
 
 # ── Admin kullanıcı seed ────────────────────────────────────────────
 def _seed_admin():

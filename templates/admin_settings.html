@@ -219,6 +219,33 @@
                 <label class="form-label">Varsayılan meta açıklama</label>
                 <textarea id="i18n_seo_description" class="form-input" rows="3" placeholder="Genel açıklama..."></textarea>
             </div>
+
+            <!-- OG Görseli — tüm diller için global, paylaşım önizlemesinde kullanılır -->
+            <div class="form-group" style="padding:16px;background:#f8f9fb;border:1px solid #e8eaf0;border-radius:10px;margin-top:16px;">
+                <label class="form-label" style="margin-bottom:10px;">Varsayılan OG Görseli <span style="font-weight:400;color:#aaa;font-size:11px;text-transform:none;letter-spacing:0;">(tüm dillere uygulanır)</span></label>
+                <p class="hint" style="margin-bottom:12px;">Telegram, WhatsApp, Twitter gibi platformlarda link paylaşıldığında görünen görsel. Önerilen boyut: <strong>1200×630 px</strong>. Sayfalara özgü OG görseli yoksa bu kullanılır.</p>
+                {% if s.default_og_image %}
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;padding:12px;background:#fff;border:1px solid #e0e4ef;border-radius:8px;">
+                    <img src="{{ s.default_og_image }}" alt="OG Görsel" style="height:60px;width:120px;object-fit:cover;border-radius:6px;border:1px solid #dde3f0;">
+                    <div>
+                        <div style="font-size:13px;font-weight:600;color:#333;">Mevcut OG Görseli</div>
+                        <small style="color:#888;">{{ s.default_og_image }}</small>
+                        <div style="margin-top:4px;"><span class="live-preview-badge">✓ Aktif</span></div>
+                    </div>
+                </div>
+                {% endif %}
+                <label class="upload-zone" for="og-default-input" style="display:block;border:2px dashed #d0d5dd;border-radius:8px;padding:18px;text-align:center;cursor:pointer;background:#fff;">
+                    <div style="font-size:28px;margin-bottom:6px;">🖼️</div>
+                    <div style="font-size:14px;font-weight:600;color:#333;">{{ 'OG Görseli Değiştir' if s.default_og_image else 'OG Görseli Yükle' }}</div>
+                    <div style="font-size:12px;color:#aaa;margin-top:4px;">JPG, PNG — 1200×630 px önerilir</div>
+                    <input id="og-default-input" type="file" name="og_default_image" accept="image/*"
+                        onchange="previewFile(this,'og-default-prev','og-default-preview-wrap')" style="display:none;">
+                </label>
+                <div id="og-default-preview-wrap" style="display:none;margin-top:12px;padding:12px;background:#f8f9fb;border-radius:8px;border:1px solid #e8eaf0;">
+                    <div style="font-size:11px;font-weight:600;color:#aaa;margin-bottom:6px;">YENİ OG GÖRSEL ÖNİZLEME</div>
+                    <img id="og-default-prev" style="max-width:100%;max-height:120px;object-fit:cover;border-radius:6px;">
+                </div>
+            </div>
         </div>
         <div class="card">
             <div class="card-title">📄 Footer (seçili dil)</div>

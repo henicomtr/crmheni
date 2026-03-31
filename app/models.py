@@ -277,14 +277,33 @@ class Page(Base):
     """
     __tablename__ = "pages"
 
-    id           = Column(Integer, primary_key=True, index=True)
-    slug         = Column(String, unique=True, index=True, nullable=False)  # EN master slug
-    template     = Column(String, default="page_generic.html")              # hangi Jinja2 şablonu
-    is_published = Column(Integer, default=1)                               # 1=yayında, 0=taslak
-    sort_order   = Column(Integer, default=0)
-    show_in_nav  = Column(Integer, default=0)                               # navbar'da göster
-    created_at   = Column(DateTime, default=datetime.utcnow)
-    updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id             = Column(Integer, primary_key=True, index=True)
+    slug           = Column(String, unique=True, index=True, nullable=False)  # EN master slug
+    template       = Column(String, default="page_generic.html")              # hangi Jinja2 şablonu
+    is_published   = Column(Integer, default=1)                               # 1=yayında, 0=taslak
+    sort_order     = Column(Integer, default=0)
+    show_in_nav    = Column(Integer, default=0)                               # navbar'da göster
+    # Landing page şablonları için paylaşılan görseller / config (JSON blob)
+    shared_content = Column(Text, nullable=True)
+    created_at     = Column(DateTime, default=datetime.utcnow)
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def get_shared(self) -> dict:
+        """shared_content JSON'unu dict olarak döner."""
+        import json
+        if self.shared_content:
+            try:
+                return json.loads(self.shared_content)
+            except Exception:
+                return {}
+        return {}
+
+    def set_shared(self, d: dict):
+        """shared_content'i JSON olarak saklar."""
+        import json
+        from sqlalchemy.orm.attributes import flag_modified
+        self.shared_content = json.dumps(d, ensure_ascii=False)
+        flag_modified(self, "shared_content")
 
     translations = relationship(
         "PageTranslation",
@@ -326,13 +345,32 @@ class PageTranslation(Base):
     lang             = Column(String(5), nullable=False)
     slug             = Column(String, nullable=True, index=True)   # dile özgü SEO slug
     title            = Column(String, nullable=False, default="")
-    body             = Column(Text, nullable=True)                  # HTML içerik
+    body             = Column(Text, nullable=True)                  # HTML içerik (generic sayfa)
+    # Landing page bölüm içerikleri (JSON blob) — generic sayfalar bunu kullanmaz
+    content          = Column(Text, nullable=True)
     meta_title       = Column(String, nullable=True)
     meta_description = Column(String, nullable=True)
     og_title         = Column(String, nullable=True)
     og_description   = Column(String, nullable=True)
 
     page = relationship("Page", back_populates="translations")
+
+    def get_content(self) -> dict:
+        """content JSON'unu dict olarak döner."""
+        import json
+        if self.content:
+            try:
+                return json.loads(self.content)
+            except Exception:
+                return {}
+        return {}
+
+    def set_content(self, d: dict):
+        """content'i JSON olarak saklar."""
+        import json
+        from sqlalchemy.orm.attributes import flag_modified
+        self.content = json.dumps(d, ensure_ascii=False)
+        flag_modified(self, "content")
 
 
 class FaqItem(Base):
@@ -494,6 +532,7 @@ class SiteSettings(Base):
     footer_columns       = Column(Text, nullable=True)    # JSON: [{"title":"Company","links":[{"label":"About Us","url":"#about"},...]}, ...]
     footer_bg_image_url  = Column(String, nullable=True)
     i18n                 = Column(Text, nullable=True)   # JSON: {"en":{...},"tr":{...},...} — dil bazlı metinler
+    default_og_image     = Column(String, nullable=True)  # Tüm sayfalar için fallback OG görseli (mutlak veya göreli URL)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

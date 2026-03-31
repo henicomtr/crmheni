@@ -78,12 +78,21 @@
                 <td style="padding:16px 20px;text-align:right;">
                     <div style="display:flex;gap:8px;justify-content:flex-end;">
                         {% for lc in langs %}
+                        {% if page.template == 'page_landing.html' %}
+                        <a href="/esk/pages/{{ page.id }}/edit-landing?lang={{ lc }}"
+                           style="padding:6px 12px;background:#fef3c7;border-radius:6px;font-size:12px;font-weight:600;color:#92400e;text-decoration:none;transition:.15s;"
+                           onmouseover="this.style.background='#fde68a'" onmouseout="this.style.background='#fef3c7'"
+                           title="{{ lang_labels[lc] }} — Landing Editor">
+                            {{ lc|upper }}
+                        </a>
+                        {% else %}
                         <a href="/esk/pages/{{ page.id }}/edit?lang={{ lc }}"
                            style="padding:6px 12px;background:#f3f4f6;border-radius:6px;font-size:12px;font-weight:600;color:#333;text-decoration:none;transition:.15s;"
                            onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'"
                            title="{{ lang_labels[lc] }}">
                             {{ lc|upper }}
                         </a>
+                        {% endif %}
                         {% endfor %}
                         <form method="post" action="/esk/pages/{{ page.id }}/delete"
                               onsubmit="return confirm('Bu sayfayı silmek istediğinize emin misiniz?')"
@@ -123,6 +132,7 @@
                 <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#555;">Şablon</label>
                 <select name="template" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;outline:none;background:#fff;">
                     <option value="page_generic.html">Genel Sayfa</option>
+                    <option value="page_landing.html">Landing Page (Fason Üretim vb.)</option>
                     <option value="homepage.html">Anasayfa</option>
                     <option value="contact.html">İletişim</option>
                 </select>

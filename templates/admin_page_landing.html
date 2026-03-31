@@ -1,0 +1,805 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+/* ── wrapper ── */
+.lp-edit-wrap { max-width: 900px; }
+
+/* ── header ── */
+.lp-edit-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 28px; gap: 16px; flex-wrap: wrap;
+}
+.lp-edit-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+
+/* ── lang bar ── */
+.lang-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+.lang-tab {
+    padding: 6px 14px; border-radius: 8px; font-size: .82rem; font-weight: 600;
+    text-decoration: none; color: #374151; background: #f3f4f6; border: 1px solid transparent;
+    transition: all .2s;
+}
+.lang-tab:hover { background: #e5e7eb; }
+.lang-tab.active { background: #111; color: #fff; border-color: #111; }
+
+/* ── section tabs ── */
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; flex-wrap: wrap; }
+.tab-btn {
+    padding: 10px 16px; font-size: .84rem; font-weight: 600; color: #6b7280;
+    text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: color .2s, border-color .2s; white-space: nowrap;
+}
+.tab-btn:hover { color: #111; }
+.tab-btn.active { color: #111; border-bottom-color: #111; }
+
+/* ── form elements ── */
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.form-hint  { font-size: .76rem; color: #9ca3af; margin-top: 4px; }
+.form-input, .form-textarea {
+    width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px;
+    font-size: .92rem; color: #111; outline: none; box-sizing: border-box; transition: border-color .2s;
+}
+.form-input:focus, .form-textarea:focus { border-color: #111; }
+.form-textarea { min-height: 100px; resize: vertical; font-family: inherit; }
+
+/* ── grid pairs ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* ── repeater card ── */
+.repeater-card {
+    border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px;
+    background: #f9fafb;
+}
+.repeater-card-head {
+    font-size: .82rem; font-weight: 700; color: #6b7280; margin-bottom: 14px;
+    letter-spacing: .05em; text-transform: uppercase;
+}
+
+/* ── image preview ── */
+.img-preview-wrap { position: relative; }
+.img-preview {
+    width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px;
+    border: 1px solid #e5e7eb; display: none; margin-top: 8px;
+}
+.img-preview.show { display: block; }
+
+/* ── görsel: link + PC'den yükle ── */
+.img-url-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.img-url-row .form-input { flex: 1; min-width: 200px; }
+.btn-upload {
+    padding: 8px 16px; background: #1e40af; color: #fff; border: none;
+    border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: opacity .2s;
+}
+.btn-upload:hover { opacity: .9; }
+.btn-upload:disabled { opacity: .6; cursor: wait; }
+.lp-img-file { display: none; }
+
+/* ── sync butonu ── */
+.btn-sync-img {
+    padding: 8px 14px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;
+    border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer;
+    white-space: nowrap; transition: all .2s; display: inline-flex; align-items: center; gap: 5px;
+}
+.btn-sync-img:hover { background: #dcfce7; border-color: #86efac; }
+.btn-sync-img:disabled { opacity: .5; cursor: wait; }
+
+/* ── save bar ── */
+.save-bar {
+    position: sticky; bottom: 0; background: #fff;
+    border-top: 1px solid #e5e7eb; padding: 14px 0;
+    display: flex; align-items: center; gap: 12px; z-index: 10; margin-top: 32px;
+}
+.btn-save {
+    padding: 10px 28px; background: #111; color: #fff; border: none;
+    border-radius: 8px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: opacity .2s;
+}
+.btn-save:hover { opacity: .8; }
+.btn-preview {
+    padding: 10px 20px; background: #f3f4f6; color: #374151; text-decoration: none;
+    border-radius: 8px; font-size: .9rem; font-weight: 600; transition: background .2s;
+}
+.btn-preview:hover { background: #e5e7eb; }
+
+/* ── tip box ── */
+.tip-box {
+    background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;
+    padding: 12px 16px; font-size: .83rem; color: #1e40af; margin-bottom: 20px;
+}
+
+/* ── SEO counter ── */
+.seo-counter { font-size: .76rem; color: #9ca3af; margin-top: 4px; }
+.seo-counter.warn { color: #d97706; }
+.seo-counter.over { color: #dc2626; }
+.seo-preview {
+    border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px;
+    margin-bottom: 20px; background: #fff;
+}
+.seo-preview-title { font-size: 1.05rem; color: #1a0dab; font-weight: 500; margin-bottom: 3px; word-break: break-word; }
+.seo-preview-url { font-size: .8rem; color: #006621; margin-bottom: 4px; }
+.seo-preview-desc { font-size: .86rem; color: #545454; line-height: 1.4; }
+
+/* ── Mobil uyum ── */
+@media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+    .lp-edit-wrap { max-width: 100%; }
+    .tab-nav { overflow-x: auto; flex-wrap: nowrap; }
+    .tab-btn { white-space: nowrap; }
+}
+</style>
+
+<div class="lp-edit-wrap">
+
+    <!-- Header -->
+    <div class="lp-edit-header">
+        <div>
+            <h1>Landing Page Düzenleyici</h1>
+            <p style="color:#6b7280;font-size:.88rem;margin-top:4px;">
+                <strong>{{ page.slug }}</strong> — Dil ve sekme seçerek düzenleyin.
+            </p>
+        </div>
+        <a href="/{{ lang if lang != 'en' else '' }}{{ '/' if lang != 'en' else '' }}{{ page.get_slug_for(lang) }}"
+           target="_blank" class="btn-preview">🔗 Sayfayı Görüntüle</a>
+    </div>
+
+    {% if request.query_params.get('saved') %}
+    <div style="background:#edf7f2;border:1px solid #b6dfc8;color:#1a7a4a;padding:12px 18px;border-radius:8px;margin-bottom:20px;font-size:14px;">
+        ✓ Değişiklikler kaydedildi.
+    </div>
+    {% endif %}
+    {% if request.query_params.get('save_error') %}
+    <div style="background:#fff0f0;border:1px solid #fecaca;color:#b91c1c;padding:12px 18px;border-radius:8px;margin-bottom:20px;font-size:14px;">
+        ⚠ Kayıt hatası: {{ request.query_params.get('save_error') }}
+    </div>
+    {% endif %}
+
+    <!-- Dil seçici -->
+    <div class="lang-bar">
+        {% for lc in supported_langs %}
+        <a href="/esk/pages/{{ page.id }}/edit-landing?lang={{ lc }}&tab={{ tab }}"
+           class="lang-tab {% if lc == lang %}active{% endif %}">
+            {{ lang_labels[lc] }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Bölüm sekmeleri -->
+    <div class="tab-nav">
+        <a href="?lang={{ lang }}&tab=hero"        class="tab-btn {% if tab=='hero'        %}active{% endif %}">🖼 Hero</a>
+        <a href="?lang={{ lang }}&tab=kategoriler" class="tab-btn {% if tab=='kategoriler' %}active{% endif %}">🏭 Kategoriler</a>
+        <a href="?lang={{ lang }}&tab=surec"        class="tab-btn {% if tab=='surec'        %}active{% endif %}">⚙️ Süreç</a>
+        <a href="?lang={{ lang }}&tab=neden_biz"   class="tab-btn {% if tab=='neden_biz'   %}active{% endif %}">💎 Neden Biz</a>
+        <a href="?lang={{ lang }}&tab=paketler"    class="tab-btn {% if tab=='paketler'    %}active{% endif %}">📦 Paketler</a>
+        <a href="?lang={{ lang }}&tab=sertifikalar" class="tab-btn {% if tab=='sertifikalar' %}active{% endif %}">✓ Sertifikalar</a>
+        <a href="?lang={{ lang }}&tab=tesis"       class="tab-btn {% if tab=='tesis'       %}active{% endif %}">🏭 Tesis</a>
+        <a href="?lang={{ lang }}&tab=kimin_icin"  class="tab-btn {% if tab=='kimin_icin'  %}active{% endif %}">👥 Kimin İçin</a>
+        <a href="?lang={{ lang }}&tab=ihracat"     class="tab-btn {% if tab=='ihracat'     %}active{% endif %}">🌍 İhracat</a>
+        <a href="?lang={{ lang }}&tab=sss"         class="tab-btn {% if tab=='sss'         %}active{% endif %}">❓ SSS</a>
+        <a href="?lang={{ lang }}&tab=cta"         class="tab-btn {% if tab=='cta'         %}active{% endif %}">📣 Son CTA</a>
+        <a href="?lang={{ lang }}&tab=seo"         class="tab-btn {% if tab=='seo'         %}active{% endif %}">🔍 SEO</a>
+    </div>
+
+    <form method="POST" action="/esk/pages/{{ page.id }}/save-landing">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="tab"  value="{{ tab }}">
+
+        <!-- ══════════ HERO ══════════ -->
+        {% if tab == 'hero' %}
+        <div class="tip-box">
+            💡 <strong>HTML desteklenir.</strong> Altın vurgu için: <code>&lt;em&gt;kelime&lt;/em&gt;</code>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Eyebrow (küçük üst metin)</label>
+            <input type="text" name="hero_eyebrow" class="form-input"
+                   value="{{ data.get('hero_eyebrow','') }}" placeholder="Heni Cosmetic — Türkiye">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Hero Başlığı (H1)</label>
+            <textarea name="hero_title" class="form-textarea" style="min-height:80px;"
+                      placeholder="Fason Üretimde <em>Güvenilir</em> Ortağınız">{{ data.get('hero_title','') }}</textarea>
+            <p class="form-hint">HTML desteklenir. &lt;em&gt;kelime&lt;/em&gt; → altın renk</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <textarea name="hero_desc" class="form-textarea">{{ data.get('hero_desc','') }}</textarea>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Buton 1 Metni</label>
+                <input type="text" name="hero_btn1_text" class="form-input" value="{{ data.get('hero_btn1_text','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Buton 1 URL</label>
+                <input type="text" name="hero_btn1_url" class="form-input" value="{{ data.get('hero_btn1_url','') }}" placeholder="#teklif">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Buton 2 Metni</label>
+                <input type="text" name="hero_btn2_text" class="form-input" value="{{ data.get('hero_btn2_text','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Buton 2 URL</label>
+                <input type="text" name="hero_btn2_url" class="form-input" value="{{ data.get('hero_btn2_url','') }}" placeholder="#urunler">
+            </div>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">🌐 Arka Plan Görseli (tüm diller paylaşır)</label>
+            <div class="img-url-row">
+                <input type="text" name="hero_bg_image" id="heroImgUrl" class="form-input"
+                       value="{{ shared.get('hero_bg_image','') }}"
+                       placeholder="Link yapıştırın veya Yükle ile PC'den ekleyin"
+                       oninput="updatePreview('heroImgUrl','heroImgPreview')">
+                <input type="file" accept="image/*" class="lp-img-file" id="heroImgFile"
+                       data-target="heroImgUrl" data-preview="heroImgPreview">
+                <button type="button" class="btn-upload" data-for="heroImgFile">Yükle</button>
+                <button type="button" class="btn-sync-img"
+                        data-field="hero_bg_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
+            </div>
+            <img id="heroImgPreview" src="{{ shared.get('hero_bg_image','') }}"
+                 class="img-preview {% if shared.get('hero_bg_image') %}show{% endif %}">
+        </div>
+        {% endif %}
+
+        <!-- ══════════ KATEGORİLER ══════════ -->
+        {% if tab == 'kategoriler' %}
+        {% for n in range(1, 4) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Kategori {{ n }}</div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="cat{{ n }}_title" class="form-input"
+                       value="{{ data.get('cat' ~ n ~ '_title','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama</label>
+                <textarea name="cat{{ n }}_desc" class="form-textarea" style="min-height:80px;">{{ data.get('cat' ~ n ~ '_desc','') }}</textarea>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">MOQ (Min. Sipariş)</label>
+                    <input type="text" name="cat{{ n }}_moq" class="form-input"
+                           value="{{ data.get('cat' ~ n ~ '_moq','') }}" placeholder="Min. 1.000 adet / SKU">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Link Metni</label>
+                    <input type="text" name="cat{{ n }}_link_text" class="form-input"
+                           value="{{ data.get('cat' ~ n ~ '_link_text','') }}" placeholder="Detayları İncele">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Link URL</label>
+                <input type="text" name="cat{{ n }}_link_url" class="form-input"
+                       value="{{ data.get('cat' ~ n ~ '_link_url','') }}">
+            </div>
+            <div class="form-group img-preview-wrap">
+                <label class="form-label">🌐 Görsel (tüm diller paylaşır)</label>
+                <div class="img-url-row">
+                    <input type="text" name="cat{{ n }}_image" id="cat{{ n }}ImgUrl" class="form-input"
+                           value="{{ shared.get('cat' ~ n ~ '_image','') }}"
+                           oninput="updatePreview('cat{{ n }}ImgUrl','cat{{ n }}ImgPreview')">
+                    <input type="file" accept="image/*" class="lp-img-file" id="cat{{ n }}ImgFile"
+                           data-target="cat{{ n }}ImgUrl" data-preview="cat{{ n }}ImgPreview">
+                    <button type="button" class="btn-upload" data-for="cat{{ n }}ImgFile">Yükle</button>
+                    <button type="button" class="btn-sync-img"
+                            data-field="cat{{ n }}_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
+                </div>
+                <img id="cat{{ n }}ImgPreview" src="{{ shared.get('cat' ~ n ~ '_image','') }}"
+                     class="img-preview {% if shared.get('cat' ~ n ~ '_image') %}show{% endif %}">
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ SÜREÇ ══════════ -->
+        {% if tab == 'surec' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="process_eyebrow" class="form-input" value="{{ data.get('process_eyebrow','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="process_title" class="form-input" value="{{ data.get('process_title','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Giriş Metni</label>
+            <textarea name="process_lead" class="form-textarea" style="min-height:70px;">{{ data.get('process_lead','') }}</textarea>
+        </div>
+
+        {% for n in range(1, 7) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Adım {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Başlık</label>
+                    <input type="text" name="step{{ n }}_title" class="form-input"
+                           value="{{ data.get('step' ~ n ~ '_title','') }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="step{{ n }}_desc" class="form-input"
+                           value="{{ data.get('step' ~ n ~ '_desc','') }}">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">🌐 Süreç Bölümü Görseli (tüm diller paylaşır)</label>
+            <div class="img-url-row">
+                <input type="text" name="process_image" id="processImgUrl" class="form-input"
+                       value="{{ shared.get('process_image','') }}"
+                       oninput="updatePreview('processImgUrl','processImgPreview')">
+                <input type="file" accept="image/*" class="lp-img-file" id="processImgFile"
+                       data-target="processImgUrl" data-preview="processImgPreview">
+                <button type="button" class="btn-upload" data-for="processImgFile">Yükle</button>
+                <button type="button" class="btn-sync-img"
+                        data-field="process_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
+            </div>
+            <img id="processImgPreview" src="{{ shared.get('process_image','') }}"
+                 class="img-preview {% if shared.get('process_image') %}show{% endif %}">
+        </div>
+        {% endif %}
+
+        <!-- ══════════ NEDEN BİZ ══════════ -->
+        {% if tab == 'neden_biz' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="why_eyebrow" class="form-input" value="{{ data.get('why_eyebrow','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı</label>
+            <input type="text" name="why_title" class="form-input" value="{{ data.get('why_title','') }}">
+        </div>
+
+        {% for n in range(1, 5) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Özellik {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Başlık</label>
+                    <input type="text" name="why{{ n }}_title" class="form-input"
+                           value="{{ data.get('why' ~ n ~ '_title','') }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="why{{ n }}_desc" class="form-input"
+                           value="{{ data.get('why' ~ n ~ '_desc','') }}">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ PAKETLER ══════════ -->
+        {% if tab == 'paketler' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="pkg_eyebrow" class="form-input" value="{{ data.get('pkg_eyebrow','') }}">
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Bölüm Başlığı</label>
+                <input type="text" name="pkg_title" class="form-input" value="{{ data.get('pkg_title','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Giriş Metni</label>
+                <input type="text" name="pkg_lead" class="form-input" value="{{ data.get('pkg_lead','') }}">
+            </div>
+        </div>
+
+        {% for n in range(1, 4) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Paket {{ n }}</span>
+                <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:600;color:#374151;cursor:pointer;">
+                    <input type="checkbox" name="pkg{{ n }}_featured"
+                           {% if shared.get('pkg' ~ n ~ '_featured') == '1' %}checked{% endif %}
+                           style="width:16px;height:16px;">
+                    Öne çıkar
+                </label>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Rozet</label>
+                    <input type="text" name="pkg{{ n }}_badge" class="form-input"
+                           value="{{ data.get('pkg' ~ n ~ '_badge','') }}" placeholder="Başlangıç">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Paket Adı</label>
+                    <input type="text" name="pkg{{ n }}_name" class="form-input"
+                           value="{{ data.get('pkg' ~ n ~ '_name','') }}" placeholder="Starter">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama</label>
+                <textarea name="pkg{{ n }}_desc" class="form-textarea" style="min-height:70px;">{{ data.get('pkg' ~ n ~ '_desc','') }}</textarea>
+            </div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label class="form-label">MOQ Kozmetik</label>
+                    <input type="text" name="pkg{{ n }}_moq_kozmetik" class="form-input"
+                           value="{{ data.get('pkg' ~ n ~ '_moq_kozmetik','') }}" placeholder="5.000 adet">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">MOQ Parfüm</label>
+                    <input type="text" name="pkg{{ n }}_moq_parfum" class="form-input"
+                           value="{{ data.get('pkg' ~ n ~ '_moq_parfum','') }}" placeholder="3.000 adet">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">MOQ Deterjan</label>
+                    <input type="text" name="pkg{{ n }}_moq_deterjan" class="form-input"
+                           value="{{ data.get('pkg' ~ n ~ '_moq_deterjan','') }}" placeholder="10.000 adet">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Özellikler (her satır bir özellik)</label>
+                <textarea name="pkg{{ n }}_features" class="form-textarea" style="min-height:100px;">{{ data.get('pkg' ~ n ~ '_features','') }}</textarea>
+                <p class="form-hint">Her satıra bir özellik yazın. Ör: Özel formülasyon desteği</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ SERTİFİKALAR ══════════ -->
+        {% if tab == 'sertifikalar' %}
+        {% for n in range(1, 5) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Sertifika {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Başlık</label>
+                    <input type="text" name="cert{{ n }}_title" class="form-input"
+                           value="{{ data.get('cert' ~ n ~ '_title','') }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="cert{{ n }}_desc" class="form-input"
+                           value="{{ data.get('cert' ~ n ~ '_desc','') }}">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ TESİS ══════════ -->
+        {% if tab == 'tesis' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="facility_eyebrow" class="form-input" value="{{ data.get('facility_eyebrow','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Başlık</label>
+            <input type="text" name="facility_title" class="form-input" value="{{ data.get('facility_title','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Birinci Paragraf</label>
+            <textarea name="facility_body1" class="form-textarea">{{ data.get('facility_body1','') }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">İkinci Paragraf</label>
+            <textarea name="facility_body2" class="form-textarea">{{ data.get('facility_body2','') }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Buton Metni</label>
+            <input type="text" name="facility_btn_text" class="form-input" value="{{ data.get('facility_btn_text','') }}" placeholder="Tesis Turuna Başla">
+        </div>
+
+        {% for n in range(1, 4) %}
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">🌐 Tesis Görseli {{ n }} (tüm diller paylaşır)</label>
+            <div class="img-url-row">
+                <input type="text" name="facility_image{{ n }}" id="facImg{{ n }}Url" class="form-input"
+                       value="{{ shared.get('facility_image' ~ n,'') }}"
+                       oninput="updatePreview('facImg{{ n }}Url','facImg{{ n }}Preview')">
+                <input type="file" accept="image/*" class="lp-img-file" id="facImg{{ n }}File"
+                       data-target="facImg{{ n }}Url" data-preview="facImg{{ n }}Preview">
+                <button type="button" class="btn-upload" data-for="facImg{{ n }}File">Yükle</button>
+            </div>
+            <img id="facImg{{ n }}Preview" src="{{ shared.get('facility_image' ~ n,'') }}"
+                 class="img-preview {% if shared.get('facility_image' ~ n) %}show{% endif %}">
+        </div>
+        {% endfor %}
+
+        <div class="form-group">
+            <label class="form-label">🌐 Video URL (tüm diller paylaşır)</label>
+            <input type="text" name="facility_video_url" class="form-input"
+                   value="{{ shared.get('facility_video_url','') }}" placeholder="https://youtube.com/embed/...">
+        </div>
+        {% endif %}
+
+        <!-- ══════════ KİMİN İÇİN ══════════ -->
+        {% if tab == 'kimin_icin' %}
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Eyebrow</label>
+                <input type="text" name="whom_eyebrow" class="form-input" value="{{ data.get('whom_eyebrow','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Bölüm Başlığı</label>
+                <input type="text" name="whom_title" class="form-input" value="{{ data.get('whom_title','') }}">
+            </div>
+        </div>
+
+        {% for n in range(1, 4) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Persona {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Başlık</label>
+                    <input type="text" name="persona{{ n }}_title" class="form-input"
+                           value="{{ data.get('persona' ~ n ~ '_title','') }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="persona{{ n }}_desc" class="form-input"
+                           value="{{ data.get('persona' ~ n ~ '_desc','') }}">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ İHRACAT ══════════ -->
+        {% if tab == 'ihracat' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="export_eyebrow" class="form-input" value="{{ data.get('export_eyebrow','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Başlık</label>
+            <input type="text" name="export_title" class="form-input" value="{{ data.get('export_title','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Giriş Metni</label>
+            <textarea name="export_lead" class="form-textarea" style="min-height:70px;">{{ data.get('export_lead','') }}</textarea>
+        </div>
+
+        {% for n in range(1, 4) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">İstatistik {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Rakam</label>
+                    <input type="text" name="stat{{ n }}_num" class="form-input"
+                           value="{{ data.get('stat' ~ n ~ '_num','') }}" placeholder="70+">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Etiket</label>
+                    <input type="text" name="stat{{ n }}_label" class="form-input"
+                           value="{{ data.get('stat' ~ n ~ '_label','') }}" placeholder="Ülke">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ SSS ══════════ -->
+        {% if tab == 'sss' %}
+        <p class="form-hint" style="margin-bottom:16px;">En fazla 8 SSS sorusu girilebilir. Boş bırakılan sorular sayfada gösterilmez.</p>
+        {% for n in range(1, 9) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Soru {{ n }}</div>
+            <div class="form-group">
+                <label class="form-label">Soru</label>
+                <input type="text" name="faq{{ n }}_question" class="form-input"
+                       value="{{ data.get('faq' ~ n ~ '_question','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cevap</label>
+                <textarea name="faq{{ n }}_answer" class="form-textarea" style="min-height:80px;">{{ data.get('faq' ~ n ~ '_answer','') }}</textarea>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- ══════════ SON CTA ══════════ -->
+        {% if tab == 'cta' %}
+        <div class="form-group">
+            <label class="form-label">Eyebrow</label>
+            <input type="text" name="cta_eyebrow" class="form-input" value="{{ data.get('cta_eyebrow','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Başlık</label>
+            <textarea name="cta_title" class="form-textarea" style="min-height:70px;">{{ data.get('cta_title','') }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Gövde Metni</label>
+            <textarea name="cta_body" class="form-textarea">{{ data.get('cta_body','') }}</textarea>
+        </div>
+
+        <hr style="margin:24px 0;border:none;border-top:1px solid #e5e7eb;">
+        <p style="font-size:.85rem;font-weight:700;color:#374151;margin-bottom:16px;">🌐 İletişim Bilgileri (tüm diller paylaşır)</p>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">E-posta</label>
+                <input type="text" name="cta_email" class="form-input"
+                       value="{{ shared.get('cta_email','') }}" placeholder="info@henib2b.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefon</label>
+                <input type="text" name="cta_phone" class="form-input"
+                       value="{{ shared.get('cta_phone','') }}" placeholder="+90 ...">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Adres</label>
+            <input type="text" name="cta_address" class="form-input"
+                   value="{{ shared.get('cta_address','') }}">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Form Action URL</label>
+            <input type="text" name="cta_form_action" class="form-input"
+                   value="{{ shared.get('cta_form_action','') }}" placeholder="/quote">
+        </div>
+        {% endif %}
+
+        <!-- ══════════ SEO ══════════ -->
+        {% if tab == 'seo' %}
+        <div class="seo-preview" id="seoPreviewBox">
+            <div class="seo-preview-title" id="seoPreviewTitle">{{ data.get('meta_title','') or page.slug }}</div>
+            <div class="seo-preview-url">https://henib2b.com/{{ lang }}/{{ data.get('canonical_slug', page.slug) }}</div>
+            <div class="seo-preview-desc" id="seoPreviewDesc">{{ data.get('meta_description','') }}</div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Title</label>
+            <input type="text" name="meta_title" id="metaTitle" class="form-input"
+                   value="{{ data.get('meta_title','') }}" maxlength="80"
+                   oninput="countChars('metaTitle','metaTitleCount',60); document.getElementById('seoPreviewTitle').textContent=this.value">
+            <p class="seo-counter" id="metaTitleCount">{{ data.get('meta_title','')|length }} / 60 karakter</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Description</label>
+            <textarea name="meta_description" id="metaDesc" class="form-textarea" style="min-height:80px;"
+                      maxlength="200"
+                      oninput="countChars('metaDesc','metaDescCount',160); document.getElementById('seoPreviewDesc').textContent=this.value">{{ data.get('meta_description','') }}</textarea>
+            <p class="seo-counter" id="metaDescCount">{{ data.get('meta_description','')|length }} / 160 karakter</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Keywords</label>
+            <input type="text" name="meta_keywords" class="form-input"
+                   value="{{ data.get('meta_keywords','') }}" placeholder="fason üretim, kozmetik, deterjan">
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">OG Title</label>
+                <input type="text" name="og_title" class="form-input" value="{{ data.get('og_title','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">OG Description</label>
+                <input type="text" name="og_description" class="form-input" value="{{ data.get('og_description','') }}">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Canonical Slug (bu dil için URL parçası)</label>
+            <input type="text" name="canonical_slug" class="form-input"
+                   value="{{ data.get('canonical_slug','') or page.slug }}"
+                   placeholder="{{ page.slug }}"
+                   oninput="document.querySelector('.seo-preview-url').textContent='https://henib2b.com/{{ lang }}/'+this.value">
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">🌐 OG Görseli (tüm diller paylaşır)</label>
+            <div class="img-url-row">
+                <input type="text" name="og_image" id="ogImgUrl" class="form-input"
+                       value="{{ shared.get('og_image','') }}"
+                       oninput="updatePreview('ogImgUrl','ogImgPreview')">
+                <input type="file" accept="image/*" class="lp-img-file" id="ogImgFile"
+                       data-target="ogImgUrl" data-preview="ogImgPreview">
+                <button type="button" class="btn-upload" data-for="ogImgFile">Yükle</button>
+            </div>
+            <img id="ogImgPreview" src="{{ shared.get('og_image','') }}"
+                 class="img-preview {% if shared.get('og_image') %}show{% endif %}">
+        </div>
+        {% endif %}
+
+        <!-- ── Save Bar ── -->
+        <div class="save-bar">
+            <button type="submit" class="btn-save">💾 Kaydet</button>
+            <span style="font-size:.83rem;color:#9ca3af;">
+                Sadece bu sekmedeki değişiklikler kaydedilir; diğer sekmeler korunur.
+            </span>
+        </div>
+    </form>
+</div>
+
+<script>
+/* ── Görsel önizleme ── */
+function updatePreview(inputId, previewId) {
+    var url = document.getElementById(inputId).value.trim();
+    var img = document.getElementById(previewId);
+    if (img) {
+        if (url) { img.src = url; img.classList.add('show'); }
+        else     { img.classList.remove('show'); }
+    }
+}
+
+/* ── PC'den yükle butonu ── */
+document.querySelectorAll('.btn-upload').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var fileId = this.getAttribute('data-for');
+        document.getElementById(fileId).click();
+    });
+});
+
+document.querySelectorAll('.lp-img-file').forEach(function(inp) {
+    inp.addEventListener('change', async function() {
+        if (!this.files.length) return;
+        var targetId  = this.getAttribute('data-target');
+        var previewId = this.getAttribute('data-preview');
+        var btn = document.querySelector('.btn-upload[data-for="' + this.id + '"]');
+        if (btn) { btn.disabled = true; btn.textContent = 'Yükleniyor…'; }
+        var fd = new FormData();
+        fd.append('file', this.files[0]);
+        try {
+            var res = await fetch('/esk/upload-homepage-image', { method: 'POST', body: fd });
+            var json = await res.json();
+            var url = json.url || json.location || '';
+            if (url) {
+                document.getElementById(targetId).value = url;
+                updatePreview(targetId, previewId);
+            }
+        } catch(e) { alert('Yükleme başarısız: ' + e); }
+        if (btn) { btn.disabled = false; btn.textContent = 'Yükle'; }
+        this.value = '';
+    });
+});
+
+/* ── Tüm dillere uygula (sync) ── */
+document.querySelectorAll('.btn-sync-img').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+        var field   = this.getAttribute('data-field');
+        var pageId  = this.getAttribute('data-page');
+        var inputId = field.replace(/_/g, '') + 'ImgUrl';
+        /* hero_bg_image → heroBgImageImgUrl gibi dinamik ID yerine data-target kullan */
+        var urlInput = document.querySelector('input[name="' + field + '"]');
+        if (!urlInput) return;
+        var value = urlInput.value.trim();
+        if (!value) { alert('Önce bir görsel URL girin.'); return; }
+        if (!confirm('Bu görsel tüm dillerin shared_content alanına uygulanacak. Devam et?')) return;
+        this.disabled = true;
+        try {
+            var res = await fetch('/esk/pages/' + pageId + '/sync-landing-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ field: field, value: value })
+            });
+            var json = await res.json();
+            if (json.ok) alert('✓ Tüm dillere uygulandı.');
+            else         alert('Hata: ' + (json.error || 'Bilinmeyen'));
+        } catch(e) { alert('Hata: ' + e); }
+        this.disabled = false;
+    });
+});
+
+/* ── SEO karakter sayacı ── */
+function countChars(inputId, counterId, limit) {
+    var el  = document.getElementById(inputId);
+    var cnt = document.getElementById(counterId);
+    if (!el || !cnt) return;
+    var len = el.value.length;
+    cnt.textContent = len + ' / ' + limit + ' karakter';
+    cnt.className = 'seo-counter' + (len > limit ? ' over' : len > limit * 0.85 ? ' warn' : '');
+}
+/* Sayfa yüklenirken ilk sayımı yap */
+['metaTitle','metaDesc'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.dispatchEvent(new Event('input'));
+});
+</script>
+
+{% endblock %}

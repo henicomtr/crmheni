@@ -15,9 +15,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% set _base_title = hp.get('meta_title') or ((site.site_name or 'Heni Kozmetik') ~ ' — Global Industrial Manufacturing Partner') %}
     <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
-    {% if hp.get('meta_description') %}<meta name="description" content="{{ hp.meta_description }}">{% endif %}
-    {% if hp.get('og_title') %}<meta property="og:title" content="{{ hp.og_title }}">{% endif %}
-    {% if hp.get('og_description') %}<meta property="og:description" content="{{ hp.og_description }}">{% endif %}
+    {% if hp.get('meta_description') %}<meta name="description" content="{{ hp.get('meta_description') }}">{% endif %}
+    <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    <meta property="og:type"        content="website">
+    <meta property="og:title"       content="{{ hp.get('og_title') or hp.get('meta_title') or (site.site_name or 'Heni') }}">
+    <meta property="og:description" content="{{ hp.get('og_description') or hp.get('meta_description') or '' }}">
+    <meta property="og:url"         content="https://henib2b.com{{ request.url.path }}">
+    {% set _og_img_raw = hp.get('og_image') or hp.get('hero_image_url') or (site.default_og_image or '') %}
+    {% if _og_img_raw %}
+    <meta property="og:image"       content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
+    {% endif %}
+    <meta name="twitter:card"       content="summary_large_image">
+    <meta name="twitter:title"      content="{{ hp.get('og_title') or hp.get('meta_title') or (site.site_name or 'Heni') }}">
+    <meta name="twitter:description" content="{{ hp.get('og_description') or hp.get('meta_description') or '' }}">
+    {% if _og_img_raw %}
+    <meta name="twitter:image"      content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
+    {% endif %}
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">

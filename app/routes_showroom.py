@@ -1867,6 +1867,93 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
 
 
 # =========================================================
+# LANDING PAGE TEKLİF FORMU  — sepet gerektirmez, QuoteRequest'e kaydeder
+# =========================================================
+
+def _landing_quote(request: Request, lang: str,
+                   company_name: str, contact_person: str, email: str,
+                   phone: str, message: str, source_page: str,
+                   db: Session):
+    # Landing page'den gelen teklif talebini kaydeder; sepet zorunluluğu yoktur
+    currency = LANG_CURRENCY.get(lang, "USD")
+    cart_payload = json.dumps([{
+        "source": source_page or "landing",
+        "message": message or ""
+    }])
+    quote = QuoteRequest(
+        company_name=company_name,
+        contact_person=contact_person,
+        email=email,
+        phone=phone or "",
+        country="",
+        total_price=0.0,
+        currency=currency,
+        cart_data=cart_payload,
+    )
+    db.add(quote)
+    db.commit()
+    # Aynı sayfaya yönlendir, başarı mesajı için anchor ve parametre ekle
+    return RedirectResponse(url=request.url.path + "?sent=1#teklif-al", status_code=303)
+
+
+@router.post("/landing-quote")
+def landing_quote_en(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "en", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/tr/landing-quote")
+def landing_quote_tr(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "tr", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/de/landing-quote")
+def landing_quote_de(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "de", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/fr/landing-quote")
+def landing_quote_fr(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "fr", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/ar/landing-quote")
+def landing_quote_ar(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "ar", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/ru/landing-quote")
+def landing_quote_ru(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "ru", company_name, contact_person, email, phone, message, source_page, db)
+
+@router.post("/es/landing-quote")
+def landing_quote_es(request: Request,
+                     company_name: str = Form(...), contact_person: str = Form(...),
+                     email: str = Form(...), phone: str = Form(""),
+                     message: str = Form(""), source_page: str = Form(""),
+                     db: Session = Depends(get_db)):
+    return _landing_quote(request, "es", company_name, contact_person, email, phone, message, source_page, db)
+
+
+# =========================================================
 # CMS SAYFALARI  /{slug}  /tr/{slug}  /de/{slug} ...
 # =========================================================
 # ⚠️ Bu route'lar dosyanın EN SONUNDA olmalı; /{slug} pattern'i
@@ -1952,4 +2039,10 @@ def _page_detail(request: Request, lang: str, slug: str, db: Session):
         "canonical_url":    f"https://henib2b.com{request.url.path}",
     })
     template_name = page.template or "page_generic.html"
+
+    # Landing page şablonu için ek context: dile özgü içerik ve paylaşılan görseller
+    if template_name == "page_landing.html":
+        ctx["data"]   = trans.get_content() if trans else {}
+        ctx["shared"] = page.get_shared()
+
     return templates.TemplateResponse(template_name, ctx)

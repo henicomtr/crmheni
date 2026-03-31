@@ -2186,6 +2186,7 @@ async def settings_post(
     logo_white: UploadFile = File(None),
     favicon: UploadFile = File(None),
     footer_bg_image: UploadFile = File(None),
+    og_default_image: UploadFile = File(None),
     db: Session = Depends(get_db),
     admin = Depends(admin_required),
 ):
@@ -2282,6 +2283,25 @@ async def settings_post(
             with open(path, "wb") as f:
                 f.write(await footer_bg_image.read())
             s.footer_bg_image_url = f"/static/upload/images/{fname}"
+
+    # Varsayılan OG görseli yükleme (tüm sayfalarda paylaşım önizlemesi için kullanılır)
+    if og_default_image and og_default_image.filename:
+        os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
+        if _is_jpeg_jpg_png_upload(og_default_image):
+            try:
+                optimized_fname = await optimize_and_save_image(og_default_image, UPLOAD_DIR_IMAGES)
+                s.default_og_image = f"/static/upload/images/{optimized_fname}"
+            except ValueError as e:
+                if "too large" in str(e).lower():
+                    return RedirectResponse("/esk/settings?error=image_too_large", status_code=302)
+                return RedirectResponse("/esk/settings?saved=0", status_code=302)
+        else:
+            ext = os.path.splitext(og_default_image.filename)[1]
+            fname = f"og_default{ext}"
+            path = os.path.join(UPLOAD_DIR_IMAGES, fname)
+            with open(path, "wb") as f:
+                f.write(await og_default_image.read())
+            s.default_og_image = f"/static/upload/images/{fname}"
 
     db.commit()
     return RedirectResponse("/esk/settings?saved=1", status_code=302)
@@ -2721,6 +2741,9 @@ def admin_homepage(
         db.commit()
     data = hp.get_data()
 
+    # Site ayarları (SEO tab önizlemesi için gerekli)
+    site = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+
     # Her görsel alanı için "kendi değeri yoksa tr'deki" URL'yi hesapla.
     # Template bu dict'i hem önizleme hem de "kaynak yok" uyarısı için kullanır.
     shared_images: dict = {}
@@ -2739,6 +2762,7 @@ def admin_homepage(
         "supported_langs": SUPPORTED_LANGS,
         "lang_labels":     LANG_LABELS,
         "shared_images":   shared_images,   # fallback URL'leri
+        "site":            site,            # SEO tab önizlemesi için
     })
 
 
@@ -3118,3 +3142,323 @@ def delete_user(
     db.delete(target_user)
     db.commit()
     return RedirectResponse("/esk/users?deleted=1", status_code=302)
+
+
+# =========================================================
+# LANDING PAGE DÜZENLEYICI — /esk/pages/{id}/edit-landing
+# =========================================================
+
+# Geçerli sekme isimleri
+_LANDING_TABS = {
+    "hero", "kategoriler", "surec", "neden_biz", "paketler",
+    "sertifikalar", "tesis", "kimin_icin", "ihracat", "sss", "cta", "seo",
+}
+
+
+@router.get("/esk/pages/{page_id}/edit-landing")
+def landing_edit_get(
+    page_id: int,
+    lang: str = "tr",
+    tab: str = "hero",
+    request: Request = None,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """Landing page çok dilli editörünü açar."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "sayfalar")
+    if redirect:
+        return redirect
+
+    page = db.query(Page).filter(Page.id == page_id).first()
+    if not page:
+        return RedirectResponse("/esk/pages", status_code=302)
+
+    if lang not in SUPPORTED_LANGS:
+        lang = "tr"
+    if tab not in _LANDING_TABS:
+        tab = "hero"
+
+    # Dile ait çeviriyi al; yoksa boş başlat
+    trans = next((t for t in page.translations if t.lang == lang), None)
+    data   = trans.get_content() if trans else {}
+    shared = page.get_shared()
+
+    return templates.TemplateResponse("admin_page_landing.html", {
+        "request":        request,
+        "current_user":   admin,
+        "page":           page,
+        "trans":          trans,
+        "data":           data,
+        "shared":         shared,
+        "lang":           lang,
+        "tab":            tab,
+        "supported_langs": SUPPORTED_LANGS,
+        "lang_labels":    LANG_LABELS,
+    })
+
+
+@router.post("/esk/pages/{page_id}/save-landing")
+async def landing_save_post(
+    page_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """Landing page içeriğini tab bazında kaydeder; diğer tabları bozmaz."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+
+    page = db.query(Page).filter(Page.id == page_id).first()
+    if not page:
+        return RedirectResponse("/esk/pages", status_code=302)
+
+    try:
+        import json as _json_mod
+        form = await request.form()
+        lang = form.get("lang", "tr")
+        tab  = form.get("tab", "hero")
+
+        if lang not in SUPPORTED_LANGS:
+            lang = "tr"
+        if tab not in _LANDING_TABS:
+            tab = "hero"
+
+        # Dile ait çeviriyi al veya oluştur
+        trans = next((t for t in page.translations if t.lang == lang), None)
+        if not trans:
+            trans = PageTranslation(page_id=page.id, lang=lang, title=page.slug, slug=page.slug)
+            db.add(trans)
+            db.flush()
+
+        existing = trans.get_content()
+        shared   = page.get_shared()
+
+        def _f(key, default=""):
+            """Form'dan al; yoksa mevcut JSON'dan al."""
+            return form.get(key, existing.get(key, default))
+
+        def _sf(key, default=""):
+            """Form'dan al; yoksa mevcut shared JSON'dan al."""
+            return form.get(key, shared.get(key, default))
+
+        # ── HERO ──────────────────────────────────────────────────────
+        if tab == "hero":
+            existing.update({
+                "hero_eyebrow":   _f("hero_eyebrow"),
+                "hero_title":     _f("hero_title"),
+                "hero_desc":      _f("hero_desc"),
+                "hero_btn1_text": _f("hero_btn1_text"),
+                "hero_btn1_url":  _f("hero_btn1_url"),
+                "hero_btn2_text": _f("hero_btn2_text"),
+                "hero_btn2_url":  _f("hero_btn2_url"),
+            })
+            if form.get("hero_bg_image") is not None:
+                shared["hero_bg_image"] = form.get("hero_bg_image", "")
+
+        # ── KATEGORİLER ───────────────────────────────────────────────
+        elif tab == "kategoriler":
+            for n in range(1, 4):
+                existing.update({
+                    f"cat{n}_title":     _f(f"cat{n}_title"),
+                    f"cat{n}_desc":      _f(f"cat{n}_desc"),
+                    f"cat{n}_moq":       _f(f"cat{n}_moq"),
+                    f"cat{n}_link_text": _f(f"cat{n}_link_text"),
+                    f"cat{n}_link_url":  _f(f"cat{n}_link_url"),
+                })
+                if form.get(f"cat{n}_image") is not None:
+                    shared[f"cat{n}_image"] = form.get(f"cat{n}_image", "")
+
+        # ── SÜREÇ ────────────────────────────────────────────────────
+        elif tab == "surec":
+            existing.update({
+                "process_eyebrow": _f("process_eyebrow"),
+                "process_title":   _f("process_title"),
+                "process_lead":    _f("process_lead"),
+            })
+            for n in range(1, 7):
+                existing.update({
+                    f"step{n}_title": _f(f"step{n}_title"),
+                    f"step{n}_desc":  _f(f"step{n}_desc"),
+                })
+            if form.get("process_image") is not None:
+                shared["process_image"] = form.get("process_image", "")
+
+        # ── NEDEN BİZ ────────────────────────────────────────────────
+        elif tab == "neden_biz":
+            existing.update({
+                "why_eyebrow": _f("why_eyebrow"),
+                "why_title":   _f("why_title"),
+            })
+            for n in range(1, 5):
+                existing.update({
+                    f"why{n}_title": _f(f"why{n}_title"),
+                    f"why{n}_desc":  _f(f"why{n}_desc"),
+                })
+
+        # ── PAKETLER ─────────────────────────────────────────────────
+        elif tab == "paketler":
+            existing.update({
+                "pkg_eyebrow": _f("pkg_eyebrow"),
+                "pkg_title":   _f("pkg_title"),
+                "pkg_lead":    _f("pkg_lead"),
+            })
+            for n in range(1, 4):
+                existing.update({
+                    f"pkg{n}_badge":         _f(f"pkg{n}_badge"),
+                    f"pkg{n}_name":          _f(f"pkg{n}_name"),
+                    f"pkg{n}_desc":          _f(f"pkg{n}_desc"),
+                    f"pkg{n}_moq_kozmetik":  _f(f"pkg{n}_moq_kozmetik"),
+                    f"pkg{n}_moq_parfum":    _f(f"pkg{n}_moq_parfum"),
+                    f"pkg{n}_moq_deterjan":  _f(f"pkg{n}_moq_deterjan"),
+                    f"pkg{n}_features":      _f(f"pkg{n}_features"),
+                })
+                # featured checkbox — paylaşılan
+                featured_val = "1" if form.get(f"pkg{n}_featured") else "0"
+                shared[f"pkg{n}_featured"] = featured_val
+
+        # ── SERTİFİKALAR ─────────────────────────────────────────────
+        elif tab == "sertifikalar":
+            for n in range(1, 5):
+                existing.update({
+                    f"cert{n}_title": _f(f"cert{n}_title"),
+                    f"cert{n}_desc":  _f(f"cert{n}_desc"),
+                })
+
+        # ── TESİS ────────────────────────────────────────────────────
+        elif tab == "tesis":
+            existing.update({
+                "facility_eyebrow":  _f("facility_eyebrow"),
+                "facility_title":    _f("facility_title"),
+                "facility_body1":    _f("facility_body1"),
+                "facility_body2":    _f("facility_body2"),
+                "facility_btn_text": _f("facility_btn_text"),
+            })
+            for key in ("facility_image1", "facility_image2", "facility_image3", "facility_video_url"):
+                if form.get(key) is not None:
+                    shared[key] = form.get(key, "")
+
+        # ── KİMİN İÇİN ───────────────────────────────────────────────
+        elif tab == "kimin_icin":
+            existing.update({
+                "whom_eyebrow": _f("whom_eyebrow"),
+                "whom_title":   _f("whom_title"),
+            })
+            for n in range(1, 4):
+                existing.update({
+                    f"persona{n}_title": _f(f"persona{n}_title"),
+                    f"persona{n}_desc":  _f(f"persona{n}_desc"),
+                })
+
+        # ── İHRACAT ──────────────────────────────────────────────────
+        elif tab == "ihracat":
+            existing.update({
+                "export_eyebrow": _f("export_eyebrow"),
+                "export_title":   _f("export_title"),
+                "export_lead":    _f("export_lead"),
+            })
+            for n in range(1, 4):
+                existing.update({
+                    f"stat{n}_num":   _f(f"stat{n}_num"),
+                    f"stat{n}_label": _f(f"stat{n}_label"),
+                })
+
+        # ── SSS ───────────────────────────────────────────────────────
+        elif tab == "sss":
+            for n in range(1, 9):
+                existing.update({
+                    f"faq{n}_question": _f(f"faq{n}_question"),
+                    f"faq{n}_answer":   _f(f"faq{n}_answer"),
+                })
+
+        # ── CTA ───────────────────────────────────────────────────────
+        elif tab == "cta":
+            existing.update({
+                "cta_eyebrow": _f("cta_eyebrow"),
+                "cta_title":   _f("cta_title"),
+                "cta_body":    _f("cta_body"),
+            })
+            for key in ("cta_email", "cta_phone", "cta_address", "cta_form_action"):
+                if form.get(key) is not None:
+                    shared[key] = form.get(key, "")
+
+        # ── SEO ───────────────────────────────────────────────────────
+        elif tab == "seo":
+            existing.update({
+                "meta_title":       _f("meta_title"),
+                "meta_description": _f("meta_description"),
+                "meta_keywords":    _f("meta_keywords"),
+                "og_title":         _f("og_title"),
+                "og_description":   _f("og_description"),
+                "canonical_slug":   _f("canonical_slug"),
+            })
+            if form.get("og_image") is not None:
+                shared["og_image"] = form.get("og_image", "")
+            # PageTranslation SEO alanlarını da güncelle (page_generic uyumluluğu)
+            trans.meta_title       = existing.get("meta_title", "")
+            trans.meta_description = existing.get("meta_description", "")
+            trans.og_title         = existing.get("og_title", "")
+            trans.og_description   = existing.get("og_description", "")
+            trans.slug             = existing.get("canonical_slug", "") or trans.slug
+
+        # JSON blob'ları kaydet
+        trans.set_content(existing)
+        page.set_shared(shared)
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        import traceback
+        traceback.print_exc()
+        err = str(e)[:120].replace('"', "").replace("'", "")
+        return RedirectResponse(
+            f"/esk/pages/{page_id}/edit-landing?lang={lang}&tab={tab}&save_error={err}",
+            status_code=302,
+        )
+
+    return RedirectResponse(
+        f"/esk/pages/{page_id}/edit-landing?lang={lang}&tab={tab}&saved=1",
+        status_code=302,
+    )
+
+
+@router.post("/esk/pages/{page_id}/sync-landing-image")
+async def landing_sync_image(
+    page_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    """
+    Paylaşılan bir görseli (shared_content) tüm dillere uygular.
+    Body: { field: "hero_bg_image", value: "/static/upload/images/xxx.webp" }
+    """
+    if not admin:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    page = db.query(Page).filter(Page.id == page_id).first()
+    if not page:
+        return JSONResponse({"error": "Sayfa bulunamadı"}, status_code=404)
+
+    body = await request.json()
+    field = body.get("field", "")
+    value = body.get("value", "")
+
+    # İzin verilen paylaşılan görsel alanları
+    allowed_shared = {
+        "hero_bg_image",
+        "cat1_image", "cat2_image", "cat3_image",
+        "process_image",
+        "facility_image1", "facility_image2", "facility_image3",
+        "og_image",
+    }
+    if field not in allowed_shared:
+        return JSONResponse({"error": "Geçersiz alan"}, status_code=400)
+
+    shared = page.get_shared()
+    shared[field] = value
+    page.set_shared(shared)
+    db.commit()
+
+    return JSONResponse({"ok": True, "field": field, "value": value})

@@ -11,12 +11,23 @@
     {% if site.seo_title_template and '%s' in site.seo_title_template %}{% set _page_title = site.seo_title_template|replace('%s', meta_title) %}{% else %}{% set _page_title = meta_title %}{% endif %}
     <title>{{ _page_title }}</title>
     <meta name="description" content="{{ meta_description }}">
-    <meta property="og:title" content="{{ _page_title }}">
+    <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    <meta property="og:type"        content="product">
+    <meta property="og:title"       content="{{ _page_title }}">
     <meta property="og:description" content="{{ meta_description }}">
-    {% if product.image %}
-    <meta property="og:image" content="{{ product.image }}">
+    <meta property="og:url"         content="{{ canonical_url }}">
+    {% set _og_img_raw = product.image or (site.default_og_image or '') %}
+    {% if _og_img_raw %}
+    <meta property="og:image"       content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
+    <meta property="og:image:width"  content="1200">
+    <meta property="og:image:height" content="630">
     {% endif %}
-    <meta property="og:type" content="product">
+    <meta name="twitter:card"       content="summary_large_image">
+    <meta name="twitter:title"      content="{{ _page_title }}">
+    <meta name="twitter:description" content="{{ meta_description }}">
+    {% if _og_img_raw %}
+    <meta name="twitter:image"      content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
+    {% endif %}
     <link rel="canonical" href="{{ canonical_url }}">
 
     <!-- hreflang — SEO: her dildeki eşdeğer URL; göreli path'e henib2b.com prefix eklenir -->
