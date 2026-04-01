@@ -3019,6 +3019,8 @@ PERMISSION_OPTIONS = [
     ("tedarikciler", "Tedarikçiler"),
     ("finans",       "Finans"),
     ("site_ayarlari","Site Ayarları"),
+    ("stok",         "Stok"),
+    ("pricing",      "Fiyatlandırma"),
 ]
 
 
