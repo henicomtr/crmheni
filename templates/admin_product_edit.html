@@ -389,6 +389,29 @@
         border-color: #c0392b;
     }
 
+    /* Medya kütüphanesinden seç butonu */
+    .btn-pick-from-library {
+        margin-top: 6px;
+        padding: 7px 14px;
+        background: transparent;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: background .15s, border-color .15s;
+        white-space: nowrap;
+    }
+    .btn-pick-from-library::before { content: '🖼'; font-size: 13px; }
+    .btn-pick-from-library:hover {
+        background: #eff6ff;
+        border-color: #93c5fd;
+    }
+
     .btn-cancel {
         padding: 11px 20px;
         background: transparent;
@@ -671,6 +694,36 @@
                         <span class="file-upload-btn">Değiştir</span>
                         <span class="file-upload-name">Yeni dosya seçilmedi</span>
                     </div>
+                    {% if fname == 'image' %}
+                    <!-- Medya kütüphanesinden görsel seçme butonu (yalnızca ürün görseli için) -->
+                    <input type="hidden" name="image_library_url" id="image_library_url">
+                    <button type="button" class="btn-pick-from-library"
+                            onclick="openMediaPicker(function(url) {
+                                document.getElementById('image_library_url').value = url;
+                                document.getElementById('img-lib-preview').src = url;
+                                document.getElementById('img-lib-preview-wrap').style.display = 'flex';
+                                document.querySelector('[name=image]').value = '';
+                                document.querySelector('[name=image]').closest('.file-upload-wrap').querySelector('.file-upload-name').textContent = 'Yeni dosya seçilmedi';
+                            })">
+                        Medya Kütüphanesinden Seç
+                    </button>
+                    <div id="img-lib-preview-wrap"
+                         style="display:none;align-items:center;gap:12px;margin-top:8px;padding:10px 14px;
+                                background:var(--surface-2);border:1px solid var(--border);
+                                border-radius:var(--radius-sm);">
+                        <img id="img-lib-preview" src=""
+                             style="width:52px;height:52px;object-fit:contain;border-radius:var(--radius-sm);
+                                    border:1px solid var(--border);background:var(--surface);padding:3px;">
+                        <div>
+                            <span style="font-size:.8rem;color:var(--text-secondary);display:block;">Kütüphaneden seçildi</span>
+                            <button type="button" onclick="clearImageLibrarySelection()"
+                                    style="font-size:.75rem;color:var(--text-muted);border:none;background:none;
+                                           cursor:pointer;padding:0;margin-top:3px;">
+                                × Seçimi temizle
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
                     {% if fexisting %}<div class="file-existing">✓ Mevcut dosya var</div>{% endif %}
                 </div>
                 {% endfor %}
@@ -777,6 +830,18 @@
     function updateFileName(input) {
         const el = input.closest('.file-upload-wrap').querySelector('.file-upload-name');
         el.textContent = input.files[0] ? input.files[0].name : 'Yeni dosya seçilmedi';
+        // PC'den dosya seçilince kütüphane seçimini iptal et
+        if (input.name === 'image' && input.files[0]) {
+            clearImageLibrarySelection();
+        }
+    }
+
+    // Kütüphane seçimini temizle
+    function clearImageLibrarySelection() {
+        const hiddenInput = document.getElementById('image_library_url');
+        const previewWrap = document.getElementById('img-lib-preview-wrap');
+        if (hiddenInput) hiddenInput.value = '';
+        if (previewWrap) previewWrap.style.display = 'none';
     }
 </script>
 {% endblock %}

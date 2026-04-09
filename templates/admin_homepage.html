@@ -73,6 +73,14 @@
 .btn-upload:hover { opacity: .9; }
 .btn-upload:disabled { opacity: .6; cursor: wait; }
 .hp-img-file { display: none; }
+/* Medya kütüphanesinden seç butonu */
+.btn-pick-library {
+    padding: 8px 14px; background: transparent; color: #1e40af;
+    border: 1px solid #bfdbfe; border-radius: 8px; font-size: .82rem;
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s;
+}
+.btn-pick-library:hover { background: #eff6ff; border-color: #93c5fd; }
 
 /* ── paylaşılan görsel sync butonu ── */
 .btn-sync-img {
@@ -218,6 +226,7 @@
                        placeholder="Link yapıştırın veya Yükle ile PC'den ekleyin">
                 <input type="file" accept="image/*" class="hp-img-file" id="heroImgFile" data-target="heroImgUrl" data-preview="heroImgPreview">
                 <button type="button" class="btn-upload" data-for="heroImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="heroImgUrl" data-preview="heroImgPreview">🖼 Kütüphane</button>
                 {% if lang != 'tr' %}
                 <button type="button" class="btn-sync-img"
                         data-field="hero_image_url" data-src-lang="{{ lang }}">
@@ -291,6 +300,7 @@
                            value="{{ s.get('image','') }}" placeholder="Link veya Yükle ile ekleyin">
                     <input type="file" accept="image/*" class="hp-img-file" id="svc{{ i }}ImgFile" data-target="svc{{ i }}ImgUrl" data-preview="svcPrev{{ i }}">
                     <button type="button" class="btn-upload" data-for="svc{{ i }}ImgFile">Yükle</button>
+                    <button type="button" class="btn-pick-library" data-target="svc{{ i }}ImgUrl" data-preview="svcPrev{{ i }}">🖼 Kütüphane</button>
                     {% if lang != 'tr' %}
                     <button type="button" class="btn-sync-img"
                             data-field="svc{{ i }}_image" data-src-lang="{{ lang }}">
@@ -359,6 +369,7 @@
                        value="{{ data.get('raw_materials_image_url','') }}" placeholder="Link veya Yükle ile ekleyin">
                 <input type="file" accept="image/*" class="hp-img-file" id="rawMaterialsImgFile" data-target="rawMaterialsImgUrl" data-preview="rawMaterialsImgPreview">
                 <button type="button" class="btn-upload" data-for="rawMaterialsImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="rawMaterialsImgUrl" data-preview="rawMaterialsImgPreview">🖼 Kütüphane</button>
                 {% if lang != 'tr' %}
                 <button type="button" class="btn-sync-img"
                         data-field="raw_materials_image_url" data-src-lang="{{ lang }}">
@@ -405,6 +416,7 @@
                        value="{{ data.get('private_label_image_url','') }}" placeholder="Link veya Yükle ile ekleyin">
                 <input type="file" accept="image/*" class="hp-img-file" id="privateLabelImgFile" data-target="privateLabelImgUrl" data-preview="privateLabelImgPreview">
                 <button type="button" class="btn-upload" data-for="privateLabelImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="privateLabelImgUrl" data-preview="privateLabelImgPreview">🖼 Kütüphane</button>
                 {% if lang != 'tr' %}
                 <button type="button" class="btn-sync-img"
                         data-field="private_label_image_url" data-src-lang="{{ lang }}">
@@ -727,6 +739,27 @@ document.querySelectorAll('.btn-upload').forEach(btn => {
     const fileInputId = btn.getAttribute('data-for');
     if (!fileInputId) return;
     btn.addEventListener('click', () => document.getElementById(fileInputId).click());
+});
+
+// Medya kütüphanesinden görsel seç — URL input ve önizlemeyi günceller
+document.querySelectorAll('.btn-pick-library').forEach(btn => {
+    btn.addEventListener('click', function () {
+        const targetId  = this.getAttribute('data-target');
+        const previewId = this.getAttribute('data-preview');
+        window.openMediaPicker(function (url) {
+            if (targetId) {
+                const target = document.getElementById(targetId);
+                if (target) target.value = url;
+            }
+            if (previewId) {
+                const preview = document.getElementById(previewId);
+                if (preview) {
+                    preview.src = url;
+                    preview.classList.add('show');
+                }
+            }
+        });
+    });
 });
 
 // PC'den görsel yükleme → static/upload/images, URL alanına yaz

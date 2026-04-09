@@ -76,6 +76,14 @@
 .btn-upload:hover { opacity: .9; }
 .btn-upload:disabled { opacity: .6; cursor: wait; }
 .lp-img-file { display: none; }
+/* Medya kütüphanesinden seç butonu */
+.btn-pick-library {
+    padding: 8px 14px; background: transparent; color: #1e40af;
+    border: 1px solid #bfdbfe; border-radius: 8px; font-size: .82rem;
+    font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s;
+}
+.btn-pick-library:hover { background: #eff6ff; border-color: #93c5fd; }
 
 /* ── sync butonu ── */
 .btn-sync-img {
@@ -241,6 +249,7 @@
                 <input type="file" accept="image/*" class="lp-img-file" id="heroImgFile"
                        data-target="heroImgUrl" data-preview="heroImgPreview">
                 <button type="button" class="btn-upload" data-for="heroImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="heroImgUrl" data-preview="heroImgPreview">🖼 Kütüphane</button>
                 <button type="button" class="btn-sync-img"
                         data-field="hero_bg_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
             </div>
@@ -289,6 +298,7 @@
                     <input type="file" accept="image/*" class="lp-img-file" id="cat{{ n }}ImgFile"
                            data-target="cat{{ n }}ImgUrl" data-preview="cat{{ n }}ImgPreview">
                     <button type="button" class="btn-upload" data-for="cat{{ n }}ImgFile">Yükle</button>
+                    <button type="button" class="btn-pick-library" data-target="cat{{ n }}ImgUrl" data-preview="cat{{ n }}ImgPreview">🖼 Kütüphane</button>
                     <button type="button" class="btn-sync-img"
                             data-field="cat{{ n }}_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
                 </div>
@@ -341,6 +351,7 @@
                 <input type="file" accept="image/*" class="lp-img-file" id="processImgFile"
                        data-target="processImgUrl" data-preview="processImgPreview">
                 <button type="button" class="btn-upload" data-for="processImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="processImgUrl" data-preview="processImgPreview">🖼 Kütüphane</button>
                 <button type="button" class="btn-sync-img"
                         data-field="process_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
             </div>
@@ -503,6 +514,7 @@
                 <input type="file" accept="image/*" class="lp-img-file" id="facImg{{ n }}File"
                        data-target="facImg{{ n }}Url" data-preview="facImg{{ n }}Preview">
                 <button type="button" class="btn-upload" data-for="facImg{{ n }}File">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="facImg{{ n }}Url" data-preview="facImg{{ n }}Preview">🖼 Kütüphane</button>
             </div>
             <img id="facImg{{ n }}Preview" src="{{ shared.get('facility_image' ~ n,'') }}"
                  class="img-preview {% if shared.get('facility_image' ~ n) %}show{% endif %}">
@@ -701,6 +713,7 @@
                 <input type="file" accept="image/*" class="lp-img-file" id="ogImgFile"
                        data-target="ogImgUrl" data-preview="ogImgPreview">
                 <button type="button" class="btn-upload" data-for="ogImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="ogImgUrl" data-preview="ogImgPreview">🖼 Kütüphane</button>
             </div>
             <img id="ogImgPreview" src="{{ shared.get('og_image','') }}"
                  class="img-preview {% if shared.get('og_image') %}show{% endif %}">
@@ -733,6 +746,20 @@ document.querySelectorAll('.btn-upload').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var fileId = this.getAttribute('data-for');
         document.getElementById(fileId).click();
+    });
+});
+
+/* ── Medya kütüphanesinden görsel seç ── */
+document.querySelectorAll('.btn-pick-library').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var targetId  = this.getAttribute('data-target');
+        var previewId = this.getAttribute('data-preview');
+        window.openMediaPicker(function(url) {
+            if (targetId) {
+                var target = document.getElementById(targetId);
+                if (target) { target.value = url; updatePreview(targetId, previewId); }
+            }
+        });
     });
 });
 

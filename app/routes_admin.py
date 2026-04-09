@@ -948,6 +948,15 @@ async def update_product(
                 url = save_upload(uploaded, udir, uprefix)
                 setattr(product, field_name, url)
 
+    # Medya kütüphanesinden seçilen görsel URL'i — dosya yüklenmemişse kullan
+    image_library_url = form.get("image_library_url", "").strip()
+    uploaded_image = form.get("image")
+    dosya_yuklenmedi = not (
+        uploaded_image and hasattr(uploaded_image, "filename") and uploaded_image.filename
+    )
+    if image_library_url and dosya_yuklenmedi:
+        product.image = image_library_url
+
     # Çeviriler — mevcut olanı güncelle, yoksa yeni oluştur
     for lc in LANGS:
         lname = form.get(f"name_{lc}", "").strip()
@@ -1996,6 +2005,28 @@ async def media_library(
         "aktif_tip": tip,
         "sayimlar": sayimlar,
     })
+
+
+@router.get("/esk/media/api/images")
+async def media_api_images(
+    request: Request,
+    admin = Depends(admin_required),
+):
+    """Medya kütüphanesindeki görselleri JSON olarak döner (picker modal için)."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+    dosyalar = _list_media_files()
+    # Yalnızca görsel dosyalarını filtrele
+    resimler = [d for d in dosyalar if d["media_type"] == "image"]
+    return JSONResponse([
+        {
+            "name": d["name"],
+            "url": d["url"],
+            "size_str": d["size_str"],
+            "modified": d["modified"],
+        }
+        for d in resimler
+    ])
 
 
 @router.post("/esk/media/upload")

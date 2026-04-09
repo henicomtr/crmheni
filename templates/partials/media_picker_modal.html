@@ -1,0 +1,325 @@
+<!-- Medya Kütüphanesi Seçici Modal — tüm admin sayfalarında kullanılabilir -->
+<!-- Açmak için: window.openMediaPicker(function(url) { ... }) -->
+
+<style>
+.mp-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9990;
+    background: rgba(0, 0, 0, .55);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+.mp-dialog {
+    position: absolute;
+    inset: 32px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, .35);
+    max-width: 1100px;
+    margin: 0 auto;
+}
+.mp-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.mp-header h3 {
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.mp-search {
+    flex: 1;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+    color: var(--text-primary);
+    font-size: .875rem;
+    outline: none;
+    transition: border-color .15s;
+}
+.mp-search:focus { border-color: #1e40af; }
+.mp-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+.mp-item {
+    cursor: pointer;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    transition: border-color .15s, box-shadow .15s;
+    background: var(--surface-2);
+}
+.mp-item:hover { border-color: #93c5fd; }
+.mp-item.selected {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, .18);
+}
+.mp-item-thumb {
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: #e5e7eb;
+}
+.mp-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform .2s;
+}
+.mp-item:hover .mp-item-thumb img { transform: scale(1.05); }
+.mp-item-info {
+    padding: 5px 7px;
+    background: var(--surface);
+}
+.mp-item-name {
+    font-size: .7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.mp-item-size {
+    font-size: .65rem;
+    color: var(--text-muted);
+}
+.mp-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-muted);
+    font-size: .9rem;
+}
+.mp-footer {
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+.mp-count {
+    font-size: .8rem;
+    color: var(--text-muted);
+}
+.mp-footer-btns { display: flex; gap: 8px; }
+.mp-btn-cancel {
+    padding: 7px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: .875rem;
+    transition: background .15s;
+}
+.mp-btn-cancel:hover { background: var(--surface-2); }
+.mp-btn-select {
+    padding: 7px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: #1e40af;
+    color: #fff;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 600;
+    transition: opacity .15s;
+}
+.mp-btn-select:hover { opacity: .9; }
+.mp-btn-select:disabled { opacity: .5; cursor: default; }
+@media (max-width: 640px) {
+    .mp-dialog { inset: 12px; border-radius: var(--radius-sm); }
+    .mp-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}
+</style>
+
+<div id="mediaPicker" class="mp-overlay" role="dialog" aria-modal="true" aria-label="Medya Kütüphanesi">
+    <div class="mp-dialog">
+        <!-- Başlık ve arama -->
+        <div class="mp-header">
+            <h3>Medya Kütüphanesi</h3>
+            <input id="mediaPickerSearch" class="mp-search" type="text"
+                   placeholder="Dosya adına göre ara…" autocomplete="off">
+            <button type="button" class="mp-btn-cancel" onclick="window.closeMediaPicker()">İptal</button>
+        </div>
+
+        <!-- Görsel grid -->
+        <div id="mediaPickerGrid" class="mp-grid">
+            <div class="mp-empty">Yükleniyor…</div>
+        </div>
+
+        <!-- Alt bar -->
+        <div class="mp-footer">
+            <span id="mediaPickerCount" class="mp-count"></span>
+            <div class="mp-footer-btns">
+                <button type="button" class="mp-btn-cancel" onclick="window.closeMediaPicker()">İptal</button>
+                <button type="button" id="mediaPickerSelectBtn" class="mp-btn-select"
+                        disabled onclick="window.confirmMediaSelection()">Seç</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // Durum değişkenleri
+    let _callback    = null;
+    let _selectedUrl = null;
+    let _allImages   = [];
+
+    // ── Public API ──────────────────────────────────────────────
+
+    /** Modal'ı aç; seçim onaylandığında callback(url) çağrılır. */
+    window.openMediaPicker = function (callback) {
+        _callback    = callback || null;
+        _selectedUrl = null;
+
+        // Arayüzü sıfırla
+        document.getElementById('mediaPickerSearch').value = '';
+        document.getElementById('mediaPickerSelectBtn').disabled = true;
+        document.getElementById('mediaPickerGrid').innerHTML =
+            '<div class="mp-empty">Yükleniyor…</div>';
+        document.getElementById('mediaPickerCount').textContent = '';
+
+        document.getElementById('mediaPicker').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+
+        // Her açılışta en güncel listeyi çek
+        _yukleGorseller();
+    };
+
+    /** Modal'ı kapat. */
+    window.closeMediaPicker = function () {
+        document.getElementById('mediaPicker').style.display = 'none';
+        document.body.style.overflow = '';
+        _callback    = null;
+        _selectedUrl = null;
+    };
+
+    /** Seçilen görseli onayla ve callback'i çağır. */
+    window.confirmMediaSelection = function () {
+        if (_selectedUrl && _callback) {
+            _callback(_selectedUrl);
+        }
+        window.closeMediaPicker();
+    };
+
+    // ── İç yardımcı fonksiyonlar ────────────────────────────────
+
+    /** API'den görsel listesini çeker ve render eder. */
+    function _yukleGorseller() {
+        fetch('/esk/media/api/images', { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (images) {
+                _allImages = images;
+                _renderGorseller(images);
+            })
+            .catch(function () {
+                document.getElementById('mediaPickerGrid').innerHTML =
+                    '<div class="mp-empty" style="color:#ef4444;">Görseller yüklenirken hata oluştu.</div>';
+            });
+    }
+
+    /** Verilen görsel dizisini grid'e çizer. */
+    function _renderGorseller(images) {
+        var grid  = document.getElementById('mediaPickerGrid');
+        var count = document.getElementById('mediaPickerCount');
+
+        if (!images || images.length === 0) {
+            grid.innerHTML = '<div class="mp-empty">Hiç görsel bulunamadı.</div>';
+            count.textContent = '';
+            return;
+        }
+
+        count.textContent = images.length + ' görsel';
+
+        grid.innerHTML = images.map(function (img) {
+            // Güvenli: tek tırnak ve özel karakterler kaçırılır
+            var safeUrl  = img.url.replace(/'/g, '%27');
+            var safeName = img.name
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/"/g, '&quot;');
+            return (
+                '<div class="mp-item" data-url="' + safeUrl + '" ' +
+                     'onclick="window._mpSelectItem(this)"' +
+                     'ondblclick="window._mpDblClick(this)">' +
+                    '<div class="mp-item-thumb">' +
+                        '<img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy">' +
+                    '</div>' +
+                    '<div class="mp-item-info">' +
+                        '<div class="mp-item-name" title="' + safeName + '">' + safeName + '</div>' +
+                        '<div class="mp-item-size">' + img.size_str + '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+        }).join('');
+    }
+
+    // ── Global olay fonksiyonları (inline onclick için) ─────────
+
+    /** Tek tıkla görsel seç. */
+    window._mpSelectItem = function (el) {
+        // Önceki seçimi kaldır
+        document.querySelectorAll('.mp-item.selected').forEach(function (item) {
+            item.classList.remove('selected');
+        });
+        el.classList.add('selected');
+        _selectedUrl = el.getAttribute('data-url');
+        document.getElementById('mediaPickerSelectBtn').disabled = false;
+    };
+
+    /** Çift tıklamayla seç ve onayla. */
+    window._mpDblClick = function (el) {
+        window._mpSelectItem(el);
+        window.confirmMediaSelection();
+    };
+
+    // ── Overlay tıklaması (dışarı tıkla kapat) ─────────────────
+    document.getElementById('mediaPicker').addEventListener('click', function (e) {
+        if (e.target === this) window.closeMediaPicker();
+    });
+
+    // ── ESC tuşu ────────────────────────────────────────────────
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' &&
+            document.getElementById('mediaPicker').style.display !== 'none') {
+            window.closeMediaPicker();
+        }
+    });
+
+    // ── Arama / filtreleme ──────────────────────────────────────
+    document.getElementById('mediaPickerSearch').addEventListener('input', function () {
+        var q        = this.value.toLowerCase().trim();
+        var filtered = q
+            ? _allImages.filter(function (img) {
+                return img.name.toLowerCase().indexOf(q) !== -1;
+              })
+            : _allImages;
+        // Yeni filtrede seçim sıfırlanır
+        _selectedUrl = null;
+        document.getElementById('mediaPickerSelectBtn').disabled = true;
+        _renderGorseller(filtered);
+    });
+
+})();
+</script>
