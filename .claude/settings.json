@@ -18,7 +18,15 @@
       "Bash(python -c \"from app.models import PricingProduct, FormulaItem, FinishedProduct, PackagingItem, PricingResult; print\\(''models OK''\\)\")",
       "Bash(python -c \"from app.services.pricing_service import calculate_internal_cost, calculate_finished_cost, calculate_final_price, save_pricing_result, format_product_name; print\\(''services OK''\\)\")",
       "Bash(python -c \"from app.routes_pricing import router; print\\(''routes_pricing OK, routes:'', len\\(router.routes\\)\\)\")",
-      "Bash(python -c \"from app.main import app; print\\(''app startup OK, total routes:'', len\\(app.routes\\)\\)\")"
+      "Bash(python -c \"from app.main import app; print\\(''app startup OK, total routes:'', len\\(app.routes\\)\\)\")",
+      "Bash(powershell -Command \"cmd /c 'dir /x \\\\\"C:\\\\\\\\Users\\\\\\\\ACER NİTRO\\\\\\\\Desktop\\\\\\\\projeler\\\\\\\\crmheni\\\\\\\\venv\\\\\\\\Scripts\\\\\\\\\"'\" 2>&1 | head -5)",
+      "Bash(powershell -Command ':*)",
+      "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\fix_heni3.py 2>&1\")",
+      "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\check_db.py 2>&1\")",
+      "Bash(powershell -Command \"Remove-Item 'C:\\\\temp\\\\fix_heni.py','C:\\\\temp\\\\fix_heni2.py','C:\\\\temp\\\\fix_heni3.py','C:\\\\temp\\\\check_db.py','C:\\\\temp\\\\find_db.py' -ErrorAction SilentlyContinue; Write-Host 'Temizlendi'\")"
+    ],
+    "additionalDirectories": [
+      "c:\\temp"
     ]
   }
 }

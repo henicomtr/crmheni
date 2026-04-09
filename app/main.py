@@ -138,12 +138,32 @@ def _seed_homepage():
         for lc in LANGS:
             exists = _db.query(HomepageContent).filter(HomepageContent.lang == lc).first()
             if not exists:
-                _db.add(HomepageContent(lang=lc))
+                _db.add(HomepageContent(lang=lc, data="{}"))
         _db.commit()
     finally:
         _db.close()
 
 _seed_homepage()
+
+
+# ── HomepageContent veri migrasyonu ─────────────────────────────────
+def _migrate_homepage_null_data():
+    """data=NULL olan homepage_contents kayıtlarını '{}' ile günceller.
+    ar/ru/es gibi sonradan eklenen dillerin seed edilmiş ama boş kalan
+    kayıtları showroom'da EN'e fallback yapar; bu migrasyon bunu düzeltir."""
+    _db = SessionLocal()
+    try:
+        from sqlalchemy import text
+        _db.execute(
+            text("UPDATE homepage_contents SET data = '{}' WHERE data IS NULL")
+        )
+        _db.commit()
+    except Exception:
+        _db.rollback()
+    finally:
+        _db.close()
+
+_migrate_homepage_null_data()
 
 # ── Users tablo migrasyonu ──────────────────────────────────────────
 def _migrate_users():

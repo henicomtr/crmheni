@@ -2737,7 +2737,7 @@ def admin_homepage(
         return RedirectResponse(f"/esk/homepage?lang={lang}&tab=hero", status_code=302)
     hp = db.query(HomepageContent).filter(HomepageContent.lang == lang).first()
     if not hp:
-        hp = HomepageContent(lang=lang)
+        hp = HomepageContent(lang=lang, data="{}")
         db.add(hp)
         db.commit()
     data = hp.get_data()

@@ -21,7 +21,9 @@
       "Bash(python -c \":*)",
       "Bash(python -c \"from app.routes_showroom import UI; print\\(''EN keys:'', list\\(UI[''en''].keys\\(\\)\\)[-6:]\\); print\\(''TR keys:'', list\\(UI[''tr''].keys\\(\\)\\)[-6:]\\)\")",
       "Bash(python -c \"from app.routes_showroom import UI; print\\(''filter_all:'', UI[''en''].get\\(''filter_all''\\)\\); print\\(''sort_label:'', UI[''en''].get\\(''sort_label''\\)\\); print\\(''sort_price_asc:'', UI[''en''].get\\(''sort_price_asc''\\)\\)\")",
-      "Bash(python -c \"from app.routes_showroom import UI; print\\(''filter_all:'', UI[''en''].get\\(''filter_all''\\)\\); print\\(''sort_label:'', UI[''en''].get\\(''sort_label''\\)\\); print\\(''ok:'', ''sort_price_asc'' in UI[''en'']\\)\")"
+      "Bash(python -c \"from app.routes_showroom import UI; print\\(''filter_all:'', UI[''en''].get\\(''filter_all''\\)\\); print\\(''sort_label:'', UI[''en''].get\\(''sort_label''\\)\\); print\\(''ok:'', ''sort_price_asc'' in UI[''en'']\\)\")",
+      "Bash(powershell -Command \"& 'C:\\\\Users\\\\ACER NİTRO\\\\Desktop\\\\projeler\\\\crmheni\\\\venv\\\\Scripts\\\\python.exe' -c \\\\\"import sqlite3; conn=sqlite3.connect\\('C:/Users/ACER NİTRO/Desktop/projeler/crmheni/heni.db'\\); cur=conn.cursor\\(\\); cur.execute\\(\\\\\\\\\\\\\"SELECT lang, data IS NULL, data='{}', json_extract\\(data, '$.meta_title'\\), json_extract\\(data, '$.meta_description'\\) FROM homepage_contents ORDER BY lang\\\\\\\\\\\\\"\\); [print\\(r\\) for r in cur.fetchall\\(\\)]; conn.close\\(\\)\\\\\"\")",
+      "Bash(powershell -Command ':*)"
     ],
     "additionalDirectories": [
       "c:\\Users\\ACER NİTRO\\Desktop\\projeler\\crmheni\\app"

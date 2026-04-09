@@ -776,8 +776,21 @@ def _site_for_lang(s, lang):
         social_instagram = getattr(s, "social_instagram", None)
         social_twitter = getattr(s, "social_twitter", None)
         social_whatsapp = getattr(s, "social_whatsapp", None)
-        seo_title_template = _v("seo_title_template")
-        seo_description = _v("seo_description")
+        # seo_title_template ve seo_description EN i18n'inden miras alınmamalı.
+        # AR/RU/ES için EN'in seo_title_template değeri miras alınırsa, template
+        # {% elif site.seo_title_template %} bloğunu tetikler ve _base_title'ı ezar.
+        # Yalnızca bu dilin i18n verisini kullan; yoksa DB kolonuna dön.
+        _lang_only = i18n.get(lang) or {}
+        seo_title_template = (
+            _lang_only.get("seo_title_template")
+            if _lang_only.get("seo_title_template") not in (None, "")
+            else (getattr(s, "seo_title_template", None) or "")
+        )
+        seo_description = (
+            _lang_only.get("seo_description")
+            if _lang_only.get("seo_description") not in (None, "")
+            else (getattr(s, "seo_description", None) or "")
+        )
         analytics_code = getattr(s, "analytics_code", None)
         custom_css = getattr(s, "custom_css", None)
         footer_description = _v("footer_description")
@@ -810,11 +823,12 @@ def common_ctx(request: Request, lang: str, product=None, db=None) -> dict:
         try:
             from app.models import HomepageContent
             hp_row = db.query(HomepageContent).filter(HomepageContent.lang == lang).first()
-            if hp_row:
-                hp_data = hp_row.get_data()
-            if not hp_data:
+            if hp_row is None:
+                # Kayıt hiç yoksa EN verisine düş (ar/ru/es kaydı boşsa düşme)
                 hp_en = db.query(HomepageContent).filter(HomepageContent.lang == "en").first()
                 hp_data = hp_en.get_data() if hp_en else {}
+            else:
+                hp_data = hp_row.get_data()
         except Exception:
             pass
 
