@@ -850,7 +850,7 @@
                     {% endif %}
                 </div>
                 <div class="cta-form">
-                    <p class="cta-form-title">{{ data.get('cta_form_title', 'Ücretsiz Teklif Alın') }}</p>
+                    <p class="cta-form-title">{{ data.get('cta_form_title') or ui.lp_form_title }}</p>
                     {# Gönderim başarı mesajı #}
                     {% if request.query_params.get('sent') == '1' %}
                     <div class="cta-form-sent">
