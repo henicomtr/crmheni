@@ -156,7 +156,13 @@
     .cat-link:hover { color: var(--metallic); }
 
     /* ── SÜREÇ ── */
-    .process-section { background: var(--navy); }
+    .process-section { background: var(--navy); position: relative; overflow: hidden; }
+    .process-bg {
+        position: absolute; inset: 0;
+        background-size: cover; background-position: center; background-repeat: no-repeat;
+        opacity: .18;
+    }
+    .process-section .container { position: relative; z-index: 1; }
     .process-section .eyebrow { color: #60a5fa; }
     .process-section .section-title { color: #fff; }
     .process-section .section-title em { color: #60a5fa; }
@@ -508,6 +514,9 @@
     <!-- ── SÜREÇ ── -->
     {% if data.get('process_title') or data.get('step1_title') %}
     <section class="section-pad process-section">
+        {% if shared.get('process_image') %}
+        <div class="process-bg" style="background-image:url('{{ shared.get('process_image') }}');"></div>
+        {% endif %}
         <div class="container">
             {% if data.get('process_eyebrow') %}
             <span class="eyebrow">{{ data.get('process_eyebrow') }}</span>
