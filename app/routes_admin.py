@@ -3293,6 +3293,12 @@ async def landing_save_post(
 
         # ── KATEGORİLER ───────────────────────────────────────────────
         elif tab == "kategoriler":
+            # Bölüm başlık alanları
+            existing.update({
+                "cats_eyebrow": _f("cats_eyebrow"),
+                "cats_title":   _f("cats_title"),
+                "cats_lead":    _f("cats_lead"),
+            })
             for n in range(1, 4):
                 existing.update({
                     f"cat{n}_title":     _f(f"cat{n}_title"),
@@ -3354,6 +3360,12 @@ async def landing_save_post(
 
         # ── SERTİFİKALAR ─────────────────────────────────────────────
         elif tab == "sertifikalar":
+            # Bölüm başlık alanları
+            existing.update({
+                "cert_eyebrow": _f("cert_eyebrow"),
+                "cert_title":   _f("cert_title"),
+                "cert_lead":    _f("cert_lead"),
+            })
             for n in range(1, 5):
                 existing.update({
                     f"cert{n}_title": _f(f"cert{n}_title"),
