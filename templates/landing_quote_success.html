@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talebiniz Alındı</title>
+    {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    {% if site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --navy:     #0f172a;
+            --metallic: #1e3a8a;
+            --white:    #ffffff;
+            --ease:     cubic-bezier(.4,0,.2,1);
+        }
+        body {
+            background: var(--navy);
+            font-family: var(--font-body, 'Inter', sans-serif);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* ── Başarı kartı ── */
+        .success-card {
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 20px;
+            padding: 56px 48px;
+            max-width: 560px;
+            width: 100%;
+            text-align: center;
+            animation: fadeUp .6s var(--ease) both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(32px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Onay ikonu ── */
+        .success-icon {
+            width: 72px; height: 72px;
+            background: rgba(96,165,250,.15);
+            border: 2px solid rgba(96,165,250,.35);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+        }
+        .success-icon svg {
+            width: 36px; height: 36px;
+            stroke: #60a5fa; stroke-width: 2.5;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+
+        /* ── Metinler ── */
+        .success-eyebrow {
+            font-size: .72rem; font-weight: 700; letter-spacing: .14em;
+            text-transform: uppercase; color: #60a5fa; margin-bottom: 14px;
+        }
+        .success-title {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 800; color: #fff;
+            line-height: 1.15; margin-bottom: 16px;
+            letter-spacing: -.02em;
+        }
+        .success-body {
+            font-size: .95rem; color: rgba(255,255,255,.7);
+            line-height: 1.7; margin-bottom: 36px;
+        }
+
+        /* ── Geri sayım çubuğu ── */
+        .countdown-wrap { margin-bottom: 28px; }
+        .countdown-label {
+            font-size: .8rem; color: rgba(255,255,255,.45);
+            margin-bottom: 10px;
+        }
+        .countdown-bar-bg {
+            background: rgba(255,255,255,.1);
+            border-radius: 99px; height: 4px; overflow: hidden;
+        }
+        .countdown-bar {
+            height: 100%; background: #60a5fa;
+            border-radius: 99px;
+            width: 100%;
+            transition: width 1s linear;
+        }
+        .countdown-sec {
+            font-weight: 700; color: #93c5fd;
+        }
+
+        /* ── Buton ── */
+        .btn-home {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 32px;
+            background: var(--metallic); color: #fff;
+            font-weight: 700; font-size: .95rem;
+            border-radius: 8px; border: 2px solid var(--metallic);
+            text-decoration: none;
+            transition: background .25s var(--ease), transform .2s var(--ease);
+        }
+        .btn-home:hover {
+            background: #2563eb; border-color: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        /* ── Logo ── */
+        .success-logo {
+            margin-bottom: 36px;
+        }
+        .success-logo img {
+            height: 36px; width: auto;
+        }
+        .success-logo-text {
+            font-size: 22px; font-weight: 800;
+            color: #fff; letter-spacing: .04em;
+        }
+
+        @media (max-width: 480px) {
+            .success-card { padding: 40px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="success-card">
+        <!-- Logo -->
+        <div class="success-logo">
+            {% if site and site.logo_url %}
+            <img src="{{ site.logo_url }}" alt="Logo">
+            {% else %}
+            <span class="success-logo-text">HENİ</span>
+            {% endif %}
+        </div>
+
+        <!-- Onay ikonu -->
+        <div class="success-icon">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+
+        <p class="success-eyebrow">Teklif Talebi</p>
+        <h1 class="success-title">Talebiniz Alındı!</h1>
+        <p class="success-body">
+            Mesajınız ekibimize iletildi. Ortalama geri dönüş süremiz 2–4 saattir.
+            En kısa sürede <strong style="color:#fff;">{{ email }}</strong> adresinize dönüş yapacağız.
+        </p>
+
+        <!-- Geri sayım -->
+        <div class="countdown-wrap">
+            <p class="countdown-label">
+                <span class="countdown-sec" id="sec">5</span> saniye içinde anasayfaya yönlendiriliyorsunuz…
+            </p>
+            <div class="countdown-bar-bg">
+                <div class="countdown-bar" id="bar"></div>
+            </div>
+        </div>
+
+        <a href="{{ home_url }}" class="btn-home">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Anasayfaya Dön
+        </a>
+    </div>
+
+    <script>
+    (function() {
+        var total = 5;
+        var remaining = total;
+        var secEl = document.getElementById('sec');
+        var barEl = document.getElementById('bar');
+        var homeUrl = {{ home_url | tojson }};
+
+        /* İlk çubuğu dolu göster, her saniye azalt */
+        barEl.style.width = '100%';
+
+        var timer = setInterval(function() {
+            remaining -= 1;
+            secEl.textContent = remaining;
+            barEl.style.width = ((remaining / total) * 100) + '%';
+            if (remaining <= 0) {
+                clearInterval(timer);
+                window.location.href = homeUrl;
+            }
+        }, 1000);
+    })();
+    </script>
+</body>
+</html>

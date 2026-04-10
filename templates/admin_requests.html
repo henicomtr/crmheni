@@ -398,6 +398,8 @@
                             <div class="req-items">
                                 {% for item in req.items_data %}
                                 <div class="req-item">
+                                    {% if item.product_name %}
+                                    {# Sepetten gelen standart talep #}
                                     <div class="req-item-name">{{ item.product_name }}</div>
                                     <div class="req-item-meta">
                                         {{ item.quantity }} adet
@@ -408,6 +410,16 @@
                                             100)|int }} indirim</span>
                                         {% endif %}
                                     </div>
+                                    {% else %}
+                                    {# Landing page formundan gelen talep #}
+                                    <div class="req-item-name" style="display:flex;align-items:center;gap:6px;">
+                                        <span style="background:#3b82f6;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;">LANDING</span>
+                                        {{ item.source or '—' }}
+                                    </div>
+                                    {% if item.message %}
+                                    <div class="req-item-meta" style="margin-top:4px;color:var(--text-muted);white-space:pre-wrap;">{{ item.message }}</div>
+                                    {% endif %}
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>
@@ -462,9 +474,18 @@
             <div class="req-items">
                 {% for item in req.items_data %}
                 <div class="req-item">
+                    {% if item.product_name %}
                     <div class="req-item-name">{{ item.product_name }}</div>
-                    <div class="req-item-meta">{{ item.quantity }} adet{% if item.pallets %} · {{ item.pallets }}
-                        palet{% endif %}</div>
+                    <div class="req-item-meta">{{ item.quantity }} adet{% if item.pallets %} · {{ item.pallets }} palet{% endif %}</div>
+                    {% else %}
+                    <div class="req-item-name" style="display:flex;align-items:center;gap:6px;">
+                        <span style="background:#3b82f6;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;">LANDING</span>
+                        {{ item.source or '—' }}
+                    </div>
+                    {% if item.message %}
+                    <div class="req-item-meta" style="margin-top:4px;color:var(--text-muted);white-space:pre-wrap;">{{ item.message }}</div>
+                    {% endif %}
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>

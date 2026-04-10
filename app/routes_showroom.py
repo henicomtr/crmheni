@@ -1913,8 +1913,15 @@ def _landing_quote(request: Request, lang: str,
     )
     db.add(quote)
     db.commit()
-    # Aynı sayfaya yönlendir, başarı mesajı için anchor ve parametre ekle
-    return RedirectResponse(url=request.url.path + "?sent=1#teklif-al", status_code=303)
+    # Başarı sayfasını render et — dile göre anasayfa URL'si ilet
+    site = _get_site_settings(db, lang)
+    return templates.TemplateResponse("landing_quote_success.html", {
+        "request":  request,
+        "lang":     lang,
+        "email":    email,
+        "site":     site,
+        "home_url": home_root_url(lang),
+    })
 
 
 @router.post("/landing-quote")
