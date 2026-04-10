@@ -825,7 +825,7 @@
                     <div class="cta-contact-item">
                         <div class="cta-contact-item-icon">✉️</div>
                         <div class="cta-contact-item-body">
-                            <strong>E-posta</strong>
+                            <strong>{{ ui.lp_email }}</strong>
                             <a href="mailto:{{ shared.get('cta_email') }}" style="color:rgba(255,255,255,.7);">{{ shared.get('cta_email') }}</a>
                         </div>
                     </div>
@@ -834,7 +834,7 @@
                     <div class="cta-contact-item">
                         <div class="cta-contact-item-icon">📞</div>
                         <div class="cta-contact-item-body">
-                            <strong>Telefon</strong>
+                            <strong>{{ ui.lp_phone }}</strong>
                             <a href="tel:{{ shared.get('cta_phone') }}" style="color:rgba(255,255,255,.7);">{{ shared.get('cta_phone') }}</a>
                         </div>
                     </div>
@@ -843,7 +843,7 @@
                     <div class="cta-contact-item">
                         <div class="cta-contact-item-icon">📍</div>
                         <div class="cta-contact-item-body">
-                            <strong>Adres</strong>
+                            <strong>{{ ui.lp_address }}</strong>
                             <span style="color:rgba(255,255,255,.7);">{{ shared.get('cta_address') }}</span>
                         </div>
                     </div>
@@ -854,7 +854,7 @@
                     {# Gönderim başarı mesajı #}
                     {% if request.query_params.get('sent') == '1' %}
                     <div class="cta-form-sent">
-                        ✓ Talebiniz alındı. En kısa sürede sizinle iletişime geçeceğiz.
+                        {{ ui.lp_sent }}
                     </div>
                     {% endif %}
                     {# Form — dile göre doğru landing-quote endpoint'ine POST eder #}
@@ -862,12 +862,12 @@
                     <form id="lp-quote-form" method="POST" action="{{ lp_action }}">
                         <input type="hidden" name="source_page" value="{{ page.slug }}">
                         <input type="hidden" name="country"     id="lp-country">
-                        <input type="text"  name="company_name"    placeholder="Şirket Adı" required>
-                        <input type="text"  name="contact_person"  placeholder="İletişim Kişisi" required>
-                        <input type="email" name="email"           placeholder="E-posta Adresi" required>
-                        <input type="tel"   name="phone"           id="lp-phone" placeholder="Telefon">
-                        <textarea name="message" placeholder="Mesajınız…"></textarea>
-                        <button type="submit" class="cta-form-btn">Teklif İste →</button>
+                        <input type="text"  name="company_name"    placeholder="{{ ui.lp_company }}" required>
+                        <input type="text"  name="contact_person"  placeholder="{{ ui.lp_contact }}" required>
+                        <input type="email" name="email"           placeholder="{{ ui.lp_email_ph }}" required>
+                        <input type="tel"   name="phone"           id="lp-phone" placeholder="{{ ui.lp_phone }}">
+                        <textarea name="message" placeholder="{{ ui.lp_message }}"></textarea>
+                        <button type="submit" class="cta-form-btn">{{ ui.lp_submit }}</button>
                     </form>
                 </div>
             </div>
