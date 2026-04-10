@@ -46,6 +46,8 @@
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/intlTelInput.min.js" defer></script>
 
     {% if site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
     {% if site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
@@ -341,6 +343,21 @@
         transition: background .2s; font-family: inherit;
     }
     .cta-form-btn:hover { background: var(--gold2); }
+
+    /* ── intl-tel-input koyu tema uyumu ── */
+    .cta-form .iti { width: 100%; margin-bottom: 12px; }
+    .cta-form .iti input[type="tel"] {
+        width: 100%; margin-bottom: 0;
+        background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15);
+        color: #fff;
+    }
+    .cta-form .iti input[type="tel"]:focus { border-color: #60a5fa; background: rgba(255,255,255,.1); }
+    .iti__flag-container .iti__selected-flag { background: rgba(255,255,255,.08); border-right: 1px solid rgba(255,255,255,.15); border-radius: 8px 0 0 8px; }
+    .iti__flag-container .iti__selected-flag:hover { background: rgba(255,255,255,.14); }
+    .iti__country-list { background: #1e293b; border-color: rgba(255,255,255,.15); color: #fff; }
+    .iti__country-list .iti__country.iti__highlight { background: rgba(255,255,255,.1); }
+    .iti__country-list .iti__divider { border-bottom-color: rgba(255,255,255,.1); }
+    .iti__dial-code { color: rgba(255,255,255,.6); }
 
     /* ── Scroll reveal ── */
     .reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .6s ease; }
@@ -842,12 +859,13 @@
                     {% endif %}
                     {# Form — dile göre doğru landing-quote endpoint'ine POST eder #}
                     {% set lp_action = ('/' ~ lang ~ '/landing-quote') if lang != 'en' else '/landing-quote' %}
-                    <form method="POST" action="{{ lp_action }}">
+                    <form id="lp-quote-form" method="POST" action="{{ lp_action }}">
                         <input type="hidden" name="source_page" value="{{ page.slug }}">
+                        <input type="hidden" name="country"     id="lp-country">
                         <input type="text"  name="company_name"    placeholder="Şirket Adı" required>
                         <input type="text"  name="contact_person"  placeholder="İletişim Kişisi" required>
                         <input type="email" name="email"           placeholder="E-posta Adresi" required>
-                        <input type="text"  name="phone"           placeholder="Telefon">
+                        <input type="tel"   name="phone"           id="lp-phone" placeholder="Telefon">
                         <textarea name="message" placeholder="Mesajınız…"></textarea>
                         <button type="submit" class="cta-form-btn">Teklif İste →</button>
                     </form>
@@ -909,6 +927,33 @@
         }, { threshold: 0.4 });
         counters.forEach(function(el) { io.observe(el); });
     })();
+
+    /* ── intl-tel-input — telefon + ülke otomatik tespiti ── */
+    document.addEventListener('DOMContentLoaded', function() {
+        var phoneInput = document.querySelector('#lp-phone');
+        var countryInput = document.querySelector('#lp-country');
+        var form = document.querySelector('#lp-quote-form');
+        if (!phoneInput || typeof window.intlTelInput === 'undefined') return;
+        var iti = window.intlTelInput(phoneInput, {
+            initialCountry: 'auto',
+            separateDialCode: true,
+            preferredCountries: ['tr', 'de', 'us', 'gb', 'fr'],
+            geoIpLookup: function(cb) {
+                fetch('https://ipapi.co/json/')
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) { cb(d.country_code); })
+                    .catch(function() { cb('tr'); });
+            },
+            utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@18.1.1/build/js/utils.js'
+        });
+        form.addEventListener('submit', function() {
+            /* Tam uluslararası formatlı telefon numarasını yaz */
+            phoneInput.value = iti.getNumber();
+            /* Seçilen ülkeyi gizli alana yaz */
+            var countryData = iti.getSelectedCountryData();
+            countryInput.value = countryData.name || '';
+        });
+    });
     </script>
 </body>
 </html>

@@ -1966,7 +1966,7 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
 
 def _landing_quote(request: Request, lang: str,
                    company_name: str, contact_person: str, email: str,
-                   phone: str, message: str, source_page: str,
+                   phone: str, message: str, source_page: str, country: str,
                    db: Session):
     # Landing page'den gelen teklif talebini kaydeder; sepet zorunluluğu yoktur
     currency = LANG_CURRENCY.get(lang, "USD")
@@ -1979,7 +1979,7 @@ def _landing_quote(request: Request, lang: str,
         contact_person=contact_person,
         email=email,
         phone=phone or "",
-        country="",
+        country=country or "",
         total_price=0.0,
         currency=currency,
         cart_data=cart_payload,
@@ -2004,56 +2004,63 @@ def landing_quote_en(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "en", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "en", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/tr/landing-quote")
 def landing_quote_tr(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "tr", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "tr", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/de/landing-quote")
 def landing_quote_de(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "de", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "de", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/fr/landing-quote")
 def landing_quote_fr(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "fr", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "fr", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/ar/landing-quote")
 def landing_quote_ar(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "ar", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "ar", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/ru/landing-quote")
 def landing_quote_ru(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "ru", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "ru", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/es/landing-quote")
 def landing_quote_es(request: Request,
                      company_name: str = Form(...), contact_person: str = Form(...),
                      email: str = Form(...), phone: str = Form(""),
                      message: str = Form(""), source_page: str = Form(""),
+                     country: str = Form(""),
                      db: Session = Depends(get_db)):
-    return _landing_quote(request, "es", company_name, contact_person, email, phone, message, source_page, db)
+    return _landing_quote(request, "es", company_name, contact_person, email, phone, message, source_page, country, db)
 
 
 # =========================================================
