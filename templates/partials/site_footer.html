@@ -96,7 +96,7 @@
         {# ── İletişim sütunu ── #}
         {% if site and (site.contact_email or site.contact_phone or site.contact_address) %}
         <div class="site-footer-col">
-            <h4 class="site-footer-col-title">Contact</h4>
+            <h4 class="site-footer-col-title">{{ ui.footer_contact if ui else 'Contact' }}</h4>
             <ul class="site-footer-col-links site-footer-contact-list">
                 {% if site.contact_email %}
                 <li>

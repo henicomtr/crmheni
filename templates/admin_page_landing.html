@@ -260,6 +260,24 @@
 
         <!-- ══════════ KATEGORİLER ══════════ -->
         {% if tab == 'kategoriler' %}
+        <div class="repeater-card" style="margin-bottom:24px;">
+            <div class="repeater-card-head">Bölüm Başlığı</div>
+            <div class="form-group">
+                <label class="form-label">Eyebrow (üst etiket)</label>
+                <input type="text" name="cats_eyebrow" class="form-input"
+                       value="{{ data.get('cats_eyebrow','') }}" placeholder="ÜRETİM KATEGORİLERİMİZ">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="cats_title" class="form-input"
+                       value="{{ data.get('cats_title','') }}" placeholder="Ürün Kategorilerimiz">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama (lead)</label>
+                <input type="text" name="cats_lead" class="form-input"
+                       value="{{ data.get('cats_lead','') }}">
+            </div>
+        </div>
         {% for n in range(1, 4) %}
         <div class="repeater-card">
             <div class="repeater-card-head">Kategori {{ n }}</div>
@@ -462,6 +480,24 @@
 
         <!-- ══════════ SERTİFİKALAR ══════════ -->
         {% if tab == 'sertifikalar' %}
+        <div class="repeater-card" style="margin-bottom:24px;">
+            <div class="repeater-card-head">Bölüm Başlığı</div>
+            <div class="form-group">
+                <label class="form-label">Eyebrow (üst etiket)</label>
+                <input type="text" name="cert_eyebrow" class="form-input"
+                       value="{{ data.get('cert_eyebrow','') }}" placeholder="KALİTE GÜVENCESİ">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Başlık</label>
+                <input type="text" name="cert_title" class="form-input"
+                       value="{{ data.get('cert_title','') }}" placeholder="Sertifikalarımız">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Açıklama (lead)</label>
+                <input type="text" name="cert_lead" class="form-input"
+                       value="{{ data.get('cert_lead','') }}">
+            </div>
+        </div>
         {% for n in range(1, 5) %}
         <div class="repeater-card">
             <div class="repeater-card-head">Sertifika {{ n }}</div>

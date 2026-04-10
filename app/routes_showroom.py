@@ -285,6 +285,7 @@ UI = {
         "hp_cta_title": "Get a quote for your custom production needs!",
         "hp_sticky_title": "Contact Us",
         "hp_sticky_sub": "Get a quote for your custom production solutions!",
+        "footer_contact": "Contact",
     },
     "tr": {
         "home": "Anasayfa", "products": "Ürünler", "basket": "Sepetim",
@@ -349,6 +350,7 @@ UI = {
         "hp_cta_title": "Özel üretim çözümleriniz için hemen teklif alın!",
         "hp_sticky_title": "Bizimle İletişime Geçin",
         "hp_sticky_sub": "Özel Üretim çözümleriniz için hemen teklif alın!",
+        "footer_contact": "İletişim",
     },
     "de": {
         "home": "Startseite", "products": "Produkte", "basket": "Warenkorb",
@@ -413,6 +415,7 @@ UI = {
         "hp_cta_title": "Holen Sie sich ein Angebot für Ihre individuelle Produktion!",
         "hp_sticky_title": "Kontaktieren Sie uns",
         "hp_sticky_sub": "Fordern Sie jetzt Ihr Angebot an!",
+        "footer_contact": "Kontakt",
     },
     "fr": {
         "home": "Accueil", "products": "Produits", "basket": "Panier",
@@ -477,6 +480,7 @@ UI = {
         "hp_cta_title": "Obtenez un devis pour vos besoins de production personnalisés !",
         "hp_sticky_title": "Contactez-nous",
         "hp_sticky_sub": "Obtenez un devis pour vos solutions de production personnalisées !",
+        "footer_contact": "Contact",
     },
     "ar": {
         "home": "الرئيسية", "products": "المنتجات", "basket": "السلة",
@@ -541,6 +545,7 @@ UI = {
         "hp_cta_title": "احصل على عرض سعر لاحتياجات إنتاجك المخصصة!",
         "hp_sticky_title": "تواصل معنا",
         "hp_sticky_sub": "احصل على عرض سعر لحلول الإنتاج المخصصة!",
+        "footer_contact": "اتصل بنا",
     },
     "ru": {
         "home": "Главная", "products": "Товары", "basket": "Корзина",
@@ -605,6 +610,7 @@ UI = {
         "hp_cta_title": "Получите предложение для вашего индивидуального производства!",
         "hp_sticky_title": "Свяжитесь с нами",
         "hp_sticky_sub": "Получите предложение для ваших производственных решений!",
+        "footer_contact": "Контакты",
     },
     "es": {
         "home": "Inicio", "products": "Productos", "basket": "Carrito",
@@ -669,6 +675,7 @@ UI = {
         "hp_cta_title": "¡Solicita un presupuesto para tus necesidades de producción personalizadas!",
         "hp_sticky_title": "Contáctenos",
         "hp_sticky_sub": "¡Solicita un presupuesto para tus soluciones de producción personalizadas!",
+        "footer_contact": "Contacto",
     },
 }
 
