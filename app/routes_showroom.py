@@ -286,6 +286,15 @@ UI = {
         "hp_sticky_title": "Contact Us",
         "hp_sticky_sub": "Get a quote for your custom production solutions!",
         "footer_contact": "Contact",
+        "success_eyebrow": "Quote Request",
+        "success_title": "Your Request Has Been Received!",
+        "success_body": "Your message has been forwarded to our team. Our average response time is 2–4 hours. We will get back to you at",
+        "success_redirecting": "You will be redirected to the homepage in",
+        "success_seconds": "seconds",
+        "success_go_home": "Go to Homepage",
+        "success_req_no": "Request No",
+        "success_total": "Total Amount",
+        "success_back_products": "Back to Products",
     },
     "tr": {
         "home": "Anasayfa", "products": "Ürünler", "basket": "Sepetim",
@@ -351,6 +360,15 @@ UI = {
         "hp_sticky_title": "Bizimle İletişime Geçin",
         "hp_sticky_sub": "Özel Üretim çözümleriniz için hemen teklif alın!",
         "footer_contact": "İletişim",
+        "success_eyebrow": "Teklif Talebi",
+        "success_title": "Talebiniz Alındı!",
+        "success_body": "Mesajınız ekibimize iletildi. Ortalama geri dönüş süremiz 2–4 saattir. En kısa sürede şu adrese dönüş yapacağız:",
+        "success_redirecting": "Anasayfaya yönlendiriliyorsunuz…",
+        "success_seconds": "saniye",
+        "success_go_home": "Anasayfaya Dön",
+        "success_req_no": "Talep No",
+        "success_total": "Toplam Tutar",
+        "success_back_products": "Ürünlere Dön",
     },
     "de": {
         "home": "Startseite", "products": "Produkte", "basket": "Warenkorb",
@@ -416,6 +434,15 @@ UI = {
         "hp_sticky_title": "Kontaktieren Sie uns",
         "hp_sticky_sub": "Fordern Sie jetzt Ihr Angebot an!",
         "footer_contact": "Kontakt",
+        "success_eyebrow": "Angebotsanfrage",
+        "success_title": "Ihre Anfrage wurde erhalten!",
+        "success_body": "Ihre Nachricht wurde an unser Team weitergeleitet. Unsere durchschnittliche Antwortzeit beträgt 2–4 Stunden. Wir melden uns unter:",
+        "success_redirecting": "Sie werden zur Startseite weitergeleitet…",
+        "success_seconds": "Sekunden",
+        "success_go_home": "Zur Startseite",
+        "success_req_no": "Anfrage-Nr.",
+        "success_total": "Gesamtbetrag",
+        "success_back_products": "Zurück zu Produkten",
     },
     "fr": {
         "home": "Accueil", "products": "Produits", "basket": "Panier",
@@ -481,6 +508,15 @@ UI = {
         "hp_sticky_title": "Contactez-nous",
         "hp_sticky_sub": "Obtenez un devis pour vos solutions de production personnalisées !",
         "footer_contact": "Contact",
+        "success_eyebrow": "Demande de devis",
+        "success_title": "Votre demande a été reçue !",
+        "success_body": "Votre message a été transmis à notre équipe. Notre délai de réponse moyen est de 2 à 4 heures. Nous vous répondrons à :",
+        "success_redirecting": "Vous allez être redirigé vers la page d'accueil…",
+        "success_seconds": "secondes",
+        "success_go_home": "Retour à l'accueil",
+        "success_req_no": "N° de demande",
+        "success_total": "Montant total",
+        "success_back_products": "Retour aux produits",
     },
     "ar": {
         "home": "الرئيسية", "products": "المنتجات", "basket": "السلة",
@@ -546,6 +582,15 @@ UI = {
         "hp_sticky_title": "تواصل معنا",
         "hp_sticky_sub": "احصل على عرض سعر لحلول الإنتاج المخصصة!",
         "footer_contact": "اتصل بنا",
+        "success_eyebrow": "طلب عرض سعر",
+        "success_title": "تم استلام طلبك!",
+        "success_body": "تم إرسال رسالتك إلى فريقنا. متوسط وقت الاستجابة لدينا 2–4 ساعات. سنتواصل معك على:",
+        "success_redirecting": "سيتم توجيهك إلى الصفحة الرئيسية…",
+        "success_seconds": "ثوانٍ",
+        "success_go_home": "الذهاب إلى الصفحة الرئيسية",
+        "success_req_no": "رقم الطلب",
+        "success_total": "المبلغ الإجمالي",
+        "success_back_products": "العودة إلى المنتجات",
     },
     "ru": {
         "home": "Главная", "products": "Товары", "basket": "Корзина",
@@ -611,6 +656,15 @@ UI = {
         "hp_sticky_title": "Свяжитесь с нами",
         "hp_sticky_sub": "Получите предложение для ваших производственных решений!",
         "footer_contact": "Контакты",
+        "success_eyebrow": "Запрос предложения",
+        "success_title": "Ваш запрос получен!",
+        "success_body": "Ваше сообщение передано нашей команде. Среднее время ответа — 2–4 часа. Мы свяжемся с вами по адресу:",
+        "success_redirecting": "Вы будете перенаправлены на главную страницу…",
+        "success_seconds": "секунд",
+        "success_go_home": "На главную",
+        "success_req_no": "№ запроса",
+        "success_total": "Итоговая сумма",
+        "success_back_products": "Назад к товарам",
     },
     "es": {
         "home": "Inicio", "products": "Productos", "basket": "Carrito",
@@ -676,6 +730,15 @@ UI = {
         "hp_sticky_title": "Contáctenos",
         "hp_sticky_sub": "¡Solicita un presupuesto para tus soluciones de producción personalizadas!",
         "footer_contact": "Contacto",
+        "success_eyebrow": "Solicitud de presupuesto",
+        "success_title": "¡Tu solicitud ha sido recibida!",
+        "success_body": "Tu mensaje ha sido enviado a nuestro equipo. Nuestro tiempo de respuesta promedio es de 2 a 4 horas. Nos pondremos en contacto contigo en:",
+        "success_redirecting": "Serás redirigido a la página de inicio…",
+        "success_seconds": "segundos",
+        "success_go_home": "Ir a la página de inicio",
+        "success_req_no": "N.º de solicitud",
+        "success_total": "Importe total",
+        "success_back_products": "Volver a productos",
     },
 }
 
@@ -1880,11 +1943,21 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
     db.commit()
     db.refresh(quote)
     request.session["cart"] = {}
-    ctx = common_ctx(request, lang, db=db)
-    ctx["active_page"] = "basket"
     price_formatted = format_price(total_price, lang, get_rates())
-    ctx.update({"quote_id": quote.id, "total_price": round(total_price, 2), "price_formatted": price_formatted})
-    return templates.TemplateResponse("quote_success.html", ctx)
+    site = _get_site_settings(db, lang)
+    ui   = UI.get(lang, UI["en"])
+    return templates.TemplateResponse("quote_success.html", {
+        "request":        request,
+        "lang":           lang,
+        "ui":             ui,
+        "site":           site,
+        "quote_id":       quote.id,
+        "total_price":    round(total_price, 2),
+        "price_formatted": price_formatted,
+        "email":          email,
+        "home_url":       home_root_url(lang),
+        "showroom_url":   showroom_url(lang),
+    })
 
 
 # =========================================================
@@ -1913,11 +1986,13 @@ def _landing_quote(request: Request, lang: str,
     )
     db.add(quote)
     db.commit()
-    # Başarı sayfasını render et — dile göre anasayfa URL'si ilet
+    # Başarı sayfasını render et — dile göre anasayfa URL'si ve UI metinleri ilet
     site = _get_site_settings(db, lang)
+    ui   = UI.get(lang, UI["en"])
     return templates.TemplateResponse("landing_quote_success.html", {
         "request":  request,
         "lang":     lang,
+        "ui":       ui,
         "email":    email,
         "site":     site,
         "home_url": home_root_url(lang),

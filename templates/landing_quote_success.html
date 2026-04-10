@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talebiniz Alındı</title>
+    <title>{{ ui.success_title }} — {{ site.site_name or 'Heni' }}</title>
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}">
@@ -90,9 +90,7 @@
             width: 100%;
             transition: width 1s linear;
         }
-        .countdown-sec {
-            font-weight: 700; color: #93c5fd;
-        }
+        .countdown-sec { font-weight: 700; color: #93c5fd; }
 
         /* ── Buton ── */
         .btn-home {
@@ -104,25 +102,16 @@
             text-decoration: none;
             transition: background .25s var(--ease), transform .2s var(--ease);
         }
-        .btn-home:hover {
-            background: #2563eb; border-color: #2563eb;
-            transform: translateY(-2px);
-        }
+        .btn-home:hover { background: #2563eb; border-color: #2563eb; transform: translateY(-2px); }
 
         /* ── Logo ── */
-        .success-logo {
-            margin-bottom: 36px;
-        }
-        .success-logo img {
-            height: 36px; width: auto;
-        }
-        .success-logo-text {
-            font-size: 22px; font-weight: 800;
-            color: #fff; letter-spacing: .04em;
-        }
+        .success-logo { margin-bottom: 36px; }
+        .success-logo img { height: 36px; width: auto; }
+        .success-logo-text { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: .04em; }
 
         @media (max-width: 480px) {
             .success-card { padding: 40px 24px; }
+            .btn-home { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -142,17 +131,17 @@
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
 
-        <p class="success-eyebrow">Teklif Talebi</p>
-        <h1 class="success-title">Talebiniz Alındı!</h1>
+        <p class="success-eyebrow">{{ ui.success_eyebrow }}</p>
+        <h1 class="success-title">{{ ui.success_title }}</h1>
         <p class="success-body">
-            Mesajınız ekibimize iletildi. Ortalama geri dönüş süremiz 2–4 saattir.
-            En kısa sürede <strong style="color:#fff;">{{ email }}</strong> adresinize dönüş yapacağız.
+            {{ ui.success_body }} <strong style="color:#93c5fd;">{{ email }}</strong>
         </p>
 
         <!-- Geri sayım -->
         <div class="countdown-wrap">
             <p class="countdown-label">
-                <span class="countdown-sec" id="sec">5</span> saniye içinde anasayfaya yönlendiriliyorsunuz…
+                <span class="countdown-sec" id="sec">5</span>
+                {{ ui.success_seconds }} — {{ ui.success_redirecting }}
             </p>
             <div class="countdown-bar-bg">
                 <div class="countdown-bar" id="bar"></div>
@@ -160,8 +149,10 @@
         </div>
 
         <a href="{{ home_url }}" class="btn-home">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-            Anasayfaya Dön
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+            </svg>
+            {{ ui.success_go_home }}
         </a>
     </div>
 
@@ -173,7 +164,6 @@
         var barEl = document.getElementById('bar');
         var homeUrl = {{ home_url | tojson }};
 
-        /* İlk çubuğu dolu göster, her saniye azalt */
         barEl.style.width = '100%';
 
         var timer = setInterval(function() {
