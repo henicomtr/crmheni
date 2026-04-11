@@ -250,6 +250,39 @@
         <div class="card">
             <div class="card-title">📄 Footer (seçili dil)</div>
 
+            <!-- Sertifika logoları — tüm dillere global uygulanır -->
+            <div style="padding:20px;background:#f8f9fb;border:1px solid #e8eaf0;border-radius:10px;margin-bottom:24px;">
+                <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:4px;">🏅 Sertifika Logoları <span style="font-size:11px;font-weight:400;color:#aaa;">(tüm dillere uygulanır)</span></div>
+                <p style="font-size:12px;color:#888;margin:0 0 16px 0;">Her sertifika için beyaz/açık renk logo yükleyin. Yüklenmezse otomatik SVG badge gösterilir. PNG, SVG, WebP kabul edilir.</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+                    {% set cert_list = [
+                        ("cert_logo_iso9001",  s.cert_logo_iso9001_url  if s.cert_logo_iso9001_url  is defined else None, "ISO 9001:2015"),
+                        ("cert_logo_iso14001", s.cert_logo_iso14001_url if s.cert_logo_iso14001_url is defined else None, "ISO 14001:2015"),
+                        ("cert_logo_iso45001", s.cert_logo_iso45001_url if s.cert_logo_iso45001_url is defined else None, "ISO 45001:2018"),
+                        ("cert_logo_gmp",      s.cert_logo_gmp_url      if s.cert_logo_gmp_url      is defined else None, "GMP-TS EN ISO"),
+                        ("cert_logo_ce",       s.cert_logo_ce_url       if s.cert_logo_ce_url       is defined else None, "CE"),
+                        ("cert_logo_fda",      s.cert_logo_fda_url      if s.cert_logo_fda_url      is defined else None, "FDA"),
+                        ("cert_logo_vegan",    s.cert_logo_vegan_url    if s.cert_logo_vegan_url    is defined else None, "VEGAN")
+                    ] %}
+                    {% for field_name, current_url, label in cert_list %}
+                    <div style="border:1px solid #e0e4ed;border-radius:8px;padding:12px;background:#fff;">
+                        <div style="font-size:11px;font-weight:700;color:#555;letter-spacing:0.05em;margin-bottom:8px;">{{ label }}</div>
+                        {% if current_url %}
+                        <div style="display:flex;align-items:center;gap:8px;padding:8px;background:#1a1f2e;border-radius:6px;margin-bottom:8px;">
+                            <img src="{{ current_url }}" alt="{{ label }}" style="height:30px;max-width:80px;object-fit:contain;filter:brightness(0) invert(1);">
+                            <span style="font-size:10px;color:#aaa;word-break:break-all;">{{ current_url.split('/')[-1] }}</span>
+                        </div>
+                        {% endif %}
+                        <label class="upload-zone" for="{{ field_name }}-input" style="min-height:80px;padding:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+                            <div style="font-size:18px;">{% if current_url %}🔄{% else %}⬆️{% endif %}</div>
+                            <div style="font-size:11px;font-weight:600;color:#555;">{{ 'Değiştir' if current_url else 'Yükle' }}</div>
+                            <input id="{{ field_name }}-input" type="file" name="{{ field_name }}" accept="image/*,.svg">
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
             <!-- Footer arka plan görseli — tüm dillere global uygulanır -->
             <div class="form-group" style="padding:16px;background:#f8f9fb;border:1px solid #e8eaf0;border-radius:10px;margin-bottom:20px;">
                 <label class="form-label" style="margin-bottom:10px;">Footer arka plan görseli <span style="font-weight:400;color:#aaa;font-size:11px;text-transform:none;letter-spacing:0;">(tüm dillere uygulanır)</span></label>

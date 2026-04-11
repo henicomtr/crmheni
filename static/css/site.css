@@ -986,10 +986,10 @@ body.site-page {
     pointer-events: none;
 }
 
-/* İç kapsayıcı — 4 sütun grid */
+/* İç kapsayıcı — 5 sütun grid (marka + iletişim + 3 nav) */
 .site-footer-inner {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: 48px;
     max-width: 1280px;
     margin: 0 auto;
@@ -1011,9 +1011,10 @@ body.site-page {
 }
 
 .site-footer-logo-img {
-    height: 44px;
-    max-width: 180px;
+    height: 54px;
+    max-width: 200px;
     object-fit: contain;
+    object-position: left center;
     filter: brightness(0) invert(1);
     opacity: 0.9;
 }
@@ -1063,6 +1064,41 @@ body.site-page {
     background: rgba(255,255,255,0.15);
     border-color: rgba(255,255,255,0.28);
     color: var(--white);
+}
+
+/* Marka sütununda iletişim bilgileri */
+.site-footer-brand-contact {
+    list-style: none;
+    margin: 0;
+    padding: 16px 0 0 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.site-footer-brand-contact li a,
+.site-footer-brand-contact li span {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.48);
+    text-decoration: none;
+    transition: color 0.2s;
+    line-height: 1.45;
+}
+
+.site-footer-brand-contact li a:hover {
+    color: rgba(255,255,255,0.8);
+}
+
+.site-footer-brand-contact svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    opacity: 0.55;
 }
 
 /* ── Link sütunları ── */
@@ -1162,11 +1198,86 @@ body.site-page {
     color: rgba(255,255,255,0.7);
 }
 
+/* ── Sertifika güven bandı — merkezi layout ── */
+.site-footer-trust {
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+    z-index: 1;
+}
+
+.site-footer-trust-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 28px 48px;
+}
+
+.site-footer-trust-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.22);
+}
+
+.site-footer-trust-badges {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.site-footer-cert {
+    color: rgba(255,255,255,0.3);
+    transition: color 0.25s, opacity 0.25s;
+    cursor: default;
+    flex-shrink: 0;
+    line-height: 0;
+}
+
+.site-footer-cert:hover {
+    color: rgba(255,255,255,0.65);
+}
+
+.site-footer-cert svg {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
+/* Yüklenen logo görseli (SVG fallback yerine) */
+.site-footer-cert-img {
+    height: 40px;
+    width: auto;
+    display: block;
+    object-fit: contain;
+    opacity: 0.55;
+    transition: opacity 0.25s;
+    filter: brightness(0) invert(1);
+}
+
+.site-footer-cert:hover .site-footer-cert-img {
+    opacity: 0.85;
+}
+
 /* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+    .site-footer-inner {
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 36px;
+    }
+    /* 5. sütun (son nav col) bir sonraki satıra geçer */
+}
+
 @media (max-width: 1024px) {
     .site-footer-inner {
-        grid-template-columns: 1fr 1fr;
-        gap: 32px;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 28px;
         padding: 48px 32px 40px;
     }
     .site-footer-brand {
@@ -1175,21 +1286,32 @@ body.site-page {
     .site-footer-bottom {
         padding: 16px 32px 20px;
     }
+    .site-footer-trust-inner {
+        padding: 22px 32px;
+    }
 }
 
 @media (max-width: 640px) {
     .site-footer-inner {
-        grid-template-columns: 1fr;
-        gap: 28px;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
         padding: 40px 20px 32px;
     }
     .site-footer-brand {
-        grid-column: auto;
+        grid-column: 1 / -1;
     }
     .site-footer-bottom {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
         padding: 16px 20px 20px;
+    }
+    .site-footer-trust-inner {
+        padding: 20px;
+        gap: 14px;
+    }
+    .site-footer-cert svg,
+    .site-footer-cert-img {
+        height: 32px;
     }
 }

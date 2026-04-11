@@ -2219,6 +2219,13 @@ async def settings_post(
     favicon: UploadFile = File(None),
     footer_bg_image: UploadFile = File(None),
     og_default_image: UploadFile = File(None),
+    cert_logo_iso9001: UploadFile = File(None),
+    cert_logo_iso14001: UploadFile = File(None),
+    cert_logo_iso45001: UploadFile = File(None),
+    cert_logo_gmp: UploadFile = File(None),
+    cert_logo_ce: UploadFile = File(None),
+    cert_logo_fda: UploadFile = File(None),
+    cert_logo_vegan: UploadFile = File(None),
     db: Session = Depends(get_db),
     admin = Depends(admin_required),
 ):
@@ -2334,6 +2341,26 @@ async def settings_post(
             with open(path, "wb") as f:
                 f.write(await og_default_image.read())
             s.default_og_image = f"/static/upload/images/{fname}"
+
+    # Sertifika logoları yükleme (PNG/SVG/WebP — optimize edilmez, beyaz versiyon)
+    _cert_logos = [
+        (cert_logo_iso9001,  "cert_logo_iso9001",  "cert_logo_iso9001_url"),
+        (cert_logo_iso14001, "cert_logo_iso14001", "cert_logo_iso14001_url"),
+        (cert_logo_iso45001, "cert_logo_iso45001", "cert_logo_iso45001_url"),
+        (cert_logo_gmp,      "cert_logo_gmp",      "cert_logo_gmp_url"),
+        (cert_logo_ce,       "cert_logo_ce",       "cert_logo_ce_url"),
+        (cert_logo_fda,      "cert_logo_fda",      "cert_logo_fda_url"),
+        (cert_logo_vegan,    "cert_logo_vegan",    "cert_logo_vegan_url"),
+    ]
+    for _upload, _prefix, _attr in _cert_logos:
+        if _upload and _upload.filename:
+            os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
+            _ext = os.path.splitext(_upload.filename)[1]
+            _fname = f"{_prefix}{_ext}"
+            _path = os.path.join(UPLOAD_DIR_IMAGES, _fname)
+            with open(_path, "wb") as f:
+                f.write(await _upload.read())
+            setattr(s, _attr, f"/static/upload/images/{_fname}")
 
     db.commit()
     return RedirectResponse("/esk/settings?saved=1", status_code=302)

@@ -909,6 +909,14 @@ def _site_for_lang(s, lang):
         footer_copyright_lead = _v("footer_copyright_lead")
         footer_copyright = _v("footer_copyright")
         footer_bg_image_url = getattr(s, "footer_bg_image_url", None)
+        # Sertifika logoları — footer güven bandı
+        cert_logo_iso9001_url  = getattr(s, "cert_logo_iso9001_url",  None)
+        cert_logo_iso14001_url = getattr(s, "cert_logo_iso14001_url", None)
+        cert_logo_iso45001_url = getattr(s, "cert_logo_iso45001_url", None)
+        cert_logo_gmp_url      = getattr(s, "cert_logo_gmp_url",      None)
+        cert_logo_ce_url       = getattr(s, "cert_logo_ce_url",       None)
+        cert_logo_fda_url      = getattr(s, "cert_logo_fda_url",      None)
+        cert_logo_vegan_url    = getattr(s, "cert_logo_vegan_url",    None)
         def get_footer_columns(self):
             return footer_cols if isinstance(footer_cols, list) else []
     return _SiteForLang()

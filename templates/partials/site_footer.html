@@ -69,31 +69,7 @@
             </div>
         </div>
 
-        {# ── Footer sütunları — admin'den JSON ile yönetilir ── #}
-        {% for col in footer_cols %}
-        <div class="site-footer-col">
-            <h4 class="site-footer-col-title">{{ col.title }}</h4>
-            <ul class="site-footer-col-links">
-                {% for link in col.links %}
-                <li><a href="{{ link.url or '#' }}">{{ link.label }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endfor %}
-
-        {# ── Footer sütunları boşsa varsayılan navigasyon göster ── #}
-        {% if not footer_cols %}
-        <div class="site-footer-col">
-            <h4 class="site-footer-col-title">{{ ui.products if ui else 'Products' }}</h4>
-            <ul class="site-footer-col-links">
-                <li><a href="{{ showroom_url }}">{{ ui.all_products if ui else 'All Products' }}</a></li>
-                <li><a href="{{ home_url }}">{{ ui.home if ui else 'Home' }}</a></li>
-                <li><a href="{{ basket_url }}">{{ ui.basket if ui else 'Basket' }}</a></li>
-            </ul>
-        </div>
-        {% endif %}
-
-        {# ── İletişim sütunu ── #}
+        {# ── İletişim sütunu — brand'dan hemen sonra ── #}
         {% if site and (site.contact_email or site.contact_phone or site.contact_address) %}
         <div class="site-footer-col">
             <h4 class="site-footer-col-title">{{ ui.footer_contact if ui else 'Contact' }}</h4>
@@ -134,7 +110,141 @@
         </div>
         {% endif %}
 
+        {# ── Footer sütunları — admin'den JSON ile yönetilir ── #}
+        {% for col in footer_cols %}
+        <div class="site-footer-col">
+            <h4 class="site-footer-col-title">{{ col.title }}</h4>
+            <ul class="site-footer-col-links">
+                {% for link in col.links %}
+                <li><a href="{{ link.url or '#' }}">{{ link.label }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+
+        {# ── Footer sütunları boşsa varsayılan navigasyon göster ── #}
+        {% if not footer_cols %}
+        <div class="site-footer-col">
+            <h4 class="site-footer-col-title">{{ ui.products if ui else 'Products' }}</h4>
+            <ul class="site-footer-col-links">
+                <li><a href="{{ showroom_url }}">{{ ui.all_products if ui else 'All Products' }}</a></li>
+                <li><a href="{{ home_url }}">{{ ui.home if ui else 'Home' }}</a></li>
+                <li><a href="{{ basket_url }}">{{ ui.basket if ui else 'Basket' }}</a></li>
+            </ul>
+        </div>
+        {% endif %}
+
+
     </div>{# /site-footer-inner #}
+
+    {# ── Sertifika güven bandı — merkezi layout ── #}
+    <div class="site-footer-trust">
+        <div class="site-footer-trust-inner">
+            <span class="site-footer-trust-label">Certifications &amp; Standards</span>
+            <div class="site-footer-trust-badges">
+
+                {# ISO 9001:2015 — Kalite Yönetim Sistemi #}
+                <div class="site-footer-cert" title="ISO 9001:2015 — Quality Management System">
+                    {% if site and site.cert_logo_iso9001_url %}
+                    <img src="{{ site.cert_logo_iso9001_url }}" alt="ISO 9001:2015" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 76 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="74.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="38" y="14" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="currentColor" letter-spacing="3">ISO</text>
+                        <line x1="10" y1="19" x2="66" y2="19" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+                        <text x="38" y="34" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="currentColor">9001</text>
+                        <text x="38" y="45" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" fill="currentColor" opacity="0.6">:2015</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# ISO 14001:2015 — Çevre Yönetim Sistemi #}
+                <div class="site-footer-cert" title="ISO 14001:2015 — Environmental Management System">
+                    {% if site and site.cert_logo_iso14001_url %}
+                    <img src="{{ site.cert_logo_iso14001_url }}" alt="ISO 14001:2015" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 82 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="80.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="41" y="14" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="currentColor" letter-spacing="3">ISO</text>
+                        <line x1="10" y1="19" x2="72" y2="19" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+                        <text x="41" y="34" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="currentColor">14001</text>
+                        <text x="41" y="45" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" fill="currentColor" opacity="0.6">:2015</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# ISO 45001:2018 — İş Sağlığı ve Güvenliği #}
+                <div class="site-footer-cert" title="ISO 45001:2018 — Occupational Health &amp; Safety">
+                    {% if site and site.cert_logo_iso45001_url %}
+                    <img src="{{ site.cert_logo_iso45001_url }}" alt="ISO 45001:2018" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 82 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="80.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="41" y="14" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="700" fill="currentColor" letter-spacing="3">ISO</text>
+                        <line x1="10" y1="19" x2="72" y2="19" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+                        <text x="41" y="34" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="800" fill="currentColor">45001</text>
+                        <text x="41" y="45" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" fill="currentColor" opacity="0.6">:2018</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# GMP-TS EN ISO — İyi Üretim Uygulamaları #}
+                <div class="site-footer-cert" title="GMP-TS EN ISO — Good Manufacturing Practice">
+                    {% if site and site.cert_logo_gmp_url %}
+                    <img src="{{ site.cert_logo_gmp_url }}" alt="GMP-TS EN ISO" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 84 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="82.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="42" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="currentColor" letter-spacing="2">GMP</text>
+                        <line x1="10" y1="28" x2="74" y2="28" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+                        <text x="42" y="41" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="currentColor" opacity="0.6" letter-spacing="0.5">TS EN ISO</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# CE — Avrupa Uygunluk İşareti #}
+                <div class="site-footer-cert" title="CE — European Conformity Mark">
+                    {% if site and site.cert_logo_ce_url %}
+                    <img src="{{ site.cert_logo_ce_url }}" alt="CE" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 58 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="56.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="29" y="35" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" font-weight="700" fill="currentColor" letter-spacing="-3">CE</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# FDA — ABD Gıda ve İlaç İdaresi Uyumlu #}
+                <div class="site-footer-cert" title="FDA — U.S. Food &amp; Drug Administration Compliant">
+                    {% if site and site.cert_logo_fda_url %}
+                    <img src="{{ site.cert_logo_fda_url }}" alt="FDA" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 74 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="72.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <text x="37" y="23" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="800" fill="currentColor" letter-spacing="2">FDA</text>
+                        <line x1="10" y1="28" x2="64" y2="28" stroke="currentColor" stroke-width="0.75" opacity="0.4"/>
+                        <text x="37" y="41" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="currentColor" opacity="0.6" letter-spacing="1">COMPLIANT</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+                {# VEGAN — Hayvan testi içermez, vegan dostu #}
+                <div class="site-footer-cert" title="Vegan Certified — Cruelty Free, No Animal Testing">
+                    {% if site and site.cert_logo_vegan_url %}
+                    <img src="{{ site.cert_logo_vegan_url }}" alt="VEGAN" class="site-footer-cert-img">
+                    {% else %}
+                    <svg viewBox="0 0 78 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="0.75" y="0.75" width="76.5" height="48.5" rx="4" stroke="currentColor" stroke-width="1.4"/>
+                        <path d="M39 7 C39 7 30 12 31 21 C32 26 37 26 39 26 C41 26 46 26 47 21 C48 12 39 7 39 7Z" stroke="currentColor" stroke-width="1.2"/>
+                        <line x1="39" y1="26" x2="39" y2="33" stroke="currentColor" stroke-width="1.2"/>
+                        <text x="39" y="45" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" font-weight="700" fill="currentColor" letter-spacing="1.5">VEGAN</text>
+                    </svg>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
 
     {# ── Alt çizgi: copyright ── #}
     <div class="site-footer-bottom">

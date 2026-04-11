@@ -533,6 +533,14 @@ class SiteSettings(Base):
     footer_bg_image_url  = Column(String, nullable=True)
     i18n                 = Column(Text, nullable=True)   # JSON: {"en":{...},"tr":{...},...} — dil bazlı metinler
     default_og_image     = Column(String, nullable=True)  # Tüm sayfalar için fallback OG görseli (mutlak veya göreli URL)
+    # Sertifika logoları — footer güven bandı (PNG/SVG beyaz versiyon yüklenebilir)
+    cert_logo_iso9001_url  = Column(String, nullable=True)
+    cert_logo_iso14001_url = Column(String, nullable=True)
+    cert_logo_iso45001_url = Column(String, nullable=True)
+    cert_logo_gmp_url      = Column(String, nullable=True)
+    cert_logo_ce_url       = Column(String, nullable=True)
+    cert_logo_fda_url      = Column(String, nullable=True)
+    cert_logo_vegan_url    = Column(String, nullable=True)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

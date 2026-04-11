@@ -49,6 +49,13 @@ def _migrate_site_settings():
         ("i18n",                  "TEXT"),
         ("logo_white_url",        "VARCHAR"),
         ("default_og_image",      "VARCHAR"),
+        ("cert_logo_iso9001_url",  "VARCHAR"),
+        ("cert_logo_iso14001_url", "VARCHAR"),
+        ("cert_logo_iso45001_url", "VARCHAR"),
+        ("cert_logo_gmp_url",      "VARCHAR"),
+        ("cert_logo_ce_url",       "VARCHAR"),
+        ("cert_logo_fda_url",      "VARCHAR"),
+        ("cert_logo_vegan_url",    "VARCHAR"),
     ]
     insp = inspect(engine)
     if "site_settings" not in insp.get_table_names():
