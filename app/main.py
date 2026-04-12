@@ -312,12 +312,15 @@ class HttpsRedirectMiddleware(BaseHTTPMiddleware):
 app.add_middleware(HttpsRedirectMiddleware)
 
 
-# Statik dosya uzantılarına göre cache süresi (saniye)
-_CACHE_1_YEAR  = "public, max-age=31536000, immutable"   # görsel, font, css
+# Statik dosya uzantılarına göre cache süresi
+# NOT: CSS immutable olmamalı — deploy sonrası değişebilir, URL'de ?v= ile bust edilir
+_CACHE_1_YEAR  = "public, max-age=31536000, immutable"   # görsel, font (değişmez varlıklar)
 _CACHE_1_WEEK  = "public, max-age=604800"                # js dosyaları
+_CACHE_1_HOUR  = "public, max-age=3600, must-revalidate" # css — her deploy'da ?v= ile güncellenir
 _IMMUTABLE_EXTS = {".webp", ".jpg", ".jpeg", ".png", ".gif", ".svg",
-                   ".woff", ".woff2", ".ttf", ".otf", ".ico", ".css"}
+                   ".woff", ".woff2", ".ttf", ".otf", ".ico"}
 _WEEK_EXTS      = {".js"}
+_HOUR_EXTS      = {".css"}
 
 
 class StaticCacheMiddleware(BaseHTTPMiddleware):
@@ -335,6 +338,8 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
                 response.headers["Cache-Control"] = _CACHE_1_YEAR
             elif ext in _WEEK_EXTS:
                 response.headers["Cache-Control"] = _CACHE_1_WEEK
+            elif ext in _HOUR_EXTS:
+                response.headers["Cache-Control"] = _CACHE_1_HOUR
         return response
 
 
