@@ -480,6 +480,39 @@
                    value="{{ data.get('export_subtitle','') }}"
                    placeholder="Trusted manufacturing partner for international brands across six continents">
         </div>
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Arka Plan Görseli URL</label>
+            <div class="img-url-row">
+                <input type="text" name="export_bg_image" id="exportBgImgUrl" class="form-input"
+                       value="{{ data.get('export_bg_image','') }}" placeholder="Link yapıştırın veya Yükle ile ekleyin">
+                <input type="file" accept="image/*" class="hp-img-file" id="exportBgImgFile"
+                       data-target="exportBgImgUrl" data-preview="exportBgImgPreview">
+                <button type="button" class="btn-upload" data-for="exportBgImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="exportBgImgUrl" data-preview="exportBgImgPreview">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img"
+                        data-field="export_bg_image" data-src-lang="{{ lang }}">
+                    🌐 Tüm dillere uygula
+                </button>
+                {% endif %}
+            </div>
+            {% if lang != 'tr' and not data.get('export_bg_image') and shared_images.get('export_bg_image') %}
+            <p class="shared-img-hint is-fallback">⚠️ Bu dile ait görsel yok — <strong>tr</strong> görseli kullanılıyor.</p>
+            {% elif lang == 'tr' and data.get('export_bg_image') %}
+            <p class="shared-img-hint">
+                ℹ️ Bu görsel yüklenmemiş dillerde otomatik kullanılır.
+                <button type="button" class="btn-sync-img" style="margin-left:4px;"
+                        data-field="export_bg_image" data-src-lang="tr">
+                    🌐 Tüm dillere uygula
+                </button>
+            </p>
+            {% endif %}
+            <p class="form-hint">Link girebilir veya «Yükle» ile PC'den ekleyin. Boş bırakılırsa varsayılan görsel kullanılır.</p>
+            <img id="exportBgImgPreview"
+                 src="{{ data.get('export_bg_image','') or shared_images.get('export_bg_image','') }}"
+                 class="img-preview {% if data.get('export_bg_image') or shared_images.get('export_bg_image') %}show{% endif %}"
+                 style="max-height:180px;">
+        </div>
         <p style="font-size:.85rem;font-weight:700;color:#374151;margin:20px 0 12px;">3 İstatistik (sayı + etiket)</p>
         {% set default_export_stats = [
             {"value":"70+","label":"Countries"},
@@ -835,6 +868,9 @@ document.querySelectorAll('.btn-sync-img').forEach(btn => {
             imgUrl = inp ? inp.value : '';
         } else if (field === 'private_label_image_url') {
             const inp = document.getElementById('privateLabelImgUrl');
+            imgUrl = inp ? inp.value : '';
+        } else if (field === 'export_bg_image') {
+            const inp = document.getElementById('exportBgImgUrl');
             imgUrl = inp ? inp.value : '';
         }
 

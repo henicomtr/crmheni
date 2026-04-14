@@ -479,7 +479,7 @@
         /* ── GLOBAL EXPORT SECTION ── */
         .hp-export {
             padding: 100px 48px;
-            background-image: url("{{ url_for('static', path='upload/images/world-export.jpg') }}");
+            background-color: #0f172a;
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -820,7 +820,9 @@
     </section>
 
     <!-- ══ GLOBAL EXPORT ══ -->
-    <section class="hp-export" id="export">
+    {# Export arka plan: admin'den yüklenen görsel varsa onu kullan, yoksa varsayılan world-export görseli #}
+    {% set _export_bg = hp.get('export_bg_image') or url_for('static', path='upload/images/world-export.jpg') %}
+    <section class="hp-export" id="export" style="background-image:url('{{ _export_bg }}');">
         <div class="export-content">
             <h2>{{ hp.get('export_title') or 'Exporting to 70+ Countries' }}</h2>
             <p>{{ hp.get('export_subtitle') or 'Trusted manufacturing partner for international brands across six continents' }}</p>

@@ -611,6 +611,25 @@
             <textarea name="export_lead" class="form-textarea" style="min-height:70px;">{{ data.get('export_lead','') }}</textarea>
         </div>
 
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">🌐 Arka Plan Görseli (tüm diller paylaşır)</label>
+            <div class="img-url-row">
+                <input type="text" name="export_bg_image" id="exportBgImgUrl" class="form-input"
+                       value="{{ shared.get('export_bg_image','') }}"
+                       placeholder="Link yapıştırın veya Yükle ile PC'den ekleyin"
+                       oninput="updatePreview('exportBgImgUrl','exportBgImgPreview')">
+                <input type="file" accept="image/*" class="lp-img-file" id="exportBgImgFile"
+                       data-target="exportBgImgUrl" data-preview="exportBgImgPreview">
+                <button type="button" class="btn-upload" data-for="exportBgImgFile">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="exportBgImgUrl" data-preview="exportBgImgPreview">🖼 Kütüphane</button>
+                <button type="button" class="btn-sync-img"
+                        data-field="export_bg_image" data-page="{{ page.id }}">🌐 Tüm dillere uygula</button>
+            </div>
+            <p class="form-hint">Boş bırakılırsa arka plan görselsiz gradient ile gösterilir.</p>
+            <img id="exportBgImgPreview" src="{{ shared.get('export_bg_image','') }}"
+                 class="img-preview {% if shared.get('export_bg_image') %}show{% endif %}">
+        </div>
+
         {% for n in range(1, 4) %}
         <div class="repeater-card">
             <div class="repeater-card-head">İstatistik {{ n }}</div>

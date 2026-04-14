@@ -258,7 +258,22 @@
     .whom-card p  { font-size: .9rem; color: var(--muted); line-height: 1.6; }
 
     /* ── İHRACAT / SAYAÇLAR ── */
-    .export-section { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); }
+    .export-section {
+        background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        position: relative;
+    }
+    /* Arka plan görseli varsa karanlık overlay */
+    .export-section.has-bg::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: rgba(15,23,42,0.82);
+        pointer-events: none;
+    }
+    .export-section.has-bg .container { position: relative; z-index: 2; }
     .export-section .eyebrow { color: #60a5fa; }
     .export-section .section-title { color: #fff; }
     .export-section .section-title em { color: #60a5fa; }
@@ -741,7 +756,10 @@
 
     <!-- ── İHRACAT ── -->
     {% if data.get('export_title') or data.get('stat1_num') %}
-    <section class="section-pad export-section">
+    {# Export arka plan: shared'den gelen görsel varsa onu kullan #}
+    {% set _export_bg = shared.get('export_bg_image','') %}
+    <section class="section-pad export-section{% if _export_bg %} has-bg{% endif %}"
+             {% if _export_bg %}style="background-image:url('{{ _export_bg }}');"{% endif %}>
         <div class="container text-center">
             {% if data.get('export_eyebrow') %}
             <span class="eyebrow">{{ data.get('export_eyebrow') }}</span>

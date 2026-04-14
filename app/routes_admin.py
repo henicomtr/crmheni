@@ -2978,8 +2978,9 @@ async def admin_homepage_save(
 
         # Export (Exporting to 70+ Countries)
         elif tab == "export":
-            existing["export_title"] = _f("export_title")
+            existing["export_title"]    = _f("export_title")
             existing["export_subtitle"] = _f("export_subtitle")
+            existing["export_bg_image"] = _f("export_bg_image")
             export_stats = []
             for i in range(1, 4):
                 export_stats.append({
@@ -3436,6 +3437,9 @@ async def landing_save_post(
                     f"stat{n}_num":   _f(f"stat{n}_num"),
                     f"stat{n}_label": _f(f"stat{n}_label"),
                 })
+            # Arka plan görseli tüm diller tarafından paylaşılır (shared)
+            if form.get("export_bg_image") is not None:
+                shared["export_bg_image"] = form.get("export_bg_image", "")
 
         # ── SSS ───────────────────────────────────────────────────────
         elif tab == "sss":
@@ -3524,6 +3528,7 @@ async def landing_sync_image(
         "cat1_image", "cat2_image", "cat3_image",
         "process_image",
         "facility_image1", "facility_image2", "facility_image3",
+        "export_bg_image",
         "og_image",
     }
     if field not in allowed_shared:
