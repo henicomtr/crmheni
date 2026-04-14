@@ -1,0 +1,956 @@
+<!-- ═══════════════════════════════════════════════════════════
+     HAKKIMIZDA SAYFASI — Admin Paneli "Sayfalar" içerik alanına yapıştırın
+     Dosya yolu: static/about-page-content.html (referans kopya)
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ── Sayfa genelinde page-prose'u sıfırla ── */
+.page-prose { font-size: inherit; line-height: inherit; color: inherit; }
+.page-prose h2 { border-bottom: none; margin: 0; font-size: inherit; }
+
+/* ── CSS değişkenleri (site.css'ten miras alınır, burada güvence için) ── */
+.about-root {
+    --ab-navy:    #0f172a;
+    --ab-blue:    #1e3a8a;
+    --ab-sky:     #3b82f6;
+    --ab-white:   #ffffff;
+    --ab-light:   #f5f7fb;
+    --ab-gray200: #e2e8f0;
+    --ab-gray700: #334155;
+    --ab-ease:    cubic-bezier(.4,0,.2,1);
+    font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--ab-navy);
+}
+
+/* ── Full-bleed yardımcısı ── */
+.ab-bleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* ── Scroll animasyonları ── */
+.ab-fade { opacity: 0; transform: translateY(32px); transition: opacity .65s var(--ab-ease), transform .65s var(--ab-ease); }
+.ab-fade.ab-visible { opacity: 1; transform: translateY(0); }
+.ab-fade-left  { opacity: 0; transform: translateX(-32px); transition: opacity .65s var(--ab-ease), transform .65s var(--ab-ease); }
+.ab-fade-left.ab-visible  { opacity: 1; transform: translateX(0); }
+.ab-fade-right { opacity: 0; transform: translateX(32px); transition: opacity .65s var(--ab-ease), transform .65s var(--ab-ease); }
+.ab-fade-right.ab-visible { opacity: 1; transform: translateX(0); }
+.ab-delay-1 { transition-delay: .1s; }
+.ab-delay-2 { transition-delay: .2s; }
+.ab-delay-3 { transition-delay: .3s; }
+.ab-delay-4 { transition-delay: .4s; }
+
+/* ══ 1. GİRİŞ METNİ ══ */
+.ab-intro {
+    padding: 16px 0 48px;
+}
+.ab-intro-lead {
+    font-size: clamp(16px, 2vw, 18px);
+    line-height: 1.85;
+    color: var(--ab-gray700);
+    max-width: 780px;
+}
+.ab-intro-lead strong { color: var(--ab-navy); }
+
+/* ══ 2. İSTATİSTİK KARTLARI ══ */
+.ab-stats-section {
+    padding: 0 0 64px;
+}
+.ab-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+.ab-stat-card {
+    background: var(--ab-navy);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform .3s var(--ab-ease), box-shadow .3s var(--ab-ease);
+}
+.ab-stat-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    background: rgba(59,130,246,0.15);
+    border-radius: 50%;
+}
+.ab-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 48px rgba(15,23,42,0.25);
+}
+.ab-stat-number {
+    font-size: clamp(32px, 4vw, 44px);
+    font-weight: 800;
+    color: var(--ab-white);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+.ab-stat-number span.ab-suffix { font-size: 0.6em; color: #93c5fd; }
+.ab-stat-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ══ 3. ÜRETİM GÜCÜ ══ */
+.ab-production-section {
+    padding: 0 0 0;
+}
+.ab-section-bg {
+    background: var(--ab-light);
+    border-radius: 24px;
+    padding: 56px 52px;
+    margin-bottom: 64px;
+    position: relative;
+    overflow: hidden;
+}
+.ab-section-bg::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 240px; height: 240px;
+    background: linear-gradient(135deg, rgba(30,58,138,0.06), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ab-section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30,58,138,0.08);
+    color: var(--ab-blue);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+}
+.ab-section-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--ab-sky);
+    border-radius: 50%;
+}
+.ab-section-title {
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 800;
+    color: var(--ab-navy);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 20px;
+}
+.ab-section-text {
+    font-size: 16px;
+    line-height: 1.85;
+    color: var(--ab-gray700);
+    margin-bottom: 32px;
+}
+.ab-production-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+}
+.ab-prod-item {
+    background: var(--ab-white);
+    border-radius: 12px;
+    padding: 24px 20px;
+    border: 1px solid var(--ab-gray200);
+    transition: border-color .25s var(--ab-ease), box-shadow .25s var(--ab-ease);
+}
+.ab-prod-item:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 4px 16px rgba(30,58,138,0.1);
+}
+.ab-prod-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--ab-blue), var(--ab-sky));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    font-size: 20px;
+}
+.ab-prod-item h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ab-navy);
+    margin-bottom: 6px;
+}
+.ab-prod-item p {
+    font-size: 14px;
+    color: var(--ab-gray700);
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* ══ 4. PRIVATE LABEL ══ */
+.ab-pl-section {
+    margin-bottom: 64px;
+}
+.ab-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    align-items: start;
+}
+.ab-feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 24px;
+}
+.ab-feature-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: 15px;
+    color: var(--ab-gray700);
+    line-height: 1.55;
+}
+.ab-feature-list li::before {
+    content: '';
+    width: 20px; height: 20px;
+    background: linear-gradient(135deg, var(--ab-blue), var(--ab-sky));
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+.ab-feature-list li strong {
+    color: var(--ab-navy);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 2px;
+}
+.ab-arge-highlight {
+    background: linear-gradient(135deg, var(--ab-blue) 0%, #1d4ed8 100%);
+    border-radius: 16px;
+    padding: 36px 32px;
+    color: var(--ab-white);
+}
+.ab-arge-highlight h3 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: var(--ab-white);
+}
+.ab-arge-highlight p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: rgba(255,255,255,0.85);
+    margin: 0;
+}
+.ab-arge-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+.ab-arge-tag {
+    background: rgba(255,255,255,0.15);
+    color: var(--ab-white);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ══ 5. GLOBAL ══ */
+.ab-global-section {
+    padding: 56px 52px;
+    background: var(--ab-navy);
+    border-radius: 24px;
+    margin-bottom: 64px;
+    position: relative;
+    overflow: hidden;
+}
+.ab-global-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Ccircle cx='400' cy='200' r='180' fill='none' stroke='rgba(59,130,246,0.08)' stroke-width='1'/%3E%3Ccircle cx='400' cy='200' r='120' fill='none' stroke='rgba(59,130,246,0.06)' stroke-width='1'/%3E%3Ccircle cx='400' cy='200' r='60' fill='none' stroke='rgba(59,130,246,0.05)' stroke-width='1'/%3E%3C/svg%3E") center/cover;
+    pointer-events: none;
+}
+.ab-global-inner {
+    position: relative;
+    z-index: 2;
+}
+.ab-global-section .ab-section-tag {
+    background: rgba(255,255,255,0.08);
+    color: #93c5fd;
+}
+.ab-global-section .ab-section-title { color: var(--ab-white); }
+.ab-global-section .ab-section-text { color: rgba(255,255,255,0.7); }
+.ab-global-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+}
+.ab-metric-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    transition: background .25s var(--ab-ease), border-color .25s;
+}
+.ab-metric-card:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(59,130,246,0.4);
+}
+.ab-metric-icon { font-size: 32px; margin-bottom: 12px; }
+.ab-metric-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--ab-white);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.ab-metric-number em { font-style: normal; font-size: 0.6em; color: #93c5fd; }
+.ab-metric-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.ab-partner-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+}
+.ab-partner-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 100px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+}
+
+/* ══ 6. SERTİFİKALAR ══ */
+.ab-cert-section { margin-bottom: 64px; }
+.ab-cert-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-top: 32px;
+}
+.ab-cert-card {
+    background: var(--ab-white);
+    border: 1px solid var(--ab-gray200);
+    border-radius: 14px;
+    padding: 24px 16px;
+    text-align: center;
+    transition: all .3s var(--ab-ease);
+    position: relative;
+    overflow: hidden;
+}
+.ab-cert-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(30,58,138,0.03), transparent);
+    opacity: 0;
+    transition: opacity .3s;
+}
+.ab-cert-card:hover {
+    border-color: var(--ab-blue);
+    box-shadow: 0 8px 24px rgba(30,58,138,0.12);
+    transform: translateY(-3px);
+}
+.ab-cert-card:hover::before { opacity: 1; }
+.ab-cert-badge {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--ab-blue), var(--ab-sky));
+    border-radius: 12px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ab-white);
+    letter-spacing: -0.03em;
+    font-size: 11px;
+}
+.ab-cert-name {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ab-navy);
+    margin-bottom: 4px;
+}
+.ab-cert-desc {
+    font-size: 12px;
+    color: var(--ab-gray700);
+    line-height: 1.5;
+}
+
+/* ══ 7. MARKALARIMIZ ══ */
+.ab-brands-section {
+    background: var(--ab-light);
+    border-radius: 24px;
+    padding: 56px 52px;
+    margin-bottom: 64px;
+}
+.ab-brands-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 36px;
+}
+.ab-brand-card {
+    background: var(--ab-white);
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all .3s var(--ab-ease);
+    position: relative;
+    overflow: hidden;
+}
+.ab-brand-card:hover {
+    border-color: var(--ab-blue);
+    box-shadow: 0 12px 36px rgba(30,58,138,0.14);
+    transform: translateY(-4px);
+}
+.ab-brand-logo {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--ab-white);
+    letter-spacing: -0.04em;
+}
+.ab-brand-logo.tidy    { background: linear-gradient(135deg, #0f172a, #1e3a8a); }
+.ab-brand-logo.beaufa  { background: linear-gradient(135deg, #831843, #db2777); }
+.ab-brand-logo.scent   { background: linear-gradient(135deg, #064e3b, #10b981); }
+.ab-brand-name {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ab-navy);
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+}
+.ab-brand-desc {
+    font-size: 14px;
+    color: var(--ab-gray700);
+    line-height: 1.65;
+    margin: 0;
+}
+
+/* ══ 8. VİZYON + NEDEN HENİ ══ */
+.ab-vision-section { margin-bottom: 64px; }
+.ab-vision-box {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+    border-radius: 24px;
+    padding: 56px 52px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 48px;
+}
+.ab-vision-box::before {
+    content: '"';
+    position: absolute;
+    top: -20px; left: 32px;
+    font-size: 200px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.03);
+    line-height: 1;
+    font-family: serif;
+    pointer-events: none;
+}
+.ab-vision-box .ab-section-tag {
+    background: rgba(255,255,255,0.08);
+    color: #93c5fd;
+    margin-bottom: 28px;
+}
+.ab-vision-text {
+    font-size: clamp(18px, 2.5vw, 24px);
+    font-weight: 700;
+    color: var(--ab-white);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+    letter-spacing: -0.01em;
+}
+.ab-why-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+.ab-why-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: var(--ab-white);
+    border: 1px solid var(--ab-gray200);
+    border-radius: 14px;
+    padding: 22px 20px;
+    transition: all .25s var(--ab-ease);
+}
+.ab-why-item:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 4px 16px rgba(30,58,138,0.08);
+    transform: translateX(4px);
+}
+.ab-why-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--ab-blue), var(--ab-sky));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+}
+.ab-why-item h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ab-navy);
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+.ab-why-item p {
+    font-size: 13px;
+    color: var(--ab-gray700);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .ab-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .ab-production-grid { grid-template-columns: 1fr; }
+    .ab-two-col { grid-template-columns: 1fr; gap: 32px; }
+    .ab-global-metrics { grid-template-columns: 1fr 1fr; }
+    .ab-cert-grid { grid-template-columns: repeat(2, 1fr); }
+    .ab-brands-grid { grid-template-columns: 1fr; }
+    .ab-why-grid { grid-template-columns: 1fr; }
+    .ab-section-bg,
+    .ab-global-section,
+    .ab-brands-section,
+    .ab-vision-box { padding: 36px 28px; }
+}
+@media (max-width: 480px) {
+    .ab-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ab-cert-grid { grid-template-columns: repeat(2, 1fr); }
+    .ab-global-metrics { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- ═══ HAKKIMIZDA İÇERİK KÖKÜ ═══ -->
+<div class="about-root">
+
+    <!-- ── 1. GİRİŞ METNİ ── -->
+    <div class="ab-intro ab-fade">
+        <p class="ab-intro-lead">
+            <strong>Heni Kozmetik Kimya Sanayi Ticaret Limited Şirketi</strong>, 2010 yılında Eskişehir'de kurulmuş olup,
+            temizlik ve kozmetik sektöründe global ölçekte üretim ve ihracat gerçekleştiren öncü bir üreticidir.
+            <strong>10.000 m²</strong> kapalı alana sahip modern üretim tesisimizde, yüksek kalite standartlarına uygun
+            olarak geniş bir ürün yelpazesi sunuyoruz.
+        </p>
+    </div>
+
+    <!-- ── 2. İSTATİSTİK KARTLARI ── -->
+    <div class="ab-stats-section">
+        <div class="ab-stats-grid">
+            <div class="ab-stat-card ab-fade ab-delay-1">
+                <div class="ab-stat-number">
+                    <span class="ab-counter" data-target="2010" data-prefix="" data-suffix="">2010</span>
+                </div>
+                <div class="ab-stat-label">Kuruluş Yılı</div>
+            </div>
+            <div class="ab-stat-card ab-fade ab-delay-2">
+                <div class="ab-stat-number">
+                    <span class="ab-counter" data-target="150" data-prefix="" data-suffix="">0</span>
+                    <span class="ab-suffix"> ton/gün</span>
+                </div>
+                <div class="ab-stat-label">Üretim Kapasitesi</div>
+            </div>
+            <div class="ab-stat-card ab-fade ab-delay-3">
+                <div class="ab-stat-number">
+                    <span class="ab-counter" data-target="70" data-prefix="" data-suffix="">0</span>
+                    <span class="ab-suffix">+ ülke</span>
+                </div>
+                <div class="ab-stat-label">İhracat Ağı</div>
+            </div>
+            <div class="ab-stat-card ab-fade ab-delay-4">
+                <div class="ab-stat-number">
+                    <span class="ab-counter" data-target="120" data-prefix="" data-suffix="">0</span>
+                    <span class="ab-suffix"> kişi</span>
+                </div>
+                <div class="ab-stat-label">Uzman Kadro</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 3. ÜRETİM GÜCÜ ── -->
+    <div class="ab-production-section">
+        <div class="ab-section-bg ab-fade">
+            <span class="ab-section-tag">Üretim Altyapısı</span>
+            <h2 class="ab-section-title">Günde 150 Ton Üretim Kapasitesi</h2>
+            <p class="ab-section-text">
+                Üretimden doluma, paketlemeden paletlemeye kadar tüm süreçler ileri teknoloji otomasyon sistemleri ile
+                yönetilmektedir. Yüksek hacimli siparişlerde dahi hız, tutarlılık ve kalite sürekliliği sağlıyoruz.
+                Global ölçekte tedarik ettiğimiz yüksek kaliteli hammaddeler ile farklı pazarların beklentilerine uygun ürünler geliştiriyoruz.
+            </p>
+            <div class="ab-production-grid">
+                <div class="ab-prod-item ab-fade ab-delay-1">
+                    <div class="ab-prod-icon">🧴</div>
+                    <h4>Sıvı Deterjan</h4>
+                    <p>Ev ve endüstriyel kullanıma yönelik geniş formül yelpazesi</p>
+                </div>
+                <div class="ab-prod-item ab-fade ab-delay-2">
+                    <div class="ab-prod-icon">🫧</div>
+                    <h4>Toz Deterjan</h4>
+                    <p>Yüksek performanslı toz formülasyonları ve özel dozajlama</p>
+                </div>
+                <div class="ab-prod-item ab-fade ab-delay-3">
+                    <div class="ab-prod-icon">💄</div>
+                    <h4>Kozmetik Ürünleri</h4>
+                    <p>Cilt bakımı ve kişisel bakım alanında uçtan uca üretim</p>
+                </div>
+                <div class="ab-prod-item ab-fade ab-delay-1">
+                    <div class="ab-prod-icon">🌸</div>
+                    <h4>Parfüm</h4>
+                    <p>Özel koku kompozisyonları ve uzun kalıcılıklı formüller</p>
+                </div>
+                <div class="ab-prod-item ab-fade ab-delay-2">
+                    <div class="ab-prod-icon">🏭</div>
+                    <h4>Endüstriyel Temizlik</h4>
+                    <p>Profesyonel sektörlere yönelik güçlü temizlik çözümleri</p>
+                </div>
+                <div class="ab-prod-item ab-fade ab-delay-3">
+                    <div class="ab-prod-icon">⚙️</div>
+                    <h4>Tam Otomasyon</h4>
+                    <p>Dolum, paketleme ve paletleme hatları otomatik çalışır</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 4. PRIVATE LABEL & AR-GE ── -->
+    <div class="ab-pl-section">
+        <div class="ab-two-col">
+            <div class="ab-fade-left">
+                <span class="ab-section-tag">Uçtan Uca Çözüm</span>
+                <h2 class="ab-section-title">Özel Marka &amp; Ar-Ge Yetkinliği</h2>
+                <p class="ab-section-text">
+                    İş ortaklarımıza yalnızca üretim değil, aynı zamanda uçtan uca çözüm sunuyoruz.
+                    Deneyimli Ar-Ge ekibimiz, hedef pazara ve müşteri ihtiyaçlarına özel formülasyonlar
+                    geliştirerek markaların rekabet gücünü artırır.
+                </p>
+                <ul class="ab-feature-list">
+                    <li>
+                        <div>
+                            <strong>Private Label Üretim</strong>
+                            Kendi markanızla satışa hazır, özelleştirilmiş ürün serisi
+                        </div>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Formül Geliştirme &amp; Optimizasyon</strong>
+                            Pazarınıza özel formülasyon ve performans testleri
+                        </div>
+                    </li>
+                    <li>
+                        <div>
+                            <strong>Ambalaj &amp; Konumlandırma Desteği</strong>
+                            Hedef kitleye uygun ambalaj tasarımı ve ürün stratejisi
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="ab-arge-highlight ab-fade-right">
+                <h3>🔬 Ar-Ge Merkezi</h3>
+                <p>
+                    Tam donanımlı laboratuvarımızda, ürünlerin güvenlik ve performans testleri eksiksiz
+                    gerçekleştirilmektedir. Farklı iklim koşulları, su sertliği ve pazar gereksinimlerine
+                    göre özelleştirilmiş formüller geliştiriyoruz.
+                </p>
+                <div class="ab-arge-tags">
+                    <span class="ab-arge-tag">Stabilite Testleri</span>
+                    <span class="ab-arge-tag">Dermatoloji Testleri</span>
+                    <span class="ab-arge-tag">Özel Formülasyon</span>
+                    <span class="ab-arge-tag">Koku Tasarımı</span>
+                    <span class="ab-arge-tag">Regülasyon Desteği</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 5. GLOBAL GÜCÜMÜZ ── -->
+    <div class="ab-global-section ab-fade">
+        <div class="ab-global-inner">
+            <span class="ab-section-tag">Global Ağ</span>
+            <h2 class="ab-section-title">6 Kıtada Aktif İhracat</h2>
+            <p class="ab-section-text">
+                70'ten fazla ülkeye ihracat yapıyor, 6 kıtada aktif müşterilere hizmet veriyoruz.
+                Farklı pazar dinamiklerine hızlı adapte olabilen esnek üretim yapımız ile global iş birlikleri kuruyoruz.
+            </p>
+            <div class="ab-global-metrics">
+                <div class="ab-metric-card ab-fade ab-delay-1">
+                    <div class="ab-metric-icon">🌍</div>
+                    <div class="ab-metric-number"><span class="ab-counter" data-target="70" data-dark="1">0</span><em>+</em></div>
+                    <div class="ab-metric-label">Ülke</div>
+                </div>
+                <div class="ab-metric-card ab-fade ab-delay-2">
+                    <div class="ab-metric-icon">🌐</div>
+                    <div class="ab-metric-number"><span class="ab-counter" data-target="6" data-dark="1">0</span></div>
+                    <div class="ab-metric-label">Kıta</div>
+                </div>
+                <div class="ab-metric-card ab-fade ab-delay-3">
+                    <div class="ab-metric-icon">📦</div>
+                    <div class="ab-metric-number"><span class="ab-counter" data-target="10000" data-dark="1">0</span><em> m²</em></div>
+                    <div class="ab-metric-label">Üretim Alanı</div>
+                </div>
+            </div>
+            <div class="ab-partner-types">
+                <span class="ab-partner-badge">🏪 Zincir Perakendeciler</span>
+                <span class="ab-partner-badge">📦 Toptancılar</span>
+                <span class="ab-partner-badge">🌐 E-Ticaret Markaları</span>
+                <span class="ab-partner-badge">🤝 Distribütörler</span>
+                <span class="ab-partner-badge">🏢 Kurumsal Müşteriler</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 6. SERTİFİKALAR ── -->
+    <div class="ab-cert-section">
+        <div class="ab-fade">
+            <span class="ab-section-tag">Akreditasyon</span>
+            <h2 class="ab-section-title">Uluslararası Kalite Sertifikaları</h2>
+            <p class="ab-section-text">
+                Tüm üretim süreçlerimiz uluslararası kalite ve güvenlik standartlarına uygun olarak yürütülmektedir.
+                Sertifikalarımız, üretim süreçlerimizin şeffaflığını, güvenilirliğini ve sürdürülebilirliğini garanti altına alır.
+            </p>
+        </div>
+        <div class="ab-cert-grid">
+            <div class="ab-cert-card ab-fade ab-delay-1">
+                <div class="ab-cert-badge">ISO</div>
+                <div class="ab-cert-name">ISO 9001:2015</div>
+                <div class="ab-cert-desc">Kalite Yönetim Sistemi</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-2">
+                <div class="ab-cert-badge">ISO</div>
+                <div class="ab-cert-name">ISO 14001:2015</div>
+                <div class="ab-cert-desc">Çevre Yönetim Sistemi</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-3">
+                <div class="ab-cert-badge">ISO</div>
+                <div class="ab-cert-name">ISO 45001:2018</div>
+                <div class="ab-cert-desc">İş Sağlığı ve Güvenliği</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-4">
+                <div class="ab-cert-badge">GMP</div>
+                <div class="ab-cert-name">GMP</div>
+                <div class="ab-cert-desc">İyi Üretim Uygulamaları</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-1">
+                <div class="ab-cert-badge">CE</div>
+                <div class="ab-cert-name">CE Belgesi</div>
+                <div class="ab-cert-desc">Avrupa Uygunluk Standartları</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-2">
+                <div class="ab-cert-badge">FDA</div>
+                <div class="ab-cert-name">FDA</div>
+                <div class="ab-cert-desc">ABD Gıda ve İlaç İdaresi</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-3">
+                <div class="ab-cert-badge" style="font-size:16px;">🌱</div>
+                <div class="ab-cert-name">VEGAN</div>
+                <div class="ab-cert-desc">Hayvansal İçerik İçermez</div>
+            </div>
+            <div class="ab-cert-card ab-fade ab-delay-4">
+                <div class="ab-cert-badge" style="font-size:16px;">✓</div>
+                <div class="ab-cert-name">Halal</div>
+                <div class="ab-cert-desc">Helal Üretim Standartları</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 7. MARKALARIMIZ ── -->
+    <div class="ab-brands-section ab-fade">
+        <span class="ab-section-tag">Portföy</span>
+        <h2 class="ab-section-title">Markalarımız</h2>
+        <p class="ab-section-text">
+            Heni Kozmetik çatısı altında geliştirilen markalarımızın her biri, hedef pazarın ihtiyaçlarına göre
+            konumlandırılmış olup kalite, performans ve kullanıcı deneyimini ön planda tutar.
+        </p>
+        <div class="ab-brands-grid">
+            <div class="ab-brand-card ab-fade ab-delay-1">
+                <div class="ab-brand-logo tidy">TH</div>
+                <div class="ab-brand-name">TidyHill</div>
+                <p class="ab-brand-desc">
+                    Ev ve endüstriyel temizlik segmentinde güçlü ve sürdürülebilir çözümler sunan
+                    premium temizlik markası.
+                </p>
+            </div>
+            <div class="ab-brand-card ab-fade ab-delay-2">
+                <div class="ab-brand-logo beaufa">BF</div>
+                <div class="ab-brand-name">Beaufa</div>
+                <p class="ab-brand-desc">
+                    Kişisel bakım ve kozmetik alanında, kalite odaklı formülasyonlarla öne çıkan
+                    modern güzellik markası.
+                </p>
+            </div>
+            <div class="ab-brand-card ab-fade ab-delay-3">
+                <div class="ab-brand-logo scent">SC</div>
+                <div class="ab-brand-name">Scentora</div>
+                <p class="ab-brand-desc">
+                    Uzun kalıcılıklı koku kompozisyonları ve premium parfüm ürünleriyle
+                    farklı pazarlara hitap eden ünisex koku markası.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 8. VİZYON & NEDEN HENİ ── -->
+    <div class="ab-vision-section">
+        <div class="ab-vision-box ab-fade">
+            <span class="ab-section-tag">Vizyonumuz</span>
+            <p class="ab-vision-text">
+                Global pazarda güvenilir bir üretim partneri olarak, yenilikçi ürünler ve
+                sürdürülebilir üretim anlayışıyla iş ortaklarımızın büyümesine katkı sağlamak.
+            </p>
+        </div>
+        <div class="ab-fade">
+            <span class="ab-section-tag">Neden Heni Kozmetik?</span>
+            <h2 class="ab-section-title" style="margin-bottom:28px;">Güçlü Üretim, Esnek Ortaklık</h2>
+        </div>
+        <div class="ab-why-grid">
+            <div class="ab-why-item ab-fade ab-delay-1">
+                <div class="ab-why-icon">⚡</div>
+                <div>
+                    <h4>Yüksek Kapasite &amp; Tam Otomasyon</h4>
+                    <p>Günde 150 ton üretim kapasitesi ve uçtan uca otomasyon altyapısı</p>
+                </div>
+            </div>
+            <div class="ab-why-item ab-fade ab-delay-2">
+                <div class="ab-why-icon">🎯</div>
+                <div>
+                    <h4>Esnek &amp; Müşteri Odaklı Model</h4>
+                    <p>Her pazar segmentine uyarlanabilir üretim ve hızlı adaptasyon</p>
+                </div>
+            </div>
+            <div class="ab-why-item ab-fade ab-delay-3">
+                <div class="ab-why-icon">🔬</div>
+                <div>
+                    <h4>Güçlü Ar-Ge Yetkinliği</h4>
+                    <p>Deneyimli ekipten özel formülasyon ve ürün optimizasyon desteği</p>
+                </div>
+            </div>
+            <div class="ab-why-item ab-fade ab-delay-4">
+                <div class="ab-why-icon">🌍</div>
+                <div>
+                    <h4>70+ Ülkeye İhracat Deneyimi</h4>
+                    <p>Global standartlara uygun üretim ve uluslararası sertifikasyon</p>
+                </div>
+            </div>
+            <div class="ab-why-item ab-fade ab-delay-1">
+                <div class="ab-why-icon">🏅</div>
+                <div>
+                    <h4>Uluslararası Kalite Sertifikaları</h4>
+                    <p>ISO, GMP, FDA, CE, Vegan sertifikalarıyla güvence altında üretim</p>
+                </div>
+            </div>
+            <div class="ab-why-item ab-fade ab-delay-2">
+                <div class="ab-why-icon">🤝</div>
+                <div>
+                    <h4>Uçtan Uca Çözüm Ortağı</h4>
+                    <p>Private label'dan formül geliştirmeye, ambalajdan pazara tüm süreçte yanınızda</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /about-root -->
+
+<script>
+(function () {
+    /* ── Intersection Observer ile scroll animasyonları ── */
+    var fadeEls = document.querySelectorAll('.ab-fade, .ab-fade-left, .ab-fade-right');
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('ab-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+        fadeEls.forEach(function (el) { observer.observe(el); });
+    } else {
+        /* Observer desteklenmiyorsa hepsini görünür yap */
+        fadeEls.forEach(function (el) { el.classList.add('ab-visible'); });
+    }
+
+    /* ── Sayaç animasyonu ── */
+    function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-target'), 10);
+        var duration = 1800;
+        var start = performance.now();
+        var startVal = 0;
+
+        function step(now) {
+            var elapsed = now - start;
+            var progress = Math.min(elapsed / duration, 1);
+            /* easeOutCubic */
+            var ease = 1 - Math.pow(1 - progress, 3);
+            var current = Math.round(startVal + (target - startVal) * ease);
+            el.textContent = current.toLocaleString('tr-TR');
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    /* Sayaçları sadece göründüklerinde çalıştır */
+    var counterEls = document.querySelectorAll('.ab-counter');
+    if ('IntersectionObserver' in window) {
+        var cObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    animateCounter(entry.target);
+                    cObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+        counterEls.forEach(function (el) { cObserver.observe(el); });
+    } else {
+        counterEls.forEach(function (el) {
+            el.textContent = parseInt(el.getAttribute('data-target'), 10).toLocaleString('tr-TR');
+        });
+    }
+})();
+</script>

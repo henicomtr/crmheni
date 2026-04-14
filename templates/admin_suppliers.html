@@ -442,6 +442,44 @@
         text-overflow: ellipsis;
     }
 
+    /* Firma hücresindeki mini etiketler */
+    .supplier-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    .meta-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        padding: 2px 7px;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+
+    /* Cari bakiye hücresi */
+    .balance-cell {
+        min-width: 110px;
+    }
+
+    /* İşlemler sütunu sabit genişlik */
+    .col-actions {
+        width: 130px;
+        white-space: nowrap;
+    }
+
+    /* Tablo sütun genişlikleri */
+    .suppliers-table col.col-firma { width: 40%; }
+    .suppliers-table col.col-iletisim { width: 28%; }
+    .suppliers-table col.col-bakiye { width: 18%; }
+    .suppliers-table col.col-islemler { width: 14%; }
+
     /* Boş */
     .empty-state {
         padding: 64px 28px;
@@ -616,45 +654,47 @@
     <!-- MASAÜSTÜ -->
     <div class="suppliers-table-wrap">
         <table class="suppliers-table">
+            <colgroup>
+                <col class="col-firma">
+                <col class="col-iletisim">
+                <col class="col-bakiye">
+                <col class="col-islemler">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Firma</th>
-                    <th>Konum</th>
                     <th>İletişim</th>
-                    <th>Vergi No</th>
                     <th>Cari Bakiye</th>
-                    <th>Not</th>
-                    <th>Kayıt</th>
-                    <th>İşlemler</th>
+                    <th class="col-actions">İşlemler</th>
                 </tr>
             </thead>
             <tbody>
                 {% for s in suppliers %}
                 <tr class="supplier-row" data-name="{{ s.name|lower }}" data-city="{{ (s.city or '')|lower }}"
                     data-contact="{{ (s.contact_person or '')|lower }}">
+                    <!-- Firma: ad + kontak + konum etiketi -->
                     <td>
                         <div class="supplier-name-cell">
                             <div class="supplier-avatar">
-                                {{ s.name[0]|upper }}{% if s.name|length > 1 %}{{ s.name.split(' ')[1][0]|upper if
-                                s.name.split(' ')|length > 1 else '' }}{% endif %}
+                                {{ s.name[0]|upper }}{% if s.name|length > 1 %}{{ s.name.split(' ')[1][0]|upper if s.name.split(' ')|length > 1 else '' }}{% endif %}
                             </div>
                             <div>
                                 <div class="supplier-name">{{ s.name }}</div>
-                                {% if s.contact_person %}
-                                <div class="supplier-sub">{{ s.contact_person }}</div>
-                                {% endif %}
+                                <div class="supplier-meta">
+                                    {% if s.contact_person %}
+                                    <span class="meta-tag">👤 {{ s.contact_person }}</span>
+                                    {% endif %}
+                                    {% if s.city or s.district %}
+                                    <span class="meta-tag">📍 {{ s.district + ', ' if s.district else '' }}{{ s.city or '' }}</span>
+                                    {% endif %}
+                                    {% if s.tax_id %}
+                                    <span class="meta-tag vkn-tag">{{ s.tax_id }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </td>
-                    <td>
-                        {% if s.city or s.district %}
-                        <span class="location-tag">
-                            📍 {{ s.district + ', ' if s.district else '' }}{{ s.city or '' }}
-                        </span>
-                        {% else %}
-                        <span style="color:var(--text-muted);font-size:12px;">—</span>
-                        {% endif %}
-                    </td>
+                    <!-- İletişim -->
                     <td>
                         {% if s.email %}
                         <div class="contact-line">
@@ -666,15 +706,12 @@
                             📞 <a href="tel:{{ s.phone }}">{{ s.phone }}</a>
                         </div>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if s.tax_id %}
-                        <span class="vkn-tag">{{ s.tax_id }}</span>
-                        {% else %}
+                        {% if not s.email and not s.phone %}
                         <span style="color:var(--text-muted);font-size:12px;">—</span>
                         {% endif %}
                     </td>
-                    <td>
+                    <!-- Cari Bakiye -->
+                    <td class="balance-cell">
                         {% set bdata = supplier_balances.get(s.id, {'native_balance': 0, 'dominant_currency': 'USD', 'balance_usd': 0}) %}
                         {% set balance = bdata.native_balance %}
                         {% set sym = {'TRY': '₺', 'USD': '$', 'EUR': '€', 'GBP': '£'}.get(bdata.dominant_currency, bdata.dominant_currency) %}
@@ -688,23 +725,12 @@
                         </div>
                         {% if balance != 0 %}
                         <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">
-                            {% if balance > 0 %}Tedarikçiye borçluyuz{% elif balance < 0 %}Tedarikçi borçlu{% endif %}
+                            {% if balance > 0 %}Borçluyuz{% else %}Borçlu{% endif %}
                         </div>
                         {% endif %}
                     </td>
-                    <td>
-                        {% if s.notes %}
-                        <div class="notes-cell" title="{{ s.notes }}">{{ s.notes }}</div>
-                        {% else %}
-                        <span style="color:var(--text-muted);font-size:12px;">—</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span style="font-size:12px;font-family:var(--mono);color:var(--text-secondary);">
-                            {{ s.created_at.strftime('%d %b %Y') }}
-                        </span>
-                    </td>
-                    <td>
+                    <!-- İşlemler (sabit) -->
+                    <td class="col-actions">
                         <div class="row-actions">
                             <a href="/esk/suppliers/edit/{{ s.id }}" class="btn-edit-sm">Düzenle</a>
                             <form method="POST" action="/esk/suppliers/delete/{{ s.id }}" style="margin:0;">
