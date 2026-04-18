@@ -628,15 +628,26 @@
                     {% if data.get('pkg' ~ n ~ '_desc') %}
                     <p>{{ data.get('pkg' ~ n ~ '_desc') }}</p>
                     {% endif %}
+                    {# Ürün kategorisi etiketleri dile göre çeviri haritası #}
+                    {% set moq_labels = {
+                        'en': {'kozmetik': 'Cosmetics', 'parfum': 'Perfume', 'deterjan': 'Detergent'},
+                        'tr': {'kozmetik': 'Kozmetik', 'parfum': 'Parfüm', 'deterjan': 'Deterjan'},
+                        'de': {'kozmetik': 'Kosmetik', 'parfum': 'Parfüm', 'deterjan': 'Reinigungsmittel'},
+                        'fr': {'kozmetik': 'Cosmétiques', 'parfum': 'Parfum', 'deterjan': 'Détergent'},
+                        'ar': {'kozmetik': 'مستحضرات التجميل', 'parfum': 'العطر', 'deterjan': 'المنظفات'},
+                        'ru': {'kozmetik': 'Косметика', 'parfum': 'Парфюм', 'deterjan': 'Моющее средство'},
+                        'es': {'kozmetik': 'Cosméticos', 'parfum': 'Perfume', 'deterjan': 'Detergente'}
+                    } %}
+                    {% set lbl = moq_labels.get(lang, moq_labels['en']) %}
                     <table class="pkg-moq-table">
                         {% if data.get('pkg' ~ n ~ '_moq_kozmetik') %}
-                        <tr><td class="pkg-moq-label">Kozmetik</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_kozmetik') }}</td></tr>
+                        <tr><td class="pkg-moq-label">{{ lbl.kozmetik }}</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_kozmetik') }}</td></tr>
                         {% endif %}
                         {% if data.get('pkg' ~ n ~ '_moq_parfum') %}
-                        <tr><td class="pkg-moq-label">Parfüm</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_parfum') }}</td></tr>
+                        <tr><td class="pkg-moq-label">{{ lbl.parfum }}</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_parfum') }}</td></tr>
                         {% endif %}
                         {% if data.get('pkg' ~ n ~ '_moq_deterjan') %}
-                        <tr><td class="pkg-moq-label">Deterjan</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_deterjan') }}</td></tr>
+                        <tr><td class="pkg-moq-label">{{ lbl.deterjan }}</td><td class="pkg-moq-val">{{ data.get('pkg' ~ n ~ '_moq_deterjan') }}</td></tr>
                         {% endif %}
                     </table>
                     {% if data.get('pkg' ~ n ~ '_features') %}
