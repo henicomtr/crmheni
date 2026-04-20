@@ -691,17 +691,61 @@ def products_page(
         return redirect
 
     products = db.query(Product).all()
+    site     = db.query(SiteSettings).first()
+
+    # Showroom meta JSON'unu dict'e çevir
+    import json as _json
+    showroom_meta = {}
+    if site and site.showroom_i18n_meta:
+        try:
+            showroom_meta = _json.loads(site.showroom_i18n_meta)
+        except Exception:
+            pass
 
     return templates.TemplateResponse(
         "admin_products.html",
         {
-            "request":       request,
-            "current_user":  admin,
-            "products":      products,
-            "categories":    CATEGORIES,
-            "categories_ui": _categories_ui(),
+            "request":        request,
+            "current_user":   admin,
+            "products":       products,
+            "categories":     CATEGORIES,
+            "categories_ui":  _categories_ui(),
+            "showroom_meta":  showroom_meta,
         }
     )
+
+
+@router.post("/esk/products/showroom-seo")
+async def save_showroom_seo(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """Showroom sayfası için her dildeki meta başlık ve açıklamayı kaydeder."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+
+    import json as _json
+
+    form = await request.form()
+    langs = ["en", "tr", "de", "fr", "ar", "ru", "es"]
+
+    meta = {}
+    for lc in langs:
+        meta[lc] = {
+            "title":       form.get(f"showroom_meta_title_{lc}", ""),
+            "description": form.get(f"showroom_meta_description_{lc}", ""),
+        }
+
+    site = db.query(SiteSettings).first()
+    if not site:
+        site = SiteSettings(id=1)
+        db.add(site)
+
+    site.showroom_i18n_meta = _json.dumps(meta, ensure_ascii=False)
+    db.commit()
+
+    return RedirectResponse("/esk/products?seo_saved=1", status_code=303)
 
 
 @router.post("/esk/products/create")

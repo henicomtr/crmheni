@@ -669,6 +669,75 @@
     </button>
 </div>
 
+{% if request.query_params.get('seo_saved') %}
+<div style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;">
+    Showroom SEO ayarları kaydedildi.
+</div>
+{% endif %}
+
+<!-- SHOWROOM SEO KARTI -->
+<div class="add-product-card" style="margin-bottom:24px;">
+    <div class="add-product-card-header" style="cursor:pointer;user-select:none;" onclick="toggleShowroomSeo(this)">
+        <h2 style="margin:0;font-size:15px;display:flex;align-items:center;gap:8px;">
+            <span id="seo-toggle-icon" style="font-size:18px;">&#9654;</span>
+            Showroom Sayfası SEO Ayarları
+            <span style="font-size:11px;font-weight:400;color:var(--text-muted);">— her dil için meta başlık &amp; açıklama</span>
+        </h2>
+    </div>
+    <div id="showroom-seo-body" style="display:none;">
+        <div class="add-product-card-body">
+            <form method="post" action="/esk/products/showroom-seo">
+                <div class="lang-tabs-wrap">
+                    <div class="lang-tab-nav">
+                        {% for lc, flag in [('en','🇬🇧'),('tr','🇹🇷'),('de','🇩🇪'),('fr','🇫🇷'),('ar','🇸🇦'),('ru','🇷🇺'),('es','🇪🇸')] %}
+                        <button type="button"
+                            class="lang-tab-btn {% if lc == 'en' %}active{% endif %}"
+                            onclick="switchSeoTab('{{ lc }}', this)">
+                            {{ flag }} {{ lc|upper }}
+                        </button>
+                        {% endfor %}
+                    </div>
+
+                    {% for lc, flag, label in [('en','🇬🇧','English'),('tr','🇹🇷','Türkçe'),('de','🇩🇪','Deutsch'),('fr','🇫🇷','Français'),('ar','🇸🇦','العربية'),('ru','🇷🇺','Русский'),('es','🇪🇸','Español')] %}
+                    {% set sm = showroom_meta.get(lc, {}) %}
+                    <div class="lang-tab-panel {% if lc == 'en' %}active{% endif %}" id="seo-panel-{{ lc }}">
+                        <div class="lang-panel-grid">
+                            <div class="form-group">
+                                <label class="form-label">Meta Başlık — {{ label }}</label>
+                                <input type="text" name="showroom_meta_title_{{ lc }}"
+                                    class="form-control"
+                                    value="{{ sm.get('title', '') }}"
+                                    placeholder="Showroom {{ label }} meta başlığı (50–60 karakter)"
+                                    oninput="updateCharCount(this, 60, 'smt-count-{{ lc }}')">
+                                <div class="char-count" id="smt-count-{{ lc }}">
+                                    {{ sm.get('title', '') | length }} / 60
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Meta Açıklama — {{ label }}</label>
+                                <input type="text" name="showroom_meta_description_{{ lc }}"
+                                    class="form-control"
+                                    value="{{ sm.get('description', '') }}"
+                                    placeholder="Showroom {{ label }} meta açıklaması (140–160 karakter)"
+                                    oninput="updateCharCount(this, 160, 'smd-count-{{ lc }}')">
+                                <div class="char-count" id="smd-count-{{ lc }}">
+                                    {{ sm.get('description', '') | length }} / 160
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="margin-top:16px;">
+                    <button type="submit" class="btn-toggle-form" style="background:var(--primary,#1e40af);">
+                        Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- ÜRÜN EKLE FORMU -->
 <div class="add-product-card" id="add-product-form" style="display:none;">
     <div class="add-product-card-header">
@@ -1059,6 +1128,22 @@
         const isVisible = form.style.display !== 'none';
         form.style.display = isVisible ? 'none' : 'block';
         icon.textContent = isVisible ? '＋' : '－';
+    }
+
+    function toggleShowroomSeo(header) {
+        const body = document.getElementById('showroom-seo-body');
+        const icon = document.getElementById('seo-toggle-icon');
+        const isVisible = body.style.display !== 'none';
+        body.style.display = isVisible ? 'none' : 'block';
+        icon.innerHTML = isVisible ? '&#9654;' : '&#9660;';
+    }
+
+    function switchSeoTab(lang, btn) {
+        document.querySelectorAll('#showroom-seo-body .lang-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('#showroom-seo-body .lang-tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = document.getElementById('seo-panel-' + lang);
+        if (panel) panel.classList.add('active');
     }
 
     // ── Dosya adı ────────────────────────────────────────────

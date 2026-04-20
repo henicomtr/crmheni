@@ -541,6 +541,8 @@ class SiteSettings(Base):
     cert_logo_ce_url       = Column(String, nullable=True)
     cert_logo_fda_url      = Column(String, nullable=True)
     cert_logo_vegan_url    = Column(String, nullable=True)
+    # Her dil için showroom sayfası meta başlık/açıklama — JSON: {"en":{"title":"...","description":"..."},...}
+    showroom_i18n_meta     = Column(Text, nullable=True)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

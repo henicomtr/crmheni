@@ -1345,8 +1345,23 @@ def _showroom(request: Request, lang: str, db: Session):
     ctx["products_ctx"] = products_ctx
     ctx["active_page"] = "showroom"
     ctx["search_query"] = request.query_params.get("q", "")
-    # Query string olmadan temiz canonical URL
     ctx["canonical_url"] = f"https://henib2b.com{request.url.path}"
+
+    # Showroom sayfası için dil bazlı meta başlık ve açıklama
+    import json as _json
+    from app.models import SiteSettings as _SiteSettings
+    site = db.query(_SiteSettings).first()
+    _showroom_meta = {}
+    if site and site.showroom_i18n_meta:
+        try:
+            _showroom_meta = _json.loads(site.showroom_i18n_meta)
+        except Exception:
+            pass
+    _lang_meta = _showroom_meta.get(lang, {})
+    ctx["meta_title"]       = _lang_meta.get("title") or None
+    ctx["meta_description"] = _lang_meta.get("description") or None
+    ctx["is_category_page"] = bool(ctx["meta_title"])
+
     return templates.TemplateResponse("showroom.html", ctx)
 
 
