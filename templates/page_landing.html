@@ -805,13 +805,23 @@
     <!-- ── SSS ── -->
     {% set has_faq = data.get('faq1_question') %}
     {% if has_faq %}
+    {# SSS bölümü başlığı dile göre çeviri haritası #}
+    {% set faq_title_map = {
+        'en': 'Frequently Asked Questions',
+        'tr': 'Sık Sorulan Sorular',
+        'de': 'Häufig gestellte Fragen',
+        'fr': 'Questions fréquemment posées',
+        'ar': 'الأسئلة الشائعة',
+        'ru': 'Часто задаваемые вопросы',
+        'es': 'Preguntas frecuentes'
+    } %}
     <section class="section-pad faq-section-wrap">
         <div class="container">
             <div class="faq-header">
                 {% if data.get('faq_eyebrow') %}
                 <span class="eyebrow">{{ data.get('faq_eyebrow') }}</span>
                 {% endif %}
-                <h2 class="section-title">{{ data.get('faq_title', 'Sık Sorulan Sorular') }}</h2>
+                <h2 class="section-title">{{ faq_title_map.get(lang, faq_title_map['en']) }}</h2>
                 {% if data.get('faq_lead') %}
                 <p class="section-lead" style="margin:0 auto;">{{ data.get('faq_lead') }}</p>
                 {% endif %}

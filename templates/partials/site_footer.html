@@ -138,9 +138,18 @@
     </div>{# /site-footer-inner #}
 
     {# ── Sertifika güven bandı — merkezi layout ── #}
+    {% set cert_label_map = {
+        'en': 'Certifications &amp; Standards',
+        'tr': 'Sertifikalar &amp; Standartlar',
+        'de': 'Zertifizierungen &amp; Standards',
+        'fr': 'Certifications &amp; Normes',
+        'ar': 'الشهادات والمعايير',
+        'ru': 'Сертификаты &amp; Стандарты',
+        'es': 'Certificaciones &amp; Normas'
+    } %}
     <div class="site-footer-trust">
         <div class="site-footer-trust-inner">
-            <span class="site-footer-trust-label">Certifications &amp; Standards</span>
+            <span class="site-footer-trust-label">{{ cert_label_map.get(lang, cert_label_map['en']) | safe }}</span>
             <div class="site-footer-trust-badges">
 
                 {# ISO 9001:2015 — Kalite Yönetim Sistemi #}
