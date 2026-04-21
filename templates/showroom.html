@@ -4,14 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
     {% set _base_title = meta_title if (is_category_page and meta_title) else (site.site_name or 'Heni') ~ ' — ' ~ ui.hero_title %}
     <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
     {% if is_category_page and meta_description %}<meta name="description" content="{{ meta_description }}">{% endif %}
     <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    {% set _og_locale_map = {'en': 'en_US', 'tr': 'tr_TR', 'de': 'de_DE', 'fr': 'fr_FR', 'ar': 'ar_AR', 'ru': 'ru_RU', 'es': 'es_ES'} %}
     <meta property="og:type"        content="website">
+    <meta property="og:locale"      content="{{ _og_locale_map[lang] if lang in _og_locale_map else 'en_US' }}">
+    {% for _lc, _locale in _og_locale_map.items() %}{% if _lc != lang %}<meta property="og:locale:alternate" content="{{ _locale }}">
+    {% endif %}{% endfor %}
     <meta property="og:title"       content="{{ meta_title if (is_category_page and meta_title) else (_base_title) }}">
     <meta property="og:description" content="{{ meta_description or '' }}">
     <meta property="og:url"         content="{{ canonical_url }}">
+    <link rel="canonical" href="{{ canonical_url }}">
     {% set _og_img_raw = (category_og_image if category_og_image is defined else '') or (site.default_og_image or '') %}
     {% if _og_img_raw %}
     <meta property="og:image"       content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
@@ -34,9 +40,9 @@
 
     <!-- Hreflang — SEO için diğer dil versiyonları -->
     {% for lc, lurl in lang_urls.items() %}
-    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
     {% endfor %}
-    <link rel="alternate" hreflang="x-default" href="/">
+    <link rel="alternate" hreflang="x-default" href="https://henib2b.com/">
 
     <style>
         /* ══════════════════════════════════════

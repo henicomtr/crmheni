@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
     <title>{{ data.get('meta_title', '') or meta_title }}</title>
     <meta name="description" content="{{ data.get('meta_description', '') or meta_description }}">
     {% if data.get('meta_keywords') %}
@@ -26,7 +27,11 @@
     <link rel="alternate" hreflang="x-default" href="{{ base_url }}/{{ page.slug }}">
 
     <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    {% set _og_locale_map = {'en': 'en_US', 'tr': 'tr_TR', 'de': 'de_DE', 'fr': 'fr_FR', 'ar': 'ar_AR', 'ru': 'ru_RU', 'es': 'es_ES'} %}
     <meta property="og:type"        content="website">
+    <meta property="og:locale"      content="{{ _og_locale_map[lang] if lang in _og_locale_map else 'en_US' }}">
+    {% for _lc, _locale in _og_locale_map.items() %}{% if _lc != lang %}<meta property="og:locale:alternate" content="{{ _locale }}">
+    {% endif %}{% endfor %}
     <meta property="og:title"       content="{{ data.get('og_title', '') or data.get('meta_title', '') or meta_title }}">
     <meta property="og:description" content="{{ data.get('og_description', '') or data.get('meta_description', '') }}">
     <meta property="og:url"         content="{{ canonical_url }}">

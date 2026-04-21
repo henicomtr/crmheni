@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
     {% set _base_title = ui.basket ~ ' – ' ~ (site.site_name or 'Heni') %}
     <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}

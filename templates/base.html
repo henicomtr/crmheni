@@ -4,6 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="robots" content="index, follow">
 	<title>{% block title %}HENİ{% endblock %}</title>
 	<link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
 
@@ -38,9 +39,16 @@
 		"name": "Heni B2B",
 		"url": "https://henib2b.com",
 		{% if site is defined and site and site.logo_url %}"logo": "{{ site.logo_url }}",{% endif %}
+		"description": "B2B contract manufacturer specializing in detergent, cosmetic and perfume production with global raw material trading and private label services.",
+		"sameAs": [
+			{% if site is defined and site and site.instagram_url %}"{{ site.instagram_url }}"{% if site.linkedin_url or site.facebook_url %},{% endif %}{% endif %}
+			{% if site is defined and site and site.linkedin_url %}"{{ site.linkedin_url }}"{% if site.facebook_url %},{% endif %}{% endif %}
+			{% if site is defined and site and site.facebook_url %}"{{ site.facebook_url }}"{% endif %}
+		],
 		"contactPoint": {
 			"@type": "ContactPoint",
-			"contactType": "customer service"
+			"contactType": "customer service",
+			"availableLanguage": ["English", "Turkish", "German", "French", "Arabic", "Russian", "Spanish"]
 		}
 	}
 	</script>

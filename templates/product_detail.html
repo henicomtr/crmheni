@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
 
     <!-- SEO META -->
     <!-- Ürün sayfasında meta_title her zaman önceliklidir.
@@ -12,7 +13,11 @@
     <title>{{ _page_title }}</title>
     <meta name="description" content="{{ meta_description }}">
     <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    {% set _og_locale_map = {'en': 'en_US', 'tr': 'tr_TR', 'de': 'de_DE', 'fr': 'fr_FR', 'ar': 'ar_AR', 'ru': 'ru_RU', 'es': 'es_ES'} %}
     <meta property="og:type"        content="product">
+    <meta property="og:locale"      content="{{ _og_locale_map[lang] if lang in _og_locale_map else 'en_US' }}">
+    {% for _lc, _locale in _og_locale_map.items() %}{% if _lc != lang %}<meta property="og:locale:alternate" content="{{ _locale }}">
+    {% endif %}{% endfor %}
     <meta property="og:title"       content="{{ _page_title }}">
     <meta property="og:description" content="{{ meta_description }}">
     <meta property="og:url"         content="{{ canonical_url }}">

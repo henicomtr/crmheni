@@ -6,6 +6,15 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /static/upload/
 
+# Sepet ve başarı sayfaları — noindex ama disallow ile de destekle
+Disallow: /basket
+Disallow: /*/basket
+Disallow: /*/sepet
+Disallow: /*/warenkorb
+Disallow: /*/panier
+Disallow: /quote-success
+Disallow: /*/quote-success
+
 # Filtre ve oturum parametreli URL'leri engelle
 Disallow: /*?*
 Disallow: /search?*

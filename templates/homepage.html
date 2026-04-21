@@ -13,11 +13,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index, follow">
     {% set _base_title = hp.get('meta_title') or ((site.site_name or 'Heni Kozmetik') ~ ' — Global Industrial Manufacturing Partner') %}
     <title>{% if site.seo_title_template and '%s' in site.seo_title_template %}{{ site.seo_title_template|replace('%s', _base_title) }}{% elif site.seo_title_template %}{{ site.seo_title_template }}{% else %}{{ _base_title }}{% endif %}</title>
     {% if hp.get('meta_description') %}<meta name="description" content="{{ hp.get('meta_description') }}">{% endif %}
     <!-- Open Graph — Telegram/WhatsApp/Twitter paylaşım önizlemesi -->
+    {% set _og_locale_map = {'en': 'en_US', 'tr': 'tr_TR', 'de': 'de_DE', 'fr': 'fr_FR', 'ar': 'ar_AR', 'ru': 'ru_RU', 'es': 'es_ES'} %}
     <meta property="og:type"        content="website">
+    <meta property="og:locale"      content="{{ _og_locale_map[lang] if lang in _og_locale_map else 'en_US' }}">
+    {% for _lc, _locale in _og_locale_map.items() %}{% if _lc != lang %}<meta property="og:locale:alternate" content="{{ _locale }}">
+    {% endif %}{% endfor %}
     <meta property="og:title"       content="{{ hp.get('og_title') or hp.get('meta_title') or (site.site_name or 'Heni') }}">
     <meta property="og:description" content="{{ hp.get('og_description') or hp.get('meta_description') or '' }}">
     <meta property="og:url"         content="https://henib2b.com{{ request.url.path }}">
@@ -37,9 +42,9 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}?v=20260412">
     {% for lc, lurl in lang_urls.items() %}
-    <link rel="alternate" hreflang="{{ lc }}" href="{{ lurl }}">
+    <link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
     {% endfor %}
-    <link rel="alternate" hreflang="x-default" href="/">
+    <link rel="alternate" hreflang="x-default" href="https://henib2b.com/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
