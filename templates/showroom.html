@@ -1002,7 +1002,7 @@
             {
                 "@type": "ListItem",
                 "position": 2,
-                "name": "{{ (cat_trans.title if cat_trans and cat_trans.title else page_title) | e }}"
+                "name": "{{ (cat_trans.title if cat_trans and cat_trans.title else (meta_title if meta_title else page_title)) | e }}"
             }
         ]
     }
