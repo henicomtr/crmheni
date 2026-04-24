@@ -225,38 +225,34 @@ def _is_logo_filename(filename: str) -> bool:
 
 async def optimize_and_save_image(file: UploadFile, upload_folder: str, is_logo: bool = False) -> str:
     """
-    JPG/JPEG/PNG görsellerini optimize ederek kaydeder.
+    JPG/JPEG/PNG görsellerini image_optimizer modülü aracılığıyla optimize ederek kaydeder.
 
-    - Normal görseller: WebP formatına dönüştürülür (max 1200px, kalite 75)
-    - Logo görselleri (is_logo=True veya dosya adında 'logo' geçiyorsa):
-      Orijinal format korunur (PNG → PNG, JPG → JPG). Şeffaflık (alfa kanalı)
-      bozulmadan saklanır. Bu sayede arka planı şeffaf logolar görsel kalitesini
-      kaybetmez.
-    - Pillow invalid görsellerde hata fırlatmak yerine ham veriyi kaydeder
+    - Normal görseller: WebP (kalite 82, max 1200px, srcset versiyonları)
+    - Logo görselleri: WebP lossless, RGBA şeffaflığı korunur, srcset yok
+    - EXIF verisi WebP formatına geçişte otomatik temizlenir
+    - Orijinal dosya _original suffix ile yedeklenir
+    - Hata durumunda orijinal ham veriyi kaydeder (upload asla başarısız olmaz)
     """
+    import uuid as _uuid
+    from app.image_optimizer import optimize_gorsel
+
     os.makedirs(upload_folder, exist_ok=True)
-
-    import uuid
-    from io import BytesIO
-
-    from PIL import Image
 
     original_filename = getattr(file, "filename", "") or ""
     original_ext = os.path.splitext(original_filename)[1].lower()
     fallback_ext = original_ext if original_ext in (".jpg", ".jpeg", ".png") else ".jpg"
 
-    # Dosya adında "logo" geçiyorsa da optimizasyondan muaf tut
+    # Dosya adında "logo" geçiyorsa logo modunda işle
     if not is_logo and _is_logo_filename(original_filename):
         is_logo = True
 
-    # UploadFile stream'i tek seferde oku.
     contents = await file.read()
-    if len(contents) > 5 * 1024 * 1024:  # 5MB
+    if len(contents) > 5 * 1024 * 1024:  # 5MB sınırı
         raise ValueError("File too large")
 
-    uid = uuid.uuid4().hex[:12]
+    uid = _uuid.uuid4().hex[:12]
 
-    # Boş dosyada çakışmayı önlemek için raw boş dosya üret.
+    # Boş dosya için ham kayıt
     if not contents:
         raw_filename = f"img_{uid}{fallback_ext}"
         raw_path = os.path.join(upload_folder, raw_filename)
@@ -265,68 +261,23 @@ async def optimize_and_save_image(file: UploadFile, upload_folder: str, is_logo:
         return raw_filename
 
     try:
-        img = Image.open(BytesIO(contents))
-        img.load()
-
-        # Maksimum boyut 1200 (aspect ratio koruyarak)
-        max_dim = 1200
-        if img.width > max_dim or img.height > max_dim:
-            resample = Image.Resampling.LANCZOS if hasattr(Image, "Resampling") else Image.LANCZOS
-            img.thumbnail((max_dim, max_dim), resample=resample)
-
-        if is_logo:
-            # Logo: orijinal formatı ve şeffaflığı koru
-            save_ext = original_ext if original_ext in (".png", ".jpg", ".jpeg") else ".png"
-            save_format = "PNG" if save_ext == ".png" else "JPEG"
-            out_filename = f"img_{uid}{save_ext}"
-            out_path = os.path.join(upload_folder, out_filename)
-
-            if save_format == "JPEG":
-                # JPEG alfa kanalını desteklemez; varsa beyaz arka plana yapıştır
-                if img.mode in ("RGBA", "LA", "P"):
-                    bg = Image.new("RGB", img.size, (255, 255, 255))
-                    bg.paste(img.convert("RGBA"), mask=img.convert("RGBA").split()[-1])
-                    img = bg
-                elif img.mode != "RGB":
-                    img = img.convert("RGB")
-                img.save(out_path, "JPEG", quality=90, optimize=True)
-            else:
-                # PNG: RGBA/P modlarını koru (şeffaflık bozulmasın)
-                if img.mode == "P":
-                    img = img.convert("RGBA")
-                elif img.mode not in ("RGBA", "RGB", "LA", "L"):
-                    img = img.convert("RGBA")
-                img.save(out_path, "PNG", optimize=True)
-
-            print(f"[upload] Saved logo image (no WebP conversion): {out_filename}")
-            return out_filename
-        else:
-            # Normal görsel: WebP'e dönüştür
-            webp_filename = f"img_{uid}.webp"
-            webp_path = os.path.join(upload_folder, webp_filename)
-
-            # RGBA / P mode -> RGB (WebP için RGB kaydetmek üzere)
-            if img.mode in ("RGBA", "LA"):
-                alpha = img.split()[-1]
-                bg = Image.new("RGB", img.size, (255, 255, 255))
-                bg.paste(img.convert("RGB"), mask=alpha)
-                img = bg
-            elif img.mode == "P":
-                img = img.convert("RGB")
-            elif img.mode != "RGB":
-                img = img.convert("RGB")
-
-            img.save(webp_path, "WEBP", quality=75, optimize=True)
-            print(f"[upload] Saved optimized image: {webp_filename}")
-            return webp_filename
+        sonuc = optimize_gorsel(
+            icerik=contents,
+            orijinal_dosya_adi=original_filename or f"upload{fallback_ext}",
+            cikti_klasoru=upload_folder,
+            logo_mu=is_logo,
+            uid=uid,
+        )
+        print(f"[upload] Optimize edildi: {sonuc.webp} | tasarruf: {sonuc.kazanilan_kb:.0f} KB")
+        return sonuc.webp
 
     except Exception as e:
-        # Pillow invalid/bozuk dosyalarda crash etmesin diye hamı kaydet.
+        # Optimizasyon başarısız olursa ham veriyi kaydet, upload akışı kesilmesin
         raw_filename = f"img_{uid}{fallback_ext}"
         raw_path = os.path.join(upload_folder, raw_filename)
         with open(raw_path, "wb") as buf:
             buf.write(contents)
-        print(f"[upload] Image optimization failed, saved raw: {raw_filename} ({e})")
+        print(f"[upload] Optimizasyon başarısız, ham kaydedildi: {raw_filename} ({e})")
         return raw_filename
 
 # =========================================================
@@ -3906,3 +3857,91 @@ async def stock_consumption_add(
         return RedirectResponse(f"/esk/stock/consumption?error={error_msg}", status_code=303)
 
     return RedirectResponse("/esk/stock/consumption?success=1", status_code=303)
+
+
+# =========================================================
+# ARAÇLAR — Görsel URL Migrasyonu
+# =========================================================
+
+@router.post("/esk/tools/migrate-image-urls")
+def migrate_image_urls(
+    db: Session = Depends(get_db),
+    admin=Depends(admin_required),
+):
+    """
+    Toplu optimizasyon sonrası DB'deki PNG/JPG görsel URL'lerini WebP karşılıklarıyla günceller.
+    site_settings logoları ve homepage_contents JSON bloklarını kapsar.
+    Yalnızca disk üzerinde WebP karşılığı bulunan URL'ler güncellenir.
+    """
+    import json as _json
+    import re as _re
+
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+
+    images_dir = UPLOAD_DIR_IMAGES
+    guncellenenler = []
+    atlananlar = []
+
+    def webp_yolu_bul(url: str):
+        """URL'ye karşılık gelen WebP dosyasını bulur. Bulamazsa None döner."""
+        if not url:
+            return None
+        dosya_adi = url.split("/")[-1]
+        adi = os.path.splitext(dosya_adi)[0]
+        uzanti = os.path.splitext(dosya_adi)[1].lower()
+        if uzanti == ".webp":
+            return None  # Zaten WebP
+
+        # Batch optimizer: img_{orijinal_ad}.webp
+        webp_adi = f"img_{adi}.webp"
+        if os.path.exists(os.path.join(images_dir, webp_adi)):
+            return url.rsplit("/", 1)[0] + "/" + webp_adi
+
+        # Aynı isimde .webp var mı (manuel kopyalananlar)
+        webp_adi2 = adi + ".webp"
+        if os.path.exists(os.path.join(images_dir, webp_adi2)):
+            return url.rsplit("/", 1)[0] + "/" + webp_adi2
+
+        return None
+
+    # site_settings güncelle
+    s = db.query(SiteSettings).first()
+    if s:
+        for alan in ("logo_url", "logo_white_url", "favicon_url", "footer_bg_image_url", "default_og_image"):
+            mevcut = getattr(s, alan, None)
+            if not mevcut:
+                continue
+            yeni = webp_yolu_bul(mevcut)
+            if yeni:
+                setattr(s, alan, yeni)
+                guncellenenler.append(f"site_settings.{alan}: {mevcut.split('/')[-1]} → {yeni.split('/')[-1]}")
+            else:
+                atlananlar.append(f"site_settings.{alan}: {mevcut.split('/')[-1]} (webp yok)")
+
+    # homepage_contents güncelle
+    from app.models import HomepageContent
+    kayitlar = db.query(HomepageContent).all()
+    for kayit in kayitlar:
+        if not kayit.data:
+            continue
+        data_str = kayit.data if isinstance(kayit.data, str) else _json.dumps(kayit.data)
+        yeni_str = data_str
+        for eski_dosya in _re.findall(r'/static/upload/images/([^"\']+\.(?:png|jpg|jpeg))', data_str):
+            eski_url = f"/static/upload/images/{eski_dosya}"
+            yeni_url = webp_yolu_bul(eski_url)
+            if yeni_url:
+                yeni_str = yeni_str.replace(eski_url, yeni_url)
+                guncellenenler.append(f"homepage[{kayit.lang}]: {eski_dosya} → {yeni_url.split('/')[-1]}")
+        if yeni_str != data_str:
+            kayit.data = yeni_str
+
+    db.commit()
+
+    return JSONResponse({
+        "durum": "tamamlandi",
+        "guncellenen_sayisi": len(guncellenenler),
+        "guncellenenler": guncellenenler,
+        "atlanan_sayisi": len(atlananlar),
+        "atlananlar": atlananlar,
+    })

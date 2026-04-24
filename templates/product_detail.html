@@ -967,7 +967,14 @@
             <!-- GÖRSEL (position:sticky — indirim rozeti position:absolute için yeterli, mobilde relative) -->
             <div class="detail-image-wrap">
                 {% if product.image %}
-                <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="eager" fetchpriority="high" width="600" height="600">
+                {% set _pimg_base = product.image.rsplit('.', 1)[0] if '.' in product.image else product.image %}
+                {% set _pimg_ext = product.image.rsplit('.', 1)[1].lower() if '.' in product.image else '' %}
+                <picture>
+                    {% if _pimg_ext != 'webp' %}
+                    <source srcset="{{ _pimg_base }}.webp" type="image/webp">
+                    {% endif %}
+                    <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="eager" fetchpriority="high" width="600" height="600">
+                </picture>
                 {% else %}
                 <div class="detail-image-placeholder">📦</div>
                 {% endif %}

@@ -11,9 +11,17 @@
         {# Logo #}
         <a href="{{ home_url }}" class="site-header-logo">
             {% if site.logo_url %}
-            <img src="{{ site.logo_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-default">
+            {% set _hdr_logo_base = site.logo_url.rsplit('.', 1)[0] if '.' in site.logo_url else site.logo_url %}
+            <picture>
+                <source srcset="{{ _hdr_logo_base }}.webp" type="image/webp">
+                <img src="{{ site.logo_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-default" fetchpriority="high">
+            </picture>
             {% if site.logo_white_url %}
-            <img src="{{ site.logo_white_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-white">
+            {% set _hdr_wlogo_base = site.logo_white_url.rsplit('.', 1)[0] if '.' in site.logo_white_url else site.logo_white_url %}
+            <picture>
+                <source srcset="{{ _hdr_wlogo_base }}.webp" type="image/webp">
+                <img src="{{ site.logo_white_url }}" alt="{{ site.site_name or 'Heni' }}" class="site-header-logo-img site-header-logo-img-white">
+            </picture>
             {% endif %}
             {% else %}
             <span class="site-header-logo-icon">{{ (site.site_name or 'H')[0]|upper }}</span>

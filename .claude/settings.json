@@ -23,7 +23,8 @@
       "Bash(powershell -Command ':*)",
       "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\fix_heni3.py 2>&1\")",
       "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\check_db.py 2>&1\")",
-      "Bash(powershell -Command \"Remove-Item 'C:\\\\temp\\\\fix_heni.py','C:\\\\temp\\\\fix_heni2.py','C:\\\\temp\\\\fix_heni3.py','C:\\\\temp\\\\check_db.py','C:\\\\temp\\\\find_db.py' -ErrorAction SilentlyContinue; Write-Host 'Temizlendi'\")"
+      "Bash(powershell -Command \"Remove-Item 'C:\\\\temp\\\\fix_heni.py','C:\\\\temp\\\\fix_heni2.py','C:\\\\temp\\\\fix_heni3.py','C:\\\\temp\\\\check_db.py','C:\\\\temp\\\\find_db.py' -ErrorAction SilentlyContinue; Write-Host 'Temizlendi'\")",
+      "PowerShell(docker exec crmheni-app-1 ls -lah /app/static/upload/images/ 2>&1)"
     ],
     "additionalDirectories": [
       "c:\\temp"

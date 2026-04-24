@@ -744,7 +744,14 @@
             <a href="{{ pc.product_url }}" class="card-img-link">
                 <div class="product-image">
                     {% if product.image %}
-                    <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="lazy">
+                    {% set _si_base = product.image.rsplit('.', 1)[0] if '.' in product.image else product.image %}
+                    {% set _si_ext = product.image.rsplit('.', 1)[1].lower() if '.' in product.image else '' %}
+                    <picture>
+                        {% if _si_ext != 'webp' %}
+                        <source srcset="{{ _si_base }}.webp" type="image/webp">
+                        {% endif %}
+                        <img src="{{ product.image }}" alt="{{ trans.name if trans else '' }}" loading="lazy">
+                    </picture>
                     {% else %}
                     <div class="no-image">📦</div>
                     {% endif %}

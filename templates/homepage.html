@@ -49,6 +49,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
+    <!-- LCP optimizasyonu: hero arkaplan görseli önceden yükle -->
+    <link rel="preload" as="image" href="{{ url_for('static', path='upload/images/img_hero-industrial.webp') }}" type="image/webp" fetchpriority="high">
 
     <style>
         /* ── RESET & BASE ── */
@@ -210,7 +212,7 @@
         .hp-hero-bg {
             position: absolute;
             inset: 0;
-            background-image: url("{{ url_for('static', path='upload/images/hero-industrial.jpg') }}");
+            background-image: url("{{ url_for('static', path='upload/images/img_hero-industrial.webp') }}");
             background-size: cover;
             background-position: center;
             opacity: 0.35;
