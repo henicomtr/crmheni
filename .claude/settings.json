@@ -24,7 +24,9 @@
       "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\fix_heni3.py 2>&1\")",
       "Bash(powershell -Command \"& py -3.11 C:\\\\temp\\\\check_db.py 2>&1\")",
       "Bash(powershell -Command \"Remove-Item 'C:\\\\temp\\\\fix_heni.py','C:\\\\temp\\\\fix_heni2.py','C:\\\\temp\\\\fix_heni3.py','C:\\\\temp\\\\check_db.py','C:\\\\temp\\\\find_db.py' -ErrorAction SilentlyContinue; Write-Host 'Temizlendi'\")",
-      "PowerShell(docker exec crmheni-app-1 ls -lah /app/static/upload/images/ 2>&1)"
+      "PowerShell(docker exec crmheni-app-1 ls -lah /app/static/upload/images/ 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\ACER N�TRO\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -c \"import sqlite3; conn=sqlite3.connect\\(r'c:\\\\Users\\\\ACER N�TRO\\\\Desktop\\\\projeler\\\\crmheni\\\\heni.db'\\); cur=conn.cursor\\(\\); cur.execute\\('SELECT logo_url, logo_white_url FROM site_settings LIMIT 1'\\); row=cur.fetchone\\(\\); print\\('logo_url:', repr\\(row[0]\\)\\); print\\('logo_white_url:', repr\\(row[1]\\)\\); conn.close\\(\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\ACER N�TRO\\\\AppData\\\\Local\\\\Programs\\\\Python\\\\Python311\\\\python.exe\" -c \"import sqlite3; conn=sqlite3.connect\\(r'c:\\\\Users\\\\ACER N�TRO\\\\Desktop\\\\projeler\\\\crmheni\\\\heni.db'\\); cur=conn.cursor\\(\\); cur.execute\\(\\\\\"SELECT name FROM sqlite_master WHERE type='table'\\\\\"\\); print\\([r[0] for r in cur.fetchall\\(\\)]\\); conn.close\\(\\)\")"
     ],
     "additionalDirectories": [
       "c:\\temp"

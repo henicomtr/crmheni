@@ -31,7 +31,7 @@
                 {% set _logo_webp = _logo_base ~ '.webp' %}
                 <picture>
                     <source srcset="{{ _logo_webp }}" type="image/webp">
-                    <img src="{{ _logo_src }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img" loading="lazy" width="160" height="48">
+                    <img src="{{ _logo_src }}" alt="{{ (site.site_name or 'Heni')|upper }}" class="site-footer-logo-img site-footer-logo-img--invert" loading="lazy" width="160" height="48">
                 </picture>
                 {% else %}
                 <span class="site-footer-logo-text">{{ (site.site_name or 'Heni')|upper }}</span>

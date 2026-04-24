@@ -86,8 +86,8 @@ body.site-page {
 }
 
 .site-header-logo-img {
-    height: 48px;
-    max-width: 200px;
+    height: 36px;
+    max-width: 150px;
     object-fit: contain;
     transition: opacity 0.25s var(--ease);
 }
@@ -1011,12 +1011,16 @@ body.site-page {
 }
 
 .site-footer-logo-img {
-    height: 54px;
-    max-width: 200px;
+    height: 40px;
+    max-width: 150px;
     object-fit: contain;
     object-position: left center;
-    filter: brightness(0) invert(1);
     opacity: 0.9;
+}
+
+/* Yalnızca renkli/koyu logo kullanılırken beyaza çevir */
+.site-footer-logo-img--invert {
+    filter: brightness(0) invert(1);
 }
 
 .site-footer-logo-text {
