@@ -3,7 +3,7 @@
    Header sabit, dil seçici: dünya ikonu + aktif dil + dropdown
 ====================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Inter font: HTML <head> veya self-hosted @font-face üzerinden yüklenir — buradaki @import kaldırıldı (render blocker) */
 
 :root {
     --navy:       #0f172a;
@@ -21,6 +21,9 @@
     --shadow-md:  0 4px 12px rgba(15, 23, 42, 0.12);
     --shadow-lg:  0 12px 32px rgba(15, 23, 42, 0.18);
 }
+
+/* Responsive resimler için yüksekliği CSS kontrol eder, HTML attribute'lar aspect-ratio için gerekli */
+img { height: auto; }
 
 /* Tüm site sayfalarında aynı font ve arka plan */
 body.site-page {

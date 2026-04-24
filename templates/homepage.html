@@ -39,20 +39,46 @@
     <meta name="twitter:image"      content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
     {% endif %}
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
-    <link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}?v=20260412">
+    <!-- CSS async yükleme: render-blocking ortadan kalkar, noscript fallback ile korunur -->
+    <link rel="preload" href="{{ url_for('static', path='css/main.css') }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', path='css/main.css') }}"></noscript>
+    <link rel="preload" href="{{ url_for('static', path='css/site.css') }}?v=20260412" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="{{ url_for('static', path='css/site.css') }}?v=20260412"></noscript>
     {% for lc, lurl in lang_urls.items() %}
     <link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
     {% endfor %}
     <link rel="alternate" hreflang="x-default" href="https://henib2b.com/">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"></noscript>
-    <!-- LCP optimizasyonu: hero arkaplan görseli önceden yükle -->
-    <link rel="preload" as="image" href="{{ url_for('static', path='upload/images/img_hero-industrial.webp') }}" type="image/webp" fetchpriority="high">
+    <!-- Inter font self-hosted: Google CDN round-trip (2x ~135 KiB) ortadan kalktı -->
+    <link rel="preload" href="{{ url_for('static', path='fonts/inter-400-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/fonts.css') }}">
+    <!-- LCP optimizasyonu: hero görseli önceden yükle (admin CMS'den dinamik URL kullanılır) -->
+    {% set _hero_preload_url = hp.get('hero_image_url') or (tr_data.get('hero_image_url') if tr_data is defined else '') or url_for('static', path='upload/images/img_hero-industrial.webp') %}
+    <link rel="preload" as="image" href="{{ _hero_preload_url }}" type="image/webp" fetchpriority="high">
 
     <style>
+        /* ── KRİTİK HEADER CSS (site.css async yüklenene kadar FOUC önler) ── */
+        .site-header{position:sticky;top:0;z-index:200;background:#0f172a;display:flex;flex-direction:column;height:auto;border-bottom:1px solid rgba(255,255,255,0.06)}
+        .shdr-top{display:flex;align-items:center;padding:0 40px;height:60px;gap:24px}
+        .shdr-bottom{display:flex;align-items:center;padding:0 40px;height:44px;background:#1e293b;border-top:1px solid rgba(255,255,255,0.07)}
+        .site-header-logo{display:flex;align-items:center;gap:12px;flex-shrink:0;text-decoration:none;color:#fff}
+        .site-header-logo-img{height:36px;max-width:150px;object-fit:contain}
+        .site-header-logo-img-white{display:block}.site-header-logo-img-default{display:none}
+        .site-header:not(.has-white-logo) .site-header-logo-img-default{display:block}
+        .site-header:not(.has-white-logo) .site-header-logo-img-white{display:none}
+        .shdr-search-wrap{flex:1;max-width:540px;margin:0 auto;position:relative}
+        .shdr-search{width:100%;display:flex;align-items:center;background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.14);border-radius:50px;padding:0 6px 0 18px;height:42px}
+        .shdr-search-input{flex:1;background:none;border:none;outline:none;color:#fff;font-size:14px;padding:0 12px}
+        .shdr-search-input::placeholder{color:rgba(255,255,255,0.42)}
+        .site-header-lang-trigger{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;color:#fff;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.18);cursor:pointer}
+        .site-header-links{display:flex;gap:8px;list-style:none;align-items:center;height:100%}
+        .site-header-links a{color:rgba(255,255,255,0.75);font-size:14px;font-weight:600;text-decoration:none;padding:0 14px;height:100%;display:flex;align-items:center}
+        .site-header-mobile-toggle{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:40px;height:40px;background:none;border:none;cursor:pointer;padding:4px;border-radius:6px}
+        .mobile-toggle-bar{display:block;width:22px;height:2px;background:#fff;border-radius:2px}
+        .site-header-mobile-basket{display:none;position:relative;align-items:center;justify-content:center;width:40px;height:40px;color:rgba(255,255,255,0.85);text-decoration:none;border-radius:8px}
+        .shdr-mobile-search-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.75);border-radius:50%}
+        .site-header-mobile-menu{display:none;position:fixed;top:60px;left:0;right:0;background:#0f172a;z-index:199}
+        @media(max-width:768px){.shdr-bottom{display:none}.shdr-top{padding:0 16px;height:60px;gap:0}.site-header-logo{margin-right:auto}.site-header-lang{display:none}.shdr-search-wrap{display:none}.shdr-mobile-search-btn{display:flex}.site-header-mobile-basket{display:flex}.site-header-mobile-toggle{display:flex}.site-header-mobile-menu{display:block}}
+
         /* ── RESET & BASE ── */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
@@ -80,7 +106,7 @@
             line-height: 1.6;
         }
         a { text-decoration: none; color: inherit; }
-        img { max-width: 100%; display: block; }
+        img { max-width: 100%; height: auto; display: block; }
         
         .container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
         section { position: relative; }
@@ -209,19 +235,26 @@
             display: flex;
             align-items: center;
         }
+        /* hp-hero-bg: <img> ile çalışacak şekilde düzenlendi (background-image yerine) */
         .hp-hero-bg {
             position: absolute;
             inset: 0;
-            background-image: url("{{ url_for('static', path='upload/images/img_hero-industrial.webp') }}");
-            background-size: cover;
-            background-position: center;
+            overflow: hidden;
+        }
+        .hp-hero-bg-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
             opacity: 0.35;
+            display: block;
         }
         .hp-hero-bg::after {
             content: '';
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(15,23,42,0.5) 100%);
+            pointer-events: none;
         }
         .hp-hero-content {
             position: relative;
@@ -687,7 +720,6 @@
         }
     </style>
     <script src="{{ url_for('static', path='js/homepage.js') }}" defer></script>
-    {% if site and site.analytics_code %}{{ site.analytics_code | safe }}{% endif %}
     {% if site and site.custom_css %}<style>{{ site.custom_css | safe }}</style>{% endif %}
 </head>
 
@@ -698,7 +730,19 @@
     <!-- ══ HERO ══ -->
     <section class="hp-hero">
         {% set _hero_img = hp.get('hero_image_url') or (tr_data.get('hero_image_url') if tr_data is defined else '') %}
-        <div class="hp-hero-bg"{% if _hero_img %} style="background-image: url('{{ _hero_img }}');"{% endif %}></div>
+        {% set _hero_src = _hero_img or url_for('static', path='upload/images/img_hero-industrial.webp') %}
+        <div class="hp-hero-bg">
+            <img
+                src="{{ _hero_src }}"
+                alt="{{ hp.get('hero_title') or 'Industrial Manufacturing' }}"
+                class="hp-hero-bg-img"
+                fetchpriority="high"
+                loading="eager"
+                decoding="async"
+                width="1920"
+                height="1080"
+            >
+        </div>
         <div class="hp-hero-content">
             <h1>{% if hp.get('hero_title') %}{{ hp.hero_title|safe }}{% else %}Industrial Manufacturing Power for Global Brands{% endif %}</h1>
             <p>{% if hp.get('hero_subtitle') %}{{ hp.hero_subtitle }}{% else %}Heni Kozmetik provides detergent, cosmetic and perfume manufacturing, global raw material trading, private label production and worldwide logistics.{% endif %}</p>
@@ -723,9 +767,23 @@
             {% if hp.get('services') and hp.services|length > 0 %}
             {% for svc in hp.services[:4] %}
             {% if svc.title %}
+            {% set _svc_raw_img = svc.image or (tr_data.get('services', [])[loop.index0].get('image','') if tr_data is defined and tr_data.get('services') and loop.index0 < tr_data.get('services',[])|length else '') or url_for('static', path='upload/images/detergent.jpg') %}
             <div class="industry-card">
                 <div class="industry-card-img">
-            <img src="{{ svc.image or ((tr_data.get('services', [])[loop.index0].get('image','') if tr_data is defined and tr_data.get('services') and loop.index0 < tr_data.get('services',[])|length else '') or url_for('static', path='upload/images/detergent.jpg')) }}" alt="{{ svc.title }}" loading="lazy" width="600" height="400">
+                {% if '.webp' in _svc_raw_img and '/upload/images/' in _svc_raw_img %}
+                {% set _svc_base = _svc_raw_img.rsplit('.', 1)[0] %}
+                <img
+                    src="{{ _svc_base }}-md.webp"
+                    srcset="{{ _svc_base }}-sm.webp 480w, {{ _svc_base }}-md.webp 683w, {{ _svc_raw_img }} 966w"
+                    sizes="(max-width: 768px) 100vw, 683px"
+                    alt="{{ svc.title }}"
+                    loading="lazy"
+                    width="683"
+                    height="455"
+                >
+                {% else %}
+                <img src="{{ _svc_raw_img }}" alt="{{ svc.title }}" loading="lazy" width="600" height="400">
+                {% endif %}
                 </div>
                 <div class="industry-card-body">
                     <h3>{{ svc.title }}</h3>
@@ -913,6 +971,31 @@
     </section>
 
     {% include 'partials/site_footer.html' %}
+
+    {% if site and site.analytics_code %}
+    <!-- Analytics: sayfa tamamen yüklendikten 2 saniye sonra enjekte edilir (LCP/TBT korunur) -->
+    <script>
+    (function() {
+        var _analyticsHTML = {{ site.analytics_code | tojson }};
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var _frag = document.createElement('div');
+                _frag.innerHTML = _analyticsHTML;
+                Array.from(_frag.querySelectorAll('script')).forEach(function(s) {
+                    var ns = document.createElement('script');
+                    if (s.src) {
+                        ns.src = s.src;
+                        ns.async = true;
+                    } else {
+                        ns.textContent = s.textContent;
+                    }
+                    document.head.appendChild(ns);
+                });
+            }, 2000);
+        });
+    })();
+    </script>
+    {% endif %}
 
 </body>
 </html>
