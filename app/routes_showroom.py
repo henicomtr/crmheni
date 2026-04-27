@@ -2134,6 +2134,43 @@ def landing_quote_es(request: Request,
 
 _SERVICE_SLUGS = ["deterjan", "kozmetik", "parfum"]
 
+# İç slug → { dil kodu: URL slug'ı }
+SERVICE_SLUG_MAP = {
+    "deterjan": {
+        "en": "detergent",
+        "tr": "deterjan",
+        "de": "waschmittel",
+        "fr": "detergent",
+        "ar": "detergent",
+        "ru": "detergent",
+        "es": "detergente",
+    },
+    "kozmetik": {
+        "en": "cosmetics",
+        "tr": "kozmetik",
+        "de": "kosmetik",
+        "fr": "cosmetiques",
+        "ar": "cosmetics",
+        "ru": "kosmetika",
+        "es": "cosmeticos",
+    },
+    "parfum": {
+        "en": "perfume",
+        "tr": "parfum",
+        "de": "parfum",
+        "fr": "parfum",
+        "ar": "perfume",
+        "ru": "parfyum",
+        "es": "perfume",
+    },
+}
+
+# Ters harita: { dil kodu: { url_slug: iç_slug } }
+_SLUG_REVERSE: dict = {}
+for _internal, _lang_map in SERVICE_SLUG_MAP.items():
+    for _lc, _url_slug in _lang_map.items():
+        _SLUG_REVERSE.setdefault(_lc, {})[_url_slug] = _internal
+
 
 def _load_service_json(slug: str, lang: str) -> dict:
     path = os.path.join(BASE_DIR, "data", "pages", slug, f"{lang}.json")
@@ -2144,10 +2181,12 @@ def _load_service_json(slug: str, lang: str) -> dict:
         return {}
 
 
-def _service_slug_url(lang: str, slug: str) -> str:
+def _service_slug_url(lang: str, internal_slug: str) -> str:
+    """Dile ve iç slug'a göre herkese açık URL döner."""
+    url_slug = SERVICE_SLUG_MAP.get(internal_slug, {}).get(lang, internal_slug)
     if lang == "en":
-        return f"/{slug}"
-    return f"/{lang}/{slug}"
+        return f"/{url_slug}"
+    return f"/{lang}/{url_slug}"
 
 
 def _service_page_detail(request: Request, lang: str, slug: str, db: Session):
@@ -2160,6 +2199,7 @@ def _service_page_detail(request: Request, lang: str, slug: str, db: Session):
 
     tr_data = _load_service_json(slug, "tr")
 
+    # Her dil için doğru URL slug'ını üret
     lang_urls = {lc: _service_slug_url(lc, slug) for lc in SUPPORTED_LANGS}
 
     meta_title = data.get("meta_title") or (slug.capitalize() + " | Heni")
@@ -2177,8 +2217,8 @@ def _service_page_detail(request: Request, lang: str, slug: str, db: Session):
     return templates.TemplateResponse("service_page.html", ctx)
 
 
-# deterjan
-@router.get("/deterjan")
+# ── deterjan ──────────────────────────────────────────────
+@router.get("/detergent")
 def service_deterjan_en(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "en", "deterjan", db)
 
@@ -2186,29 +2226,29 @@ def service_deterjan_en(request: Request, db: Session = Depends(get_db)):
 def service_deterjan_tr(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "tr", "deterjan", db)
 
-@router.get("/de/deterjan")
+@router.get("/de/waschmittel")
 def service_deterjan_de(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "de", "deterjan", db)
 
-@router.get("/fr/deterjan")
+@router.get("/fr/detergent")
 def service_deterjan_fr(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "fr", "deterjan", db)
 
-@router.get("/ar/deterjan")
+@router.get("/ar/detergent")
 def service_deterjan_ar(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ar", "deterjan", db)
 
-@router.get("/ru/deterjan")
+@router.get("/ru/detergent")
 def service_deterjan_ru(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ru", "deterjan", db)
 
-@router.get("/es/deterjan")
+@router.get("/es/detergente")
 def service_deterjan_es(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "es", "deterjan", db)
 
 
-# kozmetik
-@router.get("/kozmetik")
+# ── kozmetik ──────────────────────────────────────────────
+@router.get("/cosmetics")
 def service_kozmetik_en(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "en", "kozmetik", db)
 
@@ -2216,29 +2256,29 @@ def service_kozmetik_en(request: Request, db: Session = Depends(get_db)):
 def service_kozmetik_tr(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "tr", "kozmetik", db)
 
-@router.get("/de/kozmetik")
+@router.get("/de/kosmetik")
 def service_kozmetik_de(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "de", "kozmetik", db)
 
-@router.get("/fr/kozmetik")
+@router.get("/fr/cosmetiques")
 def service_kozmetik_fr(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "fr", "kozmetik", db)
 
-@router.get("/ar/kozmetik")
+@router.get("/ar/cosmetics")
 def service_kozmetik_ar(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ar", "kozmetik", db)
 
-@router.get("/ru/kozmetik")
+@router.get("/ru/kosmetika")
 def service_kozmetik_ru(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ru", "kozmetik", db)
 
-@router.get("/es/kozmetik")
+@router.get("/es/cosmeticos")
 def service_kozmetik_es(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "es", "kozmetik", db)
 
 
-# parfum
-@router.get("/parfum")
+# ── parfum ────────────────────────────────────────────────
+@router.get("/perfume")
 def service_parfum_en(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "en", "parfum", db)
 
@@ -2254,17 +2294,83 @@ def service_parfum_de(request: Request, db: Session = Depends(get_db)):
 def service_parfum_fr(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "fr", "parfum", db)
 
-@router.get("/ar/parfum")
+@router.get("/ar/perfume")
 def service_parfum_ar(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ar", "parfum", db)
 
-@router.get("/ru/parfum")
+@router.get("/ru/parfyum")
 def service_parfum_ru(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "ru", "parfum", db)
 
-@router.get("/es/parfum")
+@router.get("/es/perfume")
 def service_parfum_es(request: Request, db: Session = Depends(get_db)):
     return _service_page_detail(request, "es", "parfum", db)
+
+
+# ── Eski URL'ler için 301 kalıcı yönlendirmeler ───────────
+@router.get("/deterjan")
+def compat_deterjan_en(request: Request):
+    return RedirectResponse("/detergent", status_code=301)
+
+@router.get("/de/deterjan")
+def compat_deterjan_de(request: Request):
+    return RedirectResponse("/de/waschmittel", status_code=301)
+
+@router.get("/fr/deterjan")
+def compat_deterjan_fr(request: Request):
+    return RedirectResponse("/fr/detergent", status_code=301)
+
+@router.get("/ar/deterjan")
+def compat_deterjan_ar(request: Request):
+    return RedirectResponse("/ar/detergent", status_code=301)
+
+@router.get("/ru/deterjan")
+def compat_deterjan_ru(request: Request):
+    return RedirectResponse("/ru/detergent", status_code=301)
+
+@router.get("/es/deterjan")
+def compat_deterjan_es(request: Request):
+    return RedirectResponse("/es/detergente", status_code=301)
+
+@router.get("/kozmetik")
+def compat_kozmetik_en(request: Request):
+    return RedirectResponse("/cosmetics", status_code=301)
+
+@router.get("/de/kozmetik")
+def compat_kozmetik_de(request: Request):
+    return RedirectResponse("/de/kosmetik", status_code=301)
+
+@router.get("/fr/kozmetik")
+def compat_kozmetik_fr(request: Request):
+    return RedirectResponse("/fr/cosmetiques", status_code=301)
+
+@router.get("/ar/kozmetik")
+def compat_kozmetik_ar(request: Request):
+    return RedirectResponse("/ar/cosmetics", status_code=301)
+
+@router.get("/ru/kozmetik")
+def compat_kozmetik_ru(request: Request):
+    return RedirectResponse("/ru/kosmetika", status_code=301)
+
+@router.get("/es/kozmetik")
+def compat_kozmetik_es(request: Request):
+    return RedirectResponse("/es/cosmeticos", status_code=301)
+
+@router.get("/parfum")
+def compat_parfum_en(request: Request):
+    return RedirectResponse("/perfume", status_code=301)
+
+@router.get("/ar/parfum")
+def compat_parfum_ar(request: Request):
+    return RedirectResponse("/ar/perfume", status_code=301)
+
+@router.get("/ru/parfum")
+def compat_parfum_ru(request: Request):
+    return RedirectResponse("/ru/parfyum", status_code=301)
+
+@router.get("/es/parfum")
+def compat_parfum_es(request: Request):
+    return RedirectResponse("/es/perfume", status_code=301)
 
 
 # =========================================================
