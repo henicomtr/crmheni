@@ -1,0 +1,661 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+.hp-edit-wrap { max-width: 900px; }
+.hp-edit-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+.hp-edit-header h1 { font-size: 1.5rem; font-weight: 700; margin: 0; }
+.lang-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 22px; }
+.lang-tab { padding: 6px 14px; border-radius: 8px; font-size: .82rem; font-weight: 600; text-decoration: none; color: #374151; background: #f3f4f6; border: 1px solid transparent; transition: all .2s; }
+.lang-tab:hover { background: #e5e7eb; }
+.lang-tab.active { background: #111; color: #fff; border-color: #111; }
+.tab-nav { display: flex; gap: 0; border-bottom: 2px solid #e5e7eb; margin-bottom: 28px; flex-wrap: wrap; overflow-x: auto; }
+.tab-btn { padding: 10px 16px; font-size: .84rem; font-weight: 600; color: #6b7280; text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .2s, border-color .2s; white-space: nowrap; }
+.tab-btn:hover { color: #111; }
+.tab-btn.active { color: #111; border-bottom-color: #111; }
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.form-hint  { font-size: .76rem; color: #9ca3af; margin-top: 4px; }
+.form-input, .form-textarea { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: .92rem; color: #111; outline: none; box-sizing: border-box; transition: border-color .2s; }
+.form-input:focus, .form-textarea:focus { border-color: #111; }
+.form-textarea { min-height: 100px; resize: vertical; font-family: inherit; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.repeater-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; background: #f9fafb; }
+.repeater-card-head { font-size: .82rem; font-weight: 700; color: #6b7280; margin-bottom: 14px; letter-spacing: .05em; text-transform: uppercase; }
+.img-preview-wrap { position: relative; }
+.img-preview { width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: none; margin-top: 8px; }
+.img-preview.show { display: block; }
+.img-url-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.img-url-row .form-input { flex: 1; min-width: 200px; }
+.btn-upload { padding: 8px 16px; background: #1e40af; color: #fff; border: none; border-radius: 8px; font-size: .85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity .2s; }
+.btn-upload:hover { opacity: .9; }
+.btn-upload:disabled { opacity: .6; cursor: wait; }
+.hp-img-file { display: none; }
+.btn-pick-library { padding: 8px 14px; background: transparent; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; }
+.btn-pick-library:hover { background: #eff6ff; border-color: #93c5fd; }
+.btn-sync-img { padding: 8px 14px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all .2s; display: inline-flex; align-items: center; gap: 5px; }
+.btn-sync-img:hover { background: #dcfce7; border-color: #86efac; }
+.btn-sync-img:disabled { opacity: .5; cursor: wait; }
+.shared-img-hint { font-size: .76rem; color: #6b7280; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.shared-img-hint.is-fallback { color: #d97706; }
+.save-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e5e7eb; padding: 14px 0; display: flex; align-items: center; gap: 12px; z-index: 10; margin-top: 32px; }
+.btn-save { padding: 10px 28px; background: #111; color: #fff; border: none; border-radius: 8px; font-size: .9rem; font-weight: 700; cursor: pointer; transition: opacity .2s; }
+.btn-save:hover { opacity: .8; }
+.btn-preview { padding: 10px 20px; background: #f3f4f6; color: #374151; text-decoration: none; border-radius: 8px; font-size: .9rem; font-weight: 600; transition: background .2s; }
+.btn-preview:hover { background: #e5e7eb; }
+.tip-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 16px; font-size: .83rem; color: #1e40af; margin-bottom: 20px; }
+.section-divider { height: 1px; background: #e5e7eb; margin: 28px 0; }
+@media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr !important; }
+    .hp-edit-wrap { max-width: 100%; }
+}
+</style>
+
+<div class="hp-edit-wrap">
+
+    <div class="hp-edit-header">
+        <div>
+            <h1>{{ slug|capitalize }} Sayfası Düzenleyici</h1>
+            <p style="color:#6b7280;font-size:.88rem;margin-top:4px;">Sekmeler sayfadaki bölümlere karşılık gelir. Dili yukarıdan seçin.</p>
+        </div>
+        <a href="/{{ lang }}/{{ slug }}" target="_blank" class="btn-preview">🔗 Önizle</a>
+    </div>
+
+    <!-- Dil seçici -->
+    <div class="lang-bar">
+        {% for lc in supported_langs %}
+        <a href="/esk/service-page?lang={{ lc }}&tab={{ tab }}&slug={{ slug }}"
+           class="lang-tab {% if lc == lang %}active{% endif %}">{{ lang_labels[lc] }}</a>
+        {% endfor %}
+    </div>
+
+    <!-- Sekme navigasyonu -->
+    <div class="tab-nav">
+        <a href="?lang={{ lang }}&tab=hero&slug={{ slug }}"  class="tab-btn {% if tab=='hero'  %}active{% endif %}">🖼 Hero</a>
+        <a href="?lang={{ lang }}&tab=s1&slug={{ slug }}"    class="tab-btn {% if tab=='s1'    %}active{% endif %}">📦 Bölüm 1</a>
+        <a href="?lang={{ lang }}&tab=s2&slug={{ slug }}"    class="tab-btn {% if tab=='s2'    %}active{% endif %}">🔧 Bölüm 2</a>
+        <a href="?lang={{ lang }}&tab=s3&slug={{ slug }}"    class="tab-btn {% if tab=='s3'    %}active{% endif %}">🌐 Bölüm 3</a>
+        <a href="?lang={{ lang }}&tab=s4&slug={{ slug }}"    class="tab-btn {% if tab=='s4'    %}active{% endif %}">🏆 Bölüm 4</a>
+        <a href="?lang={{ lang }}&tab=faq&slug={{ slug }}"   class="tab-btn {% if tab=='faq'   %}active{% endif %}">❓ SSS</a>
+        <a href="?lang={{ lang }}&tab=cta&slug={{ slug }}"   class="tab-btn {% if tab=='cta'   %}active{% endif %}">📣 CTA</a>
+        <a href="?lang={{ lang }}&tab=seo&slug={{ slug }}"   class="tab-btn {% if tab=='seo'   %}active{% endif %}">🔍 SEO</a>
+    </div>
+
+    <form method="POST" action="/esk/service-page/save">
+        <input type="hidden" name="lang" value="{{ lang }}">
+        <input type="hidden" name="tab"  value="{{ tab }}">
+        <input type="hidden" name="slug" value="{{ slug }}">
+
+        {# ══════════════════════════════════════════════ #}
+        {# HERO                                          #}
+        {# ══════════════════════════════════════════════ #}
+        {% if tab == 'hero' %}
+        <p class="form-hint" style="margin-bottom:16px;">Sayfanın en üstündeki tam ekran bölüm: etiket, H1 başlık, alt metin, butonlar ve arka plan görseli.</p>
+        <div class="tip-box">💡 <strong>HTML kullanabilirsiniz.</strong> Vurgu için: <code>&lt;span&gt;kelime&lt;/span&gt;</code></div>
+
+        <div class="form-group">
+            <label class="form-label">Etiket (badge)</label>
+            <input type="text" name="hero_badge" class="form-input" value="{{ data.get('hero_badge','') }}" placeholder="Türkiye'nin Lider Üreticisi">
+            <p class="form-hint">H1 başlığının üzerinde çıkan küçük etiket.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Sayfa Başlığı — H1 <span style="color:#ef4444;font-size:.8rem;">SEO kritik</span></label>
+            <textarea name="hero_title" class="form-textarea" style="min-height:80px;" placeholder="Deterjan Üretimi ve &lt;span&gt;Fason Deterjan&lt;/span&gt; Fabrikası">{{ data.get('hero_title','') }}</textarea>
+            <p class="form-hint">Sayfada yalnızca bir H1 bulunur — ana anahtar kelimenizi buraya koyun. &lt;span&gt; ile vurgulayabilirsiniz.</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Alt Başlık (subtitle)</label>
+            <textarea name="hero_subtitle" class="form-textarea" style="min-height:70px;" placeholder="Kapsamlı fason üretim ve toptan tedarik çözümleri sunuyoruz.">{{ data.get('hero_subtitle','') }}</textarea>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">1. Buton Metni</label>
+                <input type="text" name="hero_btn1_text" class="form-input" value="{{ data.get('hero_btn1_text','') }}" placeholder="Teklif Al">
+            </div>
+            <div class="form-group">
+                <label class="form-label">1. Buton URL</label>
+                <input type="text" name="hero_btn1_url" class="form-input" value="{{ data.get('hero_btn1_url','') }}" placeholder="#iletisim">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">2. Buton Metni</label>
+                <input type="text" name="hero_btn2_text" class="form-input" value="{{ data.get('hero_btn2_text','') }}" placeholder="Hizmetlerimiz">
+            </div>
+            <div class="form-group">
+                <label class="form-label">2. Buton URL</label>
+                <input type="text" name="hero_btn2_url" class="form-input" value="{{ data.get('hero_btn2_url','') }}" placeholder="#hizmetler">
+            </div>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Arka Plan Görseli</label>
+            <div class="img-url-row">
+                <input type="text" name="hero_image_url" id="imgHero" class="form-input"
+                       value="{{ data.get('hero_image_url','') }}" placeholder="Link veya Yükle">
+                <input type="file" accept="image/*" class="hp-img-file" id="fileHero" data-target="imgHero" data-preview="prevHero">
+                <button type="button" class="btn-upload" data-for="fileHero">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="imgHero" data-preview="prevHero">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img" data-field="hero_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="imgHero">🌐 Tüm dillere uygula</button>
+                {% endif %}
+            </div>
+            {% if lang != 'tr' and not data.get('hero_image_url') and shared_images.get('hero_image_url') %}
+            <p class="shared-img-hint is-fallback">⚠️ Bu dile ait görsel yok — <strong>tr</strong> görseli kullanılıyor.</p>
+            {% elif lang == 'tr' and data.get('hero_image_url') %}
+            <p class="shared-img-hint">ℹ️ Görselsiz dillerde bu görsel otomatik kullanılır.
+                <button type="button" class="btn-sync-img" style="margin-left:4px;" data-field="hero_image_url" data-src-lang="tr" data-slug="{{ slug }}" data-input-id="imgHero">🌐 Tüm dillere uygula</button>
+            </p>
+            {% endif %}
+            <img id="prevHero" src="{{ data.get('hero_image_url','') or shared_images.get('hero_image_url','') }}"
+                 class="img-preview {% if data.get('hero_image_url') or shared_images.get('hero_image_url') %}show{% endif %}">
+        </div>
+
+        {# ══════════════════════════════════════════════ #}
+        {# BÖLÜM 1 — 3 H3 KART                          #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 's1' %}
+        <p class="form-hint" style="margin-bottom:16px;">Birinci içerik bölümü: H2 başlık, açıklama, bölüm görseli ve 3 H3 kart.</p>
+        <div class="tip-box">💡 Bu bölümün H2 başlığı sayfanın ilk içerik başlığıdır — birincil anahtar kelimeyi burada kullanın.</div>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı — H2 <span style="color:#ef4444;font-size:.8rem;">SEO kritik</span></label>
+            <input type="text" name="s1_h2" class="form-input" value="{{ data.get('s1_h2','') }}" placeholder="Üretim Kapasitemiz ve Ürün Yelpazesi">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Açıklaması</label>
+            <textarea name="s1_text" class="form-textarea" style="min-height:110px;" placeholder="Bölüm hakkında SEO uyumlu açıklama metni…">{{ data.get('s1_text','') }}</textarea>
+            <p class="form-hint">Bu metin H2'nin hemen altında görünür. Önerilen: 60–120 kelime.</p>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Bölüm Görseli <span style="color:#9ca3af;font-weight:400">(kartların üstünde tam genişlik)</span></label>
+            <div class="img-url-row">
+                <input type="text" name="s1_image_url" id="imgS1" class="form-input"
+                       value="{{ data.get('s1_image_url','') }}" placeholder="Link veya Yükle">
+                <input type="file" accept="image/*" class="hp-img-file" id="fileS1" data-target="imgS1" data-preview="prevS1">
+                <button type="button" class="btn-upload" data-for="fileS1">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="imgS1" data-preview="prevS1">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img" data-field="s1_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="imgS1">🌐 Tüm dillere</button>
+                {% endif %}
+            </div>
+            <img id="prevS1" src="{{ data.get('s1_image_url','') or shared_images.get('s1_image_url','') }}"
+                 class="img-preview {% if data.get('s1_image_url') or shared_images.get('s1_image_url') %}show{% endif %}">
+        </div>
+
+        <div class="section-divider"></div>
+        <p style="font-size:.88rem;font-weight:700;color:#374151;margin-bottom:16px;">H3 Kartlar (en fazla 3 adet)</p>
+
+        {% for i in range(1, 4) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">KART {{ i }} — H3</div>
+
+            <div class="form-group">
+                <label class="form-label">Kart Başlığı — H3</label>
+                <input type="text" name="s1_item{{ i }}_h3" class="form-input"
+                       value="{{ data.get('s1_item' ~ i ~ '_h3','') }}"
+                       placeholder="{{ ['Sıvı Deterjan Üretimi','Toz Deterjan Üretimi','Kapsül ve Diğer Formlar'][i-1] }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Açıklama Metni</label>
+                <textarea name="s1_item{{ i }}_text" class="form-textarea" style="min-height:90px;"
+                          placeholder="Bu alt kategori hakkında detaylı açıklama…">{{ data.get('s1_item' ~ i ~ '_text','') }}</textarea>
+                <p class="form-hint">Önerilen: 50–100 kelime. Uzun kuyruklu anahtar kelimelere odaklanın.</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">İkon <span style="color:#9ca3af;font-weight:400">(emoji)</span></label>
+                <input type="text" name="s1_item{{ i }}_icon" class="form-input" maxlength="4"
+                       value="{{ data.get('s1_item' ~ i ~ '_icon','') }}"
+                       placeholder="{{ ['💧','🌿','💊'][i-1] }}" style="max-width:80px;">
+            </div>
+
+            <div class="form-group img-preview-wrap">
+                <label class="form-label">Kart Görseli</label>
+                {% set _fid = 'imgS1i' ~ i %}
+                {% set _pid = 'prevS1i' ~ i %}
+                {% set _fallback = shared_images.get('s1_item' ~ i ~ '_image_url', '') %}
+                <div class="img-url-row">
+                    <input type="text" name="s1_item{{ i }}_image_url" id="{{ _fid }}" class="form-input"
+                           value="{{ data.get('s1_item' ~ i ~ '_image_url','') }}" placeholder="Link veya Yükle">
+                    <input type="file" accept="image/*" class="hp-img-file" id="file{{ _fid }}" data-target="{{ _fid }}" data-preview="{{ _pid }}">
+                    <button type="button" class="btn-upload" data-for="file{{ _fid }}">Yükle</button>
+                    <button type="button" class="btn-pick-library" data-target="{{ _fid }}" data-preview="{{ _pid }}">🖼 Kütüphane</button>
+                    {% if lang != 'tr' %}
+                    <button type="button" class="btn-sync-img" data-field="s1_item{{ i }}_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="{{ _fid }}">🌐 Tüm dillere</button>
+                    {% endif %}
+                </div>
+                <img id="{{ _pid }}" src="{{ data.get('s1_item' ~ i ~ '_image_url','') or _fallback }}"
+                     class="img-preview {% if data.get('s1_item' ~ i ~ '_image_url') or _fallback %}show{% endif %}" style="max-height:140px;">
+            </div>
+        </div>
+        {% endfor %}
+
+        {# ══════════════════════════════════════════════ #}
+        {# BÖLÜM 2 — 2 H3 KART                          #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 's2' %}
+        <p class="form-hint" style="margin-bottom:16px;">İkinci içerik bölümü: H2 başlık, açıklama, bölüm görseli ve 2 H3 kart.</p>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı — H2</label>
+            <input type="text" name="s2_h2" class="form-input" value="{{ data.get('s2_h2','') }}" placeholder="Fason Deterjan Üretimi Hizmeti">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Açıklaması</label>
+            <textarea name="s2_text" class="form-textarea" style="min-height:110px;" placeholder="Bu bölüm hakkında açıklama…">{{ data.get('s2_text','') }}</textarea>
+            <p class="form-hint">Önerilen: 60–120 kelime.</p>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Bölüm Görseli <span style="color:#9ca3af;font-weight:400">(kartların üstünde tam genişlik)</span></label>
+            <div class="img-url-row">
+                <input type="text" name="s2_image_url" id="imgS2" class="form-input"
+                       value="{{ data.get('s2_image_url','') }}" placeholder="Link veya Yükle">
+                <input type="file" accept="image/*" class="hp-img-file" id="fileS2" data-target="imgS2" data-preview="prevS2">
+                <button type="button" class="btn-upload" data-for="fileS2">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="imgS2" data-preview="prevS2">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img" data-field="s2_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="imgS2">🌐 Tüm dillere</button>
+                {% endif %}
+            </div>
+            <img id="prevS2" src="{{ data.get('s2_image_url','') or shared_images.get('s2_image_url','') }}"
+                 class="img-preview {% if data.get('s2_image_url') or shared_images.get('s2_image_url') %}show{% endif %}">
+        </div>
+
+        <div class="section-divider"></div>
+        <p style="font-size:.88rem;font-weight:700;color:#374151;margin-bottom:16px;">H3 Kartlar (en fazla 2 adet)</p>
+
+        {% for i in range(1, 3) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">KART {{ i }} — H3</div>
+
+            <div class="form-group">
+                <label class="form-label">Kart Başlığı — H3</label>
+                <input type="text" name="s2_item{{ i }}_h3" class="form-input"
+                       value="{{ data.get('s2_item' ~ i ~ '_h3','') }}"
+                       placeholder="{{ ['Private Label Deterjan Üretimi','Özel Formülasyon ve AR-GE Desteği'][i-1] }}">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Açıklama Metni</label>
+                <textarea name="s2_item{{ i }}_text" class="form-textarea" style="min-height:90px;"
+                          placeholder="Bu alt hizmet hakkında açıklama…">{{ data.get('s2_item' ~ i ~ '_text','') }}</textarea>
+                <p class="form-hint">Önerilen: 60–120 kelime.</p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">İkon <span style="color:#9ca3af;font-weight:400">(emoji)</span></label>
+                <input type="text" name="s2_item{{ i }}_icon" class="form-input" maxlength="4"
+                       value="{{ data.get('s2_item' ~ i ~ '_icon','') }}"
+                       placeholder="{{ ['🏷','🔬'][i-1] }}" style="max-width:80px;">
+            </div>
+
+            <div class="form-group img-preview-wrap">
+                <label class="form-label">Kart Görseli</label>
+                {% set _fid = 'imgS2i' ~ i %}
+                {% set _pid = 'prevS2i' ~ i %}
+                {% set _fallback = shared_images.get('s2_item' ~ i ~ '_image_url', '') %}
+                <div class="img-url-row">
+                    <input type="text" name="s2_item{{ i }}_image_url" id="{{ _fid }}" class="form-input"
+                           value="{{ data.get('s2_item' ~ i ~ '_image_url','') }}" placeholder="Link veya Yükle">
+                    <input type="file" accept="image/*" class="hp-img-file" id="file{{ _fid }}" data-target="{{ _fid }}" data-preview="{{ _pid }}">
+                    <button type="button" class="btn-upload" data-for="file{{ _fid }}">Yükle</button>
+                    <button type="button" class="btn-pick-library" data-target="{{ _fid }}" data-preview="{{ _pid }}">🖼 Kütüphane</button>
+                    {% if lang != 'tr' %}
+                    <button type="button" class="btn-sync-img" data-field="s2_item{{ i }}_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="{{ _fid }}">🌐 Tüm dillere</button>
+                    {% endif %}
+                </div>
+                <img id="{{ _pid }}" src="{{ data.get('s2_item' ~ i ~ '_image_url','') or _fallback }}"
+                     class="img-preview {% if data.get('s2_item' ~ i ~ '_image_url') or _fallback %}show{% endif %}" style="max-height:140px;">
+            </div>
+        </div>
+        {% endfor %}
+
+        {# ══════════════════════════════════════════════ #}
+        {# BÖLÜM 3 — 1 H3 + SPLIT GÖRSEL                #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 's3' %}
+        <p class="form-hint" style="margin-bottom:16px;">Üçüncü bölüm: H2 başlık, açıklama, yan yana (split) metin ve görsel.</p>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı — H2</label>
+            <input type="text" name="s3_h2" class="form-input" value="{{ data.get('s3_h2','') }}" placeholder="Toptan Deterjan Tedariki">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Açıklaması</label>
+            <textarea name="s3_text" class="form-textarea" style="min-height:110px;" placeholder="Bölüm hakkında açıklama…">{{ data.get('s3_text','') }}</textarea>
+            <p class="form-hint">Önerilen: 60–120 kelime.</p>
+        </div>
+
+        <div class="section-divider"></div>
+        <p style="font-size:.88rem;font-weight:700;color:#374151;margin-bottom:16px;">Alt Başlık — H3 ve Yan Görsel</p>
+
+        <div class="form-group">
+            <label class="form-label">Alt Başlık — H3</label>
+            <input type="text" name="s3_item1_h3" class="form-input" value="{{ data.get('s3_item1_h3','') }}" placeholder="Kimler İçin Üretim Yapıyoruz?">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Alt Başlık Açıklama Metni</label>
+            <textarea name="s3_item1_text" class="form-textarea" style="min-height:130px;" placeholder="Hedef kitlenizi ve neden sizi seçmeleri gerektiğini açıklayan metin…">{{ data.get('s3_item1_text','') }}</textarea>
+            <p class="form-hint">Bu metin H3'ün yanında / altında görünür. Önerilen: 80–150 kelime.</p>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Yan Görsel <span style="color:#9ca3af;font-weight:400">(metin ile yan yana)</span></label>
+            <div class="img-url-row">
+                <input type="text" name="s3_image_url" id="imgS3" class="form-input"
+                       value="{{ data.get('s3_image_url','') }}" placeholder="Link veya Yükle">
+                <input type="file" accept="image/*" class="hp-img-file" id="fileS3" data-target="imgS3" data-preview="prevS3">
+                <button type="button" class="btn-upload" data-for="fileS3">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="imgS3" data-preview="prevS3">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img" data-field="s3_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="imgS3">🌐 Tüm dillere</button>
+                {% endif %}
+            </div>
+            <img id="prevS3" src="{{ data.get('s3_image_url','') or shared_images.get('s3_image_url','') }}"
+                 class="img-preview {% if data.get('s3_image_url') or shared_images.get('s3_image_url') %}show{% endif %}">
+        </div>
+
+        {# ══════════════════════════════════════════════ #}
+        {# BÖLÜM 4 — METİN + GÖRSEL                     #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 's4' %}
+        <p class="form-hint" style="margin-bottom:16px;">Dördüncü bölüm: H2 başlık, açıklama metni ve alt görsel (ör: Kalite Belgeleri).</p>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı — H2</label>
+            <input type="text" name="s4_h2" class="form-input" value="{{ data.get('s4_h2','') }}" placeholder="Kalite Belgeleri ve Üretim Standartlarımız">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Açıklama Metni</label>
+            <textarea name="s4_text" class="form-textarea" style="min-height:150px;" placeholder="Kalite belgeleriniz, sertifikalarınız ve üretim standartlarınız hakkında detaylı bilgi…">{{ data.get('s4_text','') }}</textarea>
+            <p class="form-hint">Önerilen: 80–160 kelime. Belge isimlerini (ISO, TSE, GMP vb.) açıkça yazın.</p>
+        </div>
+
+        <div class="form-group img-preview-wrap">
+            <label class="form-label">Bölüm Görseli <span style="color:#9ca3af;font-weight:400">(sertifika kartı yoksa gösterilir — 1200×480 px)</span></label>
+            <div class="img-url-row">
+                <input type="text" name="s4_image_url" id="imgS4" class="form-input"
+                       value="{{ data.get('s4_image_url','') }}" placeholder="Link veya Yükle">
+                <input type="file" accept="image/*" class="hp-img-file" id="fileS4" data-target="imgS4" data-preview="prevS4">
+                <button type="button" class="btn-upload" data-for="fileS4">Yükle</button>
+                <button type="button" class="btn-pick-library" data-target="imgS4" data-preview="prevS4">🖼 Kütüphane</button>
+                {% if lang != 'tr' %}
+                <button type="button" class="btn-sync-img" data-field="s4_image_url" data-src-lang="{{ lang }}" data-slug="{{ slug }}" data-input-id="imgS4">🌐 Tüm dillere</button>
+                {% endif %}
+            </div>
+            <img id="prevS4" src="{{ data.get('s4_image_url','') or shared_images.get('s4_image_url','') }}"
+                 class="img-preview {% if data.get('s4_image_url') or shared_images.get('s4_image_url') %}show{% endif %}">
+        </div>
+
+        <div class="section-divider"></div>
+        <p class="form-hint" style="margin-bottom:16px;font-size:.83rem;color:#1e40af;">🏅 Sertifika Kartları — En az 1 kart başlığı girilirse görsel yerine 4'lü kart grid'i gösterilir (landing_page tasarımıyla aynı).</p>
+
+        {% for n in range(1, 5) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">Sertifika {{ n }}</div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Başlık (ör: ISO 9001:2015)</label>
+                    <input type="text" name="cert{{ n }}_title" class="form-input" value="{{ data.get('cert' ~ n ~ '_title','') }}" placeholder="ISO 9001:2015">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Açıklama</label>
+                    <input type="text" name="cert{{ n }}_desc" class="form-input" value="{{ data.get('cert' ~ n ~ '_desc','') }}" placeholder="Kalite Yönetim Sistemi">
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {# ══════════════════════════════════════════════ #}
+        {# SSS                                           #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 'faq' %}
+        <div class="tip-box">💡 SSS bölümü Google'ın soru kutularında (FAQ rich result) yer alma şansı verir. Her soru, kullanıcının arama motoruna yazacağı bir long-tail kelimeye karşılık gelmelidir. Cevaplar JSON-LD ile otomatik işaretlenir.</div>
+
+        <div class="form-group">
+            <label class="form-label">Bölüm Başlığı — H2</label>
+            <input type="text" name="faq_title" class="form-input" value="{{ data.get('faq_title','') }}" placeholder="Sıkça Sorulan Sorular">
+        </div>
+
+        {% for i in range(1, 9) %}
+        <div class="repeater-card">
+            <div class="repeater-card-head">SORU {{ i }}</div>
+            <div class="form-group">
+                <label class="form-label">Soru</label>
+                <input type="text" name="faq{{ i }}_question" class="form-input"
+                       value="{{ data.get('faq' ~ i ~ '_question','') }}"
+                       placeholder="Minimum sipariş miktarınız nedir?">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cevap</label>
+                <textarea name="faq{{ i }}_answer" class="form-textarea" style="min-height:80px;"
+                          placeholder="Detaylı, bilgilendirici bir cevap…">{{ data.get('faq' ~ i ~ '_answer','') }}</textarea>
+                <p class="form-hint">Kısa ve net tutun. 40–120 kelime idealdir.</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        {# ══════════════════════════════════════════════ #}
+        {# CTA                                           #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 'cta' %}
+        <p class="form-hint" style="margin-bottom:16px;">Sayfanın alt kısmındaki teklif / iletişim bölümü — koyu arka plan üzerinde maksimum 2 buton.</p>
+
+        <div class="form-group">
+            <label class="form-label">CTA Başlığı — H2</label>
+            <input type="text" name="cta_title" class="form-input" value="{{ data.get('cta_title','') }}" placeholder="Deterjan Üretimi İçin Teklif Alın">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Açıklama Metni</label>
+            <textarea name="cta_text" class="form-textarea" style="min-height:80px;"
+                      placeholder="Kendi markanızı oluşturmak veya toptan tedarik için bugün iletişime geçin.">{{ data.get('cta_text','') }}</textarea>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">1. Buton Metni</label>
+                <input type="text" name="cta_btn1_text" class="form-input" value="{{ data.get('cta_btn1_text','') }}" placeholder="Teklif Al →">
+            </div>
+            <div class="form-group">
+                <label class="form-label">1. Buton URL</label>
+                <input type="text" name="cta_btn1_url" class="form-input" value="{{ data.get('cta_btn1_url','') }}" placeholder="/iletisim">
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">2. Buton Metni <span style="color:#9ca3af;font-weight:400">(boş = gizlenir)</span></label>
+                <input type="text" name="cta_btn2_text" class="form-input" value="{{ data.get('cta_btn2_text','') }}" placeholder="Ürünleri İncele">
+            </div>
+            <div class="form-group">
+                <label class="form-label">2. Buton URL</label>
+                <input type="text" name="cta_btn2_url" class="form-input" value="{{ data.get('cta_btn2_url','') }}" placeholder="/urunler">
+            </div>
+        </div>
+
+        {# ══════════════════════════════════════════════ #}
+        {# SEO                                           #}
+        {# ══════════════════════════════════════════════ #}
+        {% elif tab == 'seo' %}
+        <p class="form-hint" style="margin-bottom:16px;">Tarayıcı sekmesi başlığı, arama motoru açıklaması ve sosyal medya paylaşım metinleri.</p>
+
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:18px 20px;background:#f9fafb;margin-bottom:20px;">
+            <div id="prev-title" style="font-size:1.1rem;color:#1a0dab;font-weight:600;margin-bottom:2px;">
+                {{ data.get('meta_title') or (slug|capitalize + ' — ' + (site.site_name or 'Heni')) }}
+            </div>
+            <div style="font-size:.82rem;color:#006621;margin-bottom:6px;">{{ site.domain if site and site.domain else 'henib2b.com' }}</div>
+            <div id="prev-desc" style="font-size:.85rem;color:#4d5156;line-height:1.5;">
+                {{ data.get('meta_description') or 'Meta açıklama girilmemiş…' }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Başlık (title tag) <span style="color:#ef4444;font-size:.8rem;">SEO kritik</span></label>
+            <input type="text" name="meta_title" id="inpMetaTitle" class="form-input" maxlength="70"
+                   value="{{ data.get('meta_title','') }}"
+                   placeholder="{{ slug|capitalize }} Üretimi ve Fason {{ slug|capitalize }} | Heni B2B">
+            <p class="form-hint"><span id="mt-cnt">0</span>/70 karakter · Önerilen: 50–60 · Ana anahtar kelimeni başa al</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Meta Açıklama <span style="color:#ef4444;font-size:.8rem;">SEO kritik</span></label>
+            <textarea name="meta_description" id="inpMetaDesc" class="form-textarea"
+                      style="min-height:90px;" maxlength="160"
+                      placeholder="{{ slug|capitalize }} üretiminde fason ve toptan çözümler. Private label, özel formülasyon ve hızlı teslimat.">{{ data.get('meta_description','') }}</textarea>
+            <p class="form-hint"><span id="md-cnt">0</span>/160 karakter · Önerilen: 120–155 · Güçlü CTA ile bitirin</p>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">OG Başlık <span style="color:#9ca3af;font-weight:400">(Facebook / LinkedIn)</span></label>
+            <input type="text" name="og_title" class="form-input" value="{{ data.get('og_title','') }}" placeholder="Sosyal medya paylaşım başlığı">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">OG Açıklama</label>
+            <textarea name="og_description" class="form-textarea" style="min-height:80px;" placeholder="Sosyal medya paylaşım açıklaması…">{{ data.get('og_description','') }}</textarea>
+        </div>
+
+        {% endif %}
+
+        <!-- Kaydet çubuğu -->
+        {% if request.query_params.get('saved') %}
+        <div style="background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:10px 16px;margin-bottom:10px;font-size:.88rem;color:#065f46;font-weight:600;">✅ Değişiklikler kaydedildi.</div>
+        {% elif request.query_params.get('save_error') %}
+        <div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;padding:10px 16px;margin-bottom:10px;font-size:.88rem;color:#991b1b;font-weight:600;">❌ Kayıt hatası: {{ request.query_params.get('save_error') }}</div>
+        {% endif %}
+        <div class="save-bar">
+            <button type="submit" class="btn-save">💾 Kaydet</button>
+            <a href="/{{ lang }}/{{ slug }}" target="_blank" class="btn-preview">🔗 Önizle</a>
+        </div>
+    </form>
+
+</div>
+
+<script>
+// Görsel URL inputlarını izle → önizleme güncelle
+document.querySelectorAll('.form-input[id^="img"]').forEach(inp => {
+    const pid = inp.id.replace('img', 'prev');
+    const prev = document.getElementById(pid);
+    if (!prev) return;
+    inp.addEventListener('input', () => {
+        prev.src = inp.value;
+        prev.classList.toggle('show', !!inp.value);
+    });
+});
+
+// Yükle butonu: ilgili file input'u açar
+document.querySelectorAll('.btn-upload').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const fi = document.getElementById(btn.dataset.for);
+        if (fi) fi.click();
+    });
+});
+
+// Medya kütüphanesinden görsel seç
+document.querySelectorAll('.btn-pick-library').forEach(btn => {
+    btn.addEventListener('click', function () {
+        window.openMediaPicker(url => {
+            const target  = document.getElementById(this.dataset.target);
+            const preview = document.getElementById(this.dataset.preview);
+            if (target)  { target.value = url; }
+            if (preview) { preview.src = url; preview.classList.add('show'); }
+        });
+    });
+});
+
+// PC'den görsel yükleme → /esk/upload-homepage-image
+document.querySelectorAll('.hp-img-file').forEach(fi => {
+    fi.addEventListener('change', async function () {
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const btn = document.querySelector('.btn-upload[data-for="' + this.id + '"]');
+        if (btn) btn.disabled = true;
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            const res  = await fetch('/esk/upload-homepage-image', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (data.error) { alert(data.error); return; }
+            const url     = data.url || data.location;
+            const target  = document.getElementById(this.dataset.target);
+            const preview = document.getElementById(this.dataset.preview);
+            if (target)  { target.value = url; }
+            if (preview) { preview.src = url; preview.classList.add('show'); }
+        } catch (e) {
+            alert('Yükleme başarısız: ' + (e.message || 'Beklenmeyen hata'));
+        } finally {
+            if (btn) btn.disabled = false;
+            this.value = '';
+        }
+    });
+});
+
+// Tüm dillere görsel kopyala
+document.querySelectorAll('.btn-sync-img').forEach(btn => {
+    btn.addEventListener('click', async function () {
+        const field   = this.dataset.field;
+        const srcLang = this.dataset.srcLang;
+        const slug    = this.dataset.slug;
+        const inputId = this.dataset.inputId;
+        const inp     = inputId ? document.getElementById(inputId) : null;
+        const imgUrl  = inp ? inp.value : '';
+
+        if (!imgUrl) { alert('Önce bu alana bir görsel yükleyin veya link girin.'); return; }
+        if (!confirm('Bu görsel tüm dil kayıtlarına kopyalanacak. Devam edilsin mi?')) return;
+
+        this.disabled = true;
+        const origText = this.textContent;
+        this.textContent = '⏳ Kopyalanıyor…';
+        try {
+            const fd = new FormData();
+            fd.append('field', field); fd.append('src_lang', srcLang); fd.append('slug', slug);
+            const res  = await fetch('/esk/service-page/sync-image', { method: 'POST', body: fd, credentials: 'same-origin' });
+            const data = await res.json();
+            if (data.ok) alert('✅ Kopyalandı: ' + (data.synced_to || []).join(', '));
+            else         alert('Hata: ' + (data.error || 'Bilinmeyen hata'));
+        } catch (e) {
+            alert('İstek başarısız: ' + e.message);
+        } finally {
+            this.disabled = false; this.textContent = origText;
+        }
+    });
+});
+
+// SEO önizleme — canlı karakter sayacı
+const titleInp = document.getElementById('inpMetaTitle');
+const descInp  = document.getElementById('inpMetaDesc');
+const prevT    = document.getElementById('prev-title');
+const prevD    = document.getElementById('prev-desc');
+const mtCnt    = document.getElementById('mt-cnt');
+const mdCnt    = document.getElementById('md-cnt');
+if (titleInp) {
+    titleInp.addEventListener('input', () => {
+        if (prevT) prevT.textContent = titleInp.value || titleInp.placeholder;
+        if (mtCnt) mtCnt.textContent = titleInp.value.length;
+    });
+    if (mtCnt) mtCnt.textContent = titleInp.value.length;
+}
+if (descInp) {
+    descInp.addEventListener('input', () => {
+        if (prevD) prevD.textContent = descInp.value || descInp.placeholder;
+        if (mdCnt) mdCnt.textContent = descInp.value.length;
+    });
+    if (mdCnt) mdCnt.textContent = descInp.value.length;
+}
+</script>
+
+{% endblock %}

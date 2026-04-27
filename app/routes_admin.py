@@ -3056,6 +3056,265 @@ async def admin_homepage_save(
 
 
 # =========================================================
+# HİZMET SAYFALARI — JSON dosyası tabanlı içerik editörü
+# =========================================================
+
+import json as _json_sp
+
+SERVICE_SLUGS        = ["deterjan", "kozmetik", "parfum"]
+SERVICE_IMAGE_FIELDS = [
+    "hero_image_url",
+    "s1_image_url",
+    "s1_item1_image_url", "s1_item2_image_url", "s1_item3_image_url",
+    "s2_image_url",
+    "s2_item1_image_url", "s2_item2_image_url",
+    "s3_image_url",
+    "s4_image_url",
+]
+
+
+def _service_page_path(slug: str, lang: str) -> str:
+    """Slug ve dile göre JSON dosya yolunu döner, klasörü gerekirse oluşturur."""
+    base = os.path.join(PROJECT_ROOT, "data", "pages", slug)
+    os.makedirs(base, exist_ok=True)
+    return os.path.join(base, f"{lang}.json")
+
+
+def _load_service_page(slug: str, lang: str) -> dict:
+    """JSON dosyasını yükler; yoksa veya bozuksa boş dict döner."""
+    try:
+        with open(_service_page_path(slug, lang), "r", encoding="utf-8") as f:
+            return _json_sp.load(f)
+    except (FileNotFoundError, _json_sp.JSONDecodeError):
+        return {}
+
+
+def _save_service_page(slug: str, lang: str, data: dict) -> None:
+    """Veriyi JSON dosyasına kaydeder."""
+    with open(_service_page_path(slug, lang), "w", encoding="utf-8") as f:
+        _json_sp.dump(data, f, ensure_ascii=False, indent=2)
+
+
+def _get_service_shared_image(field: str, current_data: dict, slug: str, lang: str) -> str:
+    """Görsel alanı için değer döner; boşsa tr'den fallback yapar."""
+    value = current_data.get(field, "")
+    if value:
+        return value
+    if lang == "tr":
+        return ""
+    tr_data = _load_service_page(slug, "tr")
+    return tr_data.get(field, "")
+
+
+def _get_service_svc_image(idx: int, current_data: dict, slug: str, lang: str) -> str:
+    """Hizmet kartı görselini döner (svc1_image vb.); boşsa tr'den fallback."""
+    field = f"svc{idx + 1}_image"
+    value = current_data.get(field, "")
+    if value:
+        return value
+    if lang == "tr":
+        return ""
+    tr_data = _load_service_page(slug, "tr")
+    return tr_data.get(field, "")
+
+
+@router.get("/esk/service-page")
+def admin_service_page(
+    request: Request,
+    lang: str = "tr",
+    tab: str = "hero",
+    slug: str = "deterjan",
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required),
+):
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "anasayfa")
+    if redirect:
+        return redirect
+    if slug not in SERVICE_SLUGS:
+        return RedirectResponse(f"/esk/service-page?slug=deterjan&lang={lang}&tab=hero", status_code=302)
+    if tab not in ("hero", "s1", "s2", "s3", "s4", "faq", "cta", "seo"):
+        return RedirectResponse(f"/esk/service-page?slug={slug}&lang={lang}&tab=hero", status_code=302)
+
+    data = _load_service_page(slug, lang)
+    site = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+
+    # Her görsel alanı için fallback URL'yi hesapla
+    shared_images: dict = {}
+    for field in SERVICE_IMAGE_FIELDS:
+        shared_images[field] = _get_service_shared_image(field, data, slug, lang)
+
+    return templates.TemplateResponse("admin_service_page.html", {
+        "request":         request,
+        "current_user":    admin,
+        "data":            data,
+        "lang":            lang,
+        "tab":             tab,
+        "slug":            slug,
+        "supported_langs": SUPPORTED_LANGS,
+        "lang_labels":     LANG_LABELS,
+        "shared_images":   shared_images,
+        "site":            site,
+    })
+
+
+@router.post("/esk/service-page/sync-image")
+async def admin_service_page_sync_image(
+    request: Request,
+    admin = Depends(admin_required),
+):
+    """Belirtilen görsel alanını src_lang'dan tüm diğer dil dosyalarına kopyalar."""
+    if not admin:
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
+
+    form     = await request.form()
+    field    = (form.get("field") or "").strip()
+    src_lang = (form.get("src_lang") or "tr").strip()
+    slug     = (form.get("slug") or "").strip()
+
+    if slug not in SERVICE_SLUGS:
+        return JSONResponse({"error": "Geçersiz slug"}, status_code=400)
+
+    allowed = set(SERVICE_IMAGE_FIELDS)
+    if field not in allowed:
+        return JSONResponse({"error": "Geçersiz alan"}, status_code=400)
+
+    src_data    = _load_service_page(slug, src_lang)
+    image_value = src_data.get(field, "")
+
+    if not image_value:
+        return JSONResponse({"error": "Kaynak görsel boş"}, status_code=404)
+
+    updated = []
+    for lng in SUPPORTED_LANGS:
+        if lng == src_lang:
+            continue
+        dest_data        = _load_service_page(slug, lng)
+        dest_data[field] = image_value
+        _save_service_page(slug, lng, dest_data)
+        updated.append(lng)
+
+    return JSONResponse({"ok": True, "synced_to": updated, "value": image_value})
+
+
+@router.post("/esk/service-page/save")
+async def admin_service_page_save(
+    request: Request,
+    admin = Depends(admin_required),
+):
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    slug = "deterjan"
+    lang = "tr"
+    tab  = "hero"
+    try:
+        form = await request.form()
+        lang = form.get("lang", "tr")
+        tab  = form.get("tab",  "hero")
+        slug = (form.get("slug") or "deterjan").strip()
+        if slug not in SERVICE_SLUGS:
+            slug = "deterjan"
+
+        existing = _load_service_page(slug, lang)
+
+        def _f(key, default=""):
+            return form.get(key, existing.get(key, default))
+
+        if tab == "hero":
+            existing.update({
+                "hero_badge":     _f("hero_badge"),
+                "hero_title":     _f("hero_title"),
+                "hero_subtitle":  _f("hero_subtitle"),
+                "hero_btn1_text": _f("hero_btn1_text"),
+                "hero_btn1_url":  _f("hero_btn1_url"),
+                "hero_btn2_text": _f("hero_btn2_text"),
+                "hero_btn2_url":  _f("hero_btn2_url"),
+                "hero_image_url": _f("hero_image_url"),
+            })
+
+        elif tab == "s1":
+            existing.update({
+                "s1_h2":        _f("s1_h2"),
+                "s1_text":      _f("s1_text"),
+                "s1_image_url": _f("s1_image_url"),
+            })
+            for i in range(1, 4):
+                existing[f"s1_item{i}_h3"]        = form.get(f"s1_item{i}_h3",        "")
+                existing[f"s1_item{i}_text"]       = form.get(f"s1_item{i}_text",       "")
+                existing[f"s1_item{i}_icon"]       = form.get(f"s1_item{i}_icon",       "")
+                existing[f"s1_item{i}_image_url"]  = form.get(f"s1_item{i}_image_url",  "")
+
+        elif tab == "s2":
+            existing.update({
+                "s2_h2":        _f("s2_h2"),
+                "s2_text":      _f("s2_text"),
+                "s2_image_url": _f("s2_image_url"),
+            })
+            for i in range(1, 3):
+                existing[f"s2_item{i}_h3"]        = form.get(f"s2_item{i}_h3",        "")
+                existing[f"s2_item{i}_text"]       = form.get(f"s2_item{i}_text",       "")
+                existing[f"s2_item{i}_icon"]       = form.get(f"s2_item{i}_icon",       "")
+                existing[f"s2_item{i}_image_url"]  = form.get(f"s2_item{i}_image_url",  "")
+
+        elif tab == "s3":
+            existing.update({
+                "s3_h2":          _f("s3_h2"),
+                "s3_text":        _f("s3_text"),
+                "s3_image_url":   _f("s3_image_url"),
+                "s3_item1_h3":    _f("s3_item1_h3"),
+                "s3_item1_text":  _f("s3_item1_text"),
+            })
+
+        elif tab == "s4":
+            existing.update({
+                "s4_h2":        _f("s4_h2"),
+                "s4_text":      _f("s4_text"),
+                "s4_image_url": _f("s4_image_url"),
+            })
+            # Sertifika kartı alanlarını kaydet
+            for i in range(1, 5):
+                existing[f"cert{i}_title"] = form.get(f"cert{i}_title", "")
+                existing[f"cert{i}_desc"]  = form.get(f"cert{i}_desc",  "")
+
+        elif tab == "faq":
+            existing["faq_title"] = _f("faq_title")
+            for i in range(1, 9):
+                existing[f"faq{i}_question"] = form.get(f"faq{i}_question", "")
+                existing[f"faq{i}_answer"]   = form.get(f"faq{i}_answer",   "")
+
+        elif tab == "cta":
+            existing.update({
+                "cta_title":     _f("cta_title"),
+                "cta_text":      _f("cta_text"),
+                "cta_btn1_text": _f("cta_btn1_text"),
+                "cta_btn1_url":  _f("cta_btn1_url"),
+                "cta_btn2_text": _f("cta_btn2_text"),
+                "cta_btn2_url":  _f("cta_btn2_url"),
+            })
+
+        elif tab == "seo":
+            existing.update({
+                "meta_title":       _f("meta_title"),
+                "meta_description": _f("meta_description"),
+                "og_title":         _f("og_title"),
+                "og_description":   _f("og_description"),
+            })
+
+        _save_service_page(slug, lang, existing)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        err_msg = str(e)[:150].replace('"', '').replace("'", '')
+        return RedirectResponse(
+            f"/esk/service-page?slug={slug}&lang={lang}&tab={tab}&save_error={err_msg}",
+            status_code=302
+        )
+    return RedirectResponse(f"/esk/service-page?slug={slug}&lang={lang}&tab={tab}&saved=1", status_code=302)
+
+
+# =========================================================
 # KULLANICI YÖNETİMİ — Sadece superadmin erişebilir
 # =========================================================
 

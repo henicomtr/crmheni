@@ -2129,6 +2129,145 @@ def landing_quote_es(request: Request,
 
 
 # =========================================================
+# HİZMET SAYFALARI — deterjan / kozmetik / parfüm
+# =========================================================
+
+_SERVICE_SLUGS = ["deterjan", "kozmetik", "parfum"]
+
+
+def _load_service_json(slug: str, lang: str) -> dict:
+    path = os.path.join(BASE_DIR, "data", "pages", slug, f"{lang}.json")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _service_slug_url(lang: str, slug: str) -> str:
+    if lang == "en":
+        return f"/{slug}"
+    return f"/{lang}/{slug}"
+
+
+def _service_page_detail(request: Request, lang: str, slug: str, db: Session):
+    data = _load_service_json(slug, lang)
+    if not data:
+        # Dile özgü içerik yoksa TR verisine düş
+        data = _load_service_json(slug, "tr")
+    if not data:
+        raise HTTPException(status_code=404, detail="Sayfa bulunamadı")
+
+    tr_data = _load_service_json(slug, "tr")
+
+    lang_urls = {lc: _service_slug_url(lc, slug) for lc in SUPPORTED_LANGS}
+
+    meta_title = data.get("meta_title") or (slug.capitalize() + " | Heni")
+    meta_desc  = data.get("meta_description") or ""
+
+    ctx = common_ctx(request, lang, db=db)
+    ctx["lang_urls"] = lang_urls
+    ctx.update({
+        "data":             data,
+        "tr_data":          tr_data,
+        "slug":             slug,
+        "meta_title":       meta_title,
+        "meta_description": meta_desc,
+    })
+    return templates.TemplateResponse("service_page.html", ctx)
+
+
+# deterjan
+@router.get("/deterjan")
+def service_deterjan_en(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "en", "deterjan", db)
+
+@router.get("/tr/deterjan")
+def service_deterjan_tr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "tr", "deterjan", db)
+
+@router.get("/de/deterjan")
+def service_deterjan_de(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "de", "deterjan", db)
+
+@router.get("/fr/deterjan")
+def service_deterjan_fr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "fr", "deterjan", db)
+
+@router.get("/ar/deterjan")
+def service_deterjan_ar(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ar", "deterjan", db)
+
+@router.get("/ru/deterjan")
+def service_deterjan_ru(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ru", "deterjan", db)
+
+@router.get("/es/deterjan")
+def service_deterjan_es(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "es", "deterjan", db)
+
+
+# kozmetik
+@router.get("/kozmetik")
+def service_kozmetik_en(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "en", "kozmetik", db)
+
+@router.get("/tr/kozmetik")
+def service_kozmetik_tr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "tr", "kozmetik", db)
+
+@router.get("/de/kozmetik")
+def service_kozmetik_de(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "de", "kozmetik", db)
+
+@router.get("/fr/kozmetik")
+def service_kozmetik_fr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "fr", "kozmetik", db)
+
+@router.get("/ar/kozmetik")
+def service_kozmetik_ar(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ar", "kozmetik", db)
+
+@router.get("/ru/kozmetik")
+def service_kozmetik_ru(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ru", "kozmetik", db)
+
+@router.get("/es/kozmetik")
+def service_kozmetik_es(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "es", "kozmetik", db)
+
+
+# parfum
+@router.get("/parfum")
+def service_parfum_en(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "en", "parfum", db)
+
+@router.get("/tr/parfum")
+def service_parfum_tr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "tr", "parfum", db)
+
+@router.get("/de/parfum")
+def service_parfum_de(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "de", "parfum", db)
+
+@router.get("/fr/parfum")
+def service_parfum_fr(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "fr", "parfum", db)
+
+@router.get("/ar/parfum")
+def service_parfum_ar(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ar", "parfum", db)
+
+@router.get("/ru/parfum")
+def service_parfum_ru(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "ru", "parfum", db)
+
+@router.get("/es/parfum")
+def service_parfum_es(request: Request, db: Session = Depends(get_db)):
+    return _service_page_detail(request, "es", "parfum", db)
+
+
+# =========================================================
 # CMS SAYFALARI  /{slug}  /tr/{slug}  /de/{slug} ...
 # =========================================================
 # ⚠️ Bu route'lar dosyanın EN SONUNDA olmalı; /{slug} pattern'i
