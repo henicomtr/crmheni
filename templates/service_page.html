@@ -33,7 +33,7 @@
     {% for lc, lurl in lang_urls.items() %}
     <link rel="alternate" hreflang="{{ lc }}" href="{{ ('https://henib2b.com' + lurl) if lurl.startswith('/') else lurl }}">
     {% endfor %}
-    <link rel="alternate" hreflang="x-default" href="https://henib2b.com/{{ slug }}">
+    <link rel="alternate" hreflang="x-default" href="https://henib2b.com{{ lang_urls.get('en', '/' + slug) }}">
 
     {% if site.favicon_url %}<link rel="icon" href="{{ site.favicon_url }}">{% endif %}
 
@@ -49,9 +49,14 @@
     <link rel="preload" as="image" href="{{ _hero_img }}" fetchpriority="high">
     {% endif %}
 
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"Organization","@id":"https://henib2b.com/#organization","name":"Heni Kozmetik","url":"https://henib2b.com","logo":{"@type":"ImageObject","url":"https://henib2b.com/static/upload/images/logo.webp"},"address":{"@type":"PostalAddress","addressLocality":"Eskişehir","addressCountry":"TR"},"contactPoint":{"@type":"ContactPoint","telephone":"+902129092626","contactType":"sales","availableLanguage":["Turkish","English","German","French","Arabic","Russian","Spanish"]},"sameAs":["https://www.instagram.com/henicomtr","https://tr.linkedin.com/company/henicomtr","https://x.com/henicomtr"]}
+    </script>
+
     <!-- JSON-LD: Service -->
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"Service","name":{{ (data.get('hero_title', meta_title) | striptags) | tojson }},"description":{{ meta_description | tojson }},"provider":{"@type":"Organization","name":"Heni B2B","url":"https://henib2b.com"},"url":"https://henib2b.com{{ request.url.path }}"{% if _og_img_raw %},"image":{{ (('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw) | tojson }}{% endif %}}
+    {"@context":"https://schema.org","@type":"Service","name":{{ (data.get('hero_title', meta_title) | striptags) | tojson }},"description":{{ meta_description | tojson }},"provider":{"@type":"Organization","@id":"https://henib2b.com/#organization"},"url":"https://henib2b.com{{ request.url.path }}"{% if _og_img_raw %},"image":{{ (('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw) | tojson }}{% endif %}}
     </script>
 
     <!-- JSON-LD: BreadcrumbList -->
@@ -116,8 +121,15 @@
         .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
         .skip-link:focus { position: fixed; top: 8px; left: 8px; width: auto; height: auto; padding: 10px 18px; background: var(--navy); color: #fff; border-radius: 6px; z-index: 9999; font-size: 14px; font-weight: 600; }
 
-        /* ── BREADCRUMB — SEO için DOM'da, kullanıcıdan gizli ── */
-        .sp-breadcrumb { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        /* ── BREADCRUMB ── */
+        .sp-breadcrumb { position: static; width: auto; height: auto; padding: 10px 48px; margin: 0; overflow: visible; clip: auto; white-space: normal; border: 0; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); font-size: 13px; color: var(--gray-500); }
+        .sp-breadcrumb-list { display: flex; align-items: center; gap: 8px; list-style: none; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+        .sp-breadcrumb-item { display: flex; align-items: center; gap: 8px; }
+        .sp-breadcrumb-item:not(:last-child)::after { content: '›'; color: var(--gray-500); font-size: 14px; }
+        .sp-breadcrumb-item a { color: var(--gray-500); text-decoration: none; font-size: 13px; }
+        .sp-breadcrumb-item a:hover { color: var(--navy); }
+        .sp-breadcrumb-item[aria-current="page"] { color: var(--navy); font-weight: 600; }
+        @media (max-width: 768px) { .sp-breadcrumb { padding: 10px 24px; } }
 
         /* ── HERO ── */
         .sp-hero { position: relative; background: var(--navy); overflow: hidden; }
@@ -158,6 +170,9 @@
         .sp-card-icon { font-size: 36px; margin-bottom: 16px; line-height: 1; }
         .sp-card-h3 { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 12px; line-height: 1.35; }
         .sp-card-text { font-size: 14px; line-height: 1.8; color: var(--gray-700); }
+        .sp-card-list { margin-top: 12px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+        .sp-card-list li { font-size: 14px; color: var(--gray-700); padding-left: 16px; position: relative; line-height: 1.6; }
+        .sp-card-list li::before { content: '→'; position: absolute; left: 0; color: var(--blue); font-size: 12px; top: 2px; }
 
         /* ── YATAY BÖLÜM (split) ── */
         .sp-split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
@@ -286,7 +301,7 @@
                 {% set _s1_img = data.get('s1_image_url') or tr_data.get('s1_image_url', '') %}
                 {% if _s1_img %}
                 <div class="sp-section-img">
-                    <img src="{{ _s1_img }}" alt="{{ data.s1_h2 }}" loading="lazy" width="1100" height="520">
+                    <img src="{{ _s1_img }}" alt="{{ data.get('s1_image_alt') or data.s1_h2 }}" loading="lazy" width="1100" height="520">
                 </div>
                 {% endif %}
                 {% if data.get('s1_item1_h3') or data.get('s1_item2_h3') or data.get('s1_item3_h3') %}
@@ -296,12 +311,23 @@
                     {% set _txt = data.get('s1_item' ~ i ~ '_text', '') %}
                     {% set _ico = data.get('s1_item' ~ i ~ '_icon', '') %}
                     {% set _img = data.get('s1_item' ~ i ~ '_image_url') or tr_data.get('s1_item' ~ i ~ '_image_url', '') %}
+                    {% set _img_alt = data.get('s1_item' ~ i ~ '_image_alt') or _h3 %}
                     {% if _h3 or _txt %}
                     <article class="sp-card" aria-labelledby="s1-item-{{ i }}">
-                        {% if _img %}<img src="{{ _img }}" alt="{{ _h3 }}" class="sp-card-img" loading="lazy" width="400" height="200">{% endif %}
+                        {% if _img %}<img src="{{ _img }}" alt="{{ _img_alt }}" class="sp-card-img" loading="lazy" width="400" height="200">{% endif %}
                         {% if _ico %}<div class="sp-card-icon" aria-hidden="true">{{ _ico }}</div>{% endif %}
                         {% if _h3 %}<h3 id="s1-item-{{ i }}" class="sp-card-h3">{{ _h3 }}</h3>{% endif %}
-                        {% if _txt %}<p class="sp-card-text">{{ _txt }}</p>{% endif %}
+                        {% if _txt %}
+                        {% if '\n' in _txt %}
+                        {% set _txt_lines = _txt.split('\n') %}
+                        <p class="sp-card-text">{{ _txt_lines[0] }}</p>
+                        <ul class="sp-card-list">
+                            {% for _line in _txt_lines[1:] %}{% if _line.strip() %}<li>{{ _line.strip() }}</li>{% endif %}{% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="sp-card-text">{{ _txt }}</p>
+                        {% endif %}
+                        {% endif %}
                     </article>
                     {% endif %}
                     {% endfor %}
@@ -322,7 +348,7 @@
                 {% set _s2_img = data.get('s2_image_url') or tr_data.get('s2_image_url', '') %}
                 {% if _s2_img %}
                 <div class="sp-section-img">
-                    <img src="{{ _s2_img }}" alt="{{ data.s2_h2 }}" loading="lazy" width="1100" height="520">
+                    <img src="{{ _s2_img }}" alt="{{ data.get('s2_image_alt') or data.s2_h2 }}" loading="lazy" width="1100" height="520">
                 </div>
                 {% endif %}
                 {% if data.get('s2_item1_h3') or data.get('s2_item2_h3') %}
@@ -332,9 +358,10 @@
                     {% set _txt = data.get('s2_item' ~ i ~ '_text', '') %}
                     {% set _ico = data.get('s2_item' ~ i ~ '_icon', '') %}
                     {% set _img = data.get('s2_item' ~ i ~ '_image_url') or tr_data.get('s2_item' ~ i ~ '_image_url', '') %}
+                    {% set _img_alt = data.get('s2_item' ~ i ~ '_image_alt') or _h3 %}
                     {% if _h3 or _txt %}
                     <article class="sp-card" aria-labelledby="s2-item-{{ i }}">
-                        {% if _img %}<img src="{{ _img }}" alt="{{ _h3 }}" class="sp-card-img" loading="lazy" width="500" height="240">{% endif %}
+                        {% if _img %}<img src="{{ _img }}" alt="{{ _img_alt }}" class="sp-card-img" loading="lazy" width="500" height="240">{% endif %}
                         {% if _ico %}<div class="sp-card-icon" aria-hidden="true">{{ _ico }}</div>{% endif %}
                         {% if _h3 %}<h3 id="s2-item-{{ i }}" class="sp-card-h3">{{ _h3 }}</h3>{% endif %}
                         {% if _txt %}<p class="sp-card-text">{{ _txt }}</p>{% endif %}
@@ -364,7 +391,7 @@
                         {% if data.get('s3_item1_text') %}<p>{{ data.s3_item1_text }}</p>{% endif %}
                     </div>
                     <div class="sp-split-img">
-                        <img src="{{ _s3_img }}" alt="{{ data.get('s3_item1_h3') or data.s3_h2 }}" loading="lazy" width="560" height="420">
+                        <img src="{{ _s3_img }}" alt="{{ data.get('s3_image_alt') or data.get('s3_item1_h3') or data.s3_h2 }}" loading="lazy" width="560" height="420">
                     </div>
                 </div>
                 {% else %}
@@ -380,7 +407,7 @@
 
         <!-- ═══ BÖLÜM 4 — Kalite Belgeleri (cert-grid veya metin+görsel) ═══ -->
         {% if data.get('s4_h2') or data.get('cert1_title') %}
-        <section class="sp-section sp-section--light" id="bolum-4" aria-labelledby="s4-h2">
+        <section class="sp-section sp-section--white" id="bolum-4" aria-labelledby="s4-h2">
             <div class="sp-section-inner">
                 {% if data.get('s4_h2') %}
                 <div class="sp-section-head">
@@ -406,7 +433,7 @@
                 {% set _s4_img = data.get('s4_image_url') or tr_data.get('s4_image_url', '') %}
                 {% if _s4_img %}
                 <div class="sp-section-img">
-                    <img src="{{ _s4_img }}" alt="{{ data.get('s4_h2', '') }}" loading="lazy" width="1100" height="480">
+                    <img src="{{ _s4_img }}" alt="{{ data.get('s4_image_alt') or data.get('s4_h2', '') }}" loading="lazy" width="1100" height="480">
                 </div>
                 {% endif %}
                 {% endif %}
