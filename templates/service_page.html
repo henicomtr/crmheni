@@ -61,7 +61,7 @@
 
     <!-- JSON-LD: BreadcrumbList -->
     <script type="application/ld+json">
-    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Ana Sayfa","item":"https://henib2b.com{% if lang != 'en' %}/{{ lang }}{% endif %}/"},{"@type":"ListItem","position":2,"name":{{ (data.get('hero_title', meta_title) | striptags) | tojson }},"item":"https://henib2b.com{{ request.url.path }}"}]}
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":{{ ui.home | tojson }},"item":"https://henib2b.com{% if lang != 'en' %}/{{ lang }}{% endif %}/"},{"@type":"ListItem","position":2,"name":{{ (data.get('hero_title', meta_title) | striptags) | tojson }},"item":"https://henib2b.com{{ request.url.path }}"}]}
     </script>
 
     {% if data.get('faq1_question') %}
@@ -250,7 +250,7 @@
             <div class="sp-breadcrumb-inner">
                 <ol class="sp-breadcrumb-list">
                     <li class="sp-breadcrumb-item">
-                        <a href="{% if lang != 'en' %}/{{ lang }}/{% else %}/{% endif %}">Ana Sayfa</a>
+                        <a href="{% if lang != 'en' %}/{{ lang }}/{% else %}/{% endif %}">{{ ui.home }}</a>
                     </li>
                     <li class="sp-breadcrumb-item" aria-current="page">
                         {{ data.get('hero_title', '') | striptags }}
