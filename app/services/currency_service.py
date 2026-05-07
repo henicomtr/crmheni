@@ -128,7 +128,7 @@ LANG_CURRENCY = {
     "de": "EUR",
     "fr": "EUR",
     "ar": "USD",
-    "ru": "EUR",
+    "ru": "USD",
     "es": "EUR",
 }
 
