@@ -155,6 +155,55 @@ def _seed_homepage():
 _seed_homepage()
 
 
+# ── ServicePage seed + JSON→DB migrasyonu ───────────────────────────
+def _seed_and_migrate_service_pages():
+    """
+    Servis sayfaları (deterjan/kozmetik/parfüm) için HomepageContent
+    kayıtlarını oluşturur. Eğer eski data/pages/ JSON dosyaları varsa
+    içeriklerini DB'ye taşır — tek seferlik, var olan DB kaydına dokunmaz.
+    """
+    import json as _jsp
+    import os as _os
+
+    LANGS = ["en", "tr", "de", "fr", "ar", "ru", "es"]
+    SLUGS = ["deterjan", "kozmetik", "parfum"]
+
+    _db = SessionLocal()
+    try:
+        for slug in SLUGS:
+            for lc in LANGS:
+                key = f"{slug}__{lc}"
+                exists = _db.query(HomepageContent).filter(
+                    HomepageContent.lang == key
+                ).first()
+
+                if exists:
+                    # Kayıt zaten var — dokunma
+                    continue
+
+                # Eski JSON dosyasını kontrol et (veri varsa taşı, yoksa boş oluştur)
+                json_path = _os.path.join(
+                    _os.path.dirname(__file__), "..", "data", "pages", slug, f"{lc}.json"
+                )
+                initial_data = "{}"
+                if _os.path.isfile(json_path):
+                    try:
+                        with open(json_path, "r", encoding="utf-8") as f:
+                            parsed = _jsp.load(f)
+                        if parsed:
+                            initial_data = _jsp.dumps(parsed, ensure_ascii=False)
+                    except Exception:
+                        pass  # Bozuk JSON — boş kayıt oluştur
+
+                _db.add(HomepageContent(lang=key, data=initial_data))
+
+        _db.commit()
+    finally:
+        _db.close()
+
+_seed_and_migrate_service_pages()
+
+
 # ── HomepageContent veri migrasyonu ─────────────────────────────────
 def _migrate_homepage_null_data():
     """data=NULL olan homepage_contents kayıtlarını '{}' ile günceller.

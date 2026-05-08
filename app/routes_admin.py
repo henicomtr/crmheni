@@ -3073,40 +3073,70 @@ SERVICE_IMAGE_FIELDS = [
 ]
 
 
-def _service_page_path(slug: str, lang: str) -> str:
-    """Slug ve dile göre JSON dosya yolunu döner, klasörü gerekirse oluşturur."""
-    base = os.path.join(PROJECT_ROOT, "data", "pages", slug)
-    os.makedirs(base, exist_ok=True)
-    return os.path.join(base, f"{lang}.json")
+def _service_page_key(slug: str, lang: str) -> str:
+        """HomepageContent tablosunda kullanılacak benzersiz anahtarı üretir."""
+    return f"{slug}__{lang}"
 
 
-def _load_service_page(slug: str, lang: str) -> dict:
-    """JSON dosyasını yükler; yoksa veya bozuksa boş dict döner."""
+def _load_service_page(slug: str, lang: str, db=None) -> dict:
+    """
+    Servis sayfası verisini HomepageContent tablosundan çeker.
+    db parametresi verilmezse SessionLocal ile geçici oturum açar.
+    """
+    from .database import SessionLocal as _SL
+    _own_session = db is None
+    if _own_session:
+        db = _SL()
     try:
-        with open(_service_page_path(slug, lang), "r", encoding="utf-8") as f:
-            return _json_sp.load(f)
-    except (FileNotFoundError, _json_sp.JSONDecodeError):
-        return {}
+        key = _service_page_key(slug, lang)
+        row = db.query(HomepageContent).filter(HomepageContent.lang == key).first()
+        return row.get_data() if row else {}
+    finally:
+        if _own_session:
+            db.close()
 
 
-def _save_service_page(slug: str, lang: str, data: dict) -> None:
-    """Veriyi JSON dosyasına kaydeder."""
-    with open(_service_page_path(slug, lang), "w", encoding="utf-8") as f:
-        _json_sp.dump(data, f, ensure_ascii=False, indent=2)
+def _save_service_page(slug: str, lang: str, data: dict, db=None) -> None:
+    """
+    Servis sayfası verisini HomepageContent tablosuna kaydeder.
+    Kayıt yoksa oluşturur, varsa günceller.
+    db parametresi verilmezse kendi oturumunu açıp kapatır.
+    """
+    from .database import SessionLocal as _SL
+    _own_session = db is None
+    if _own_session:
+        db = _SL()
+    try:
+        key = _service_page_key(slug, lang)
+        row = db.query(HomepageContent).filter(HomepageContent.lang == key).first()
+        if not row:
+            row = HomepageContent(lang=key, data="{}")
+            db.add(row)
+            db.flush()
+        row.set_data(data)
+        if _own_session:
+            db.commit()
+    except Exception:
+        if _own_session:
+            db.rollback()
+        raise
+    finally:
+        if _own_session:
+            db.close()
 
 
-def _get_service_shared_image(field: str, current_data: dict, slug: str, lang: str) -> str:
+def _get_service_shared_image(field: str, current_data: dict, slug: str, lang: str, db=None) -> str:
     """Görsel alanı için değer döner; boşsa tr'den fallback yapar."""
     value = current_data.get(field, "")
     if value:
         return value
     if lang == "tr":
         return ""
-    tr_data = _load_service_page(slug, "tr")
+    tr_data = _load_service_page(slug, "tr", db=db)
     return tr_data.get(field, "")
 
 
-def _get_service_svc_image(idx: int, current_data: dict, slug: str, lang: str) -> str:
+def _get_service_svc_image(idx: int, current_data: dict, slug: str, lang: str, db=None) -> str:
     """Hizmet kartı görselini döner (svc1_image vb.); boşsa tr'den fallback."""
     field = f"svc{idx + 1}_image"
     value = current_data.get(field, "")
@@ -3114,7 +3144,7 @@ def _get_service_svc_image(idx: int, current_data: dict, slug: str, lang: str) -
         return value
     if lang == "tr":
         return ""
-    tr_data = _load_service_page(slug, "tr")
+    tr_data = _load_service_page(slug, "tr", db=db)
     return tr_data.get(field, "")
 
 
@@ -3137,13 +3167,13 @@ def admin_service_page(
     if tab not in ("hero", "s1", "s2", "s3", "s4", "faq", "cta", "seo"):
         return RedirectResponse(f"/esk/service-page?slug={slug}&lang={lang}&tab=hero", status_code=302)
 
-    data = _load_service_page(slug, lang)
+    data = _load_service_page(slug, lang, db=db)
     site = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
 
     # Her görsel alanı için fallback URL'yi hesapla
     shared_images: dict = {}
     for field in SERVICE_IMAGE_FIELDS:
-        shared_images[field] = _get_service_shared_image(field, data, slug, lang)
+        shared_images[field] = _get_service_shared_image(field, data, slug, lang, db=db)
 
     return templates.TemplateResponse("admin_service_page.html", {
         "request":         request,
@@ -3180,7 +3210,7 @@ async def admin_service_page_sync_image(
     if field not in allowed:
         return JSONResponse({"error": "Geçersiz alan"}, status_code=400)
 
-    src_data    = _load_service_page(slug, src_lang)
+    src_data    = _load_service_page(slug, src_lang, db=db)
     image_value = src_data.get(field, "")
 
     if not image_value:
@@ -3190,9 +3220,9 @@ async def admin_service_page_sync_image(
     for lng in SUPPORTED_LANGS:
         if lng == src_lang:
             continue
-        dest_data        = _load_service_page(slug, lng)
+        dest_data        = _load_service_page(slug, lng, db=db)
         dest_data[field] = image_value
-        _save_service_page(slug, lng, dest_data)
+        _save_service_page(slug, lng, dest_data, db=db)
         updated.append(lng)
 
     return JSONResponse({"ok": True, "synced_to": updated, "value": image_value})
@@ -3201,6 +3231,7 @@ async def admin_service_page_sync_image(
 @router.post("/esk/service-page/save")
 async def admin_service_page_save(
     request: Request,
+    db: Session = Depends(get_db),
     admin = Depends(admin_required),
 ):
     if not admin:
@@ -3216,7 +3247,7 @@ async def admin_service_page_save(
         if slug not in SERVICE_SLUGS:
             slug = "deterjan"
 
-        existing = _load_service_page(slug, lang)
+        existing = _load_service_page(slug, lang, db=db)
 
         def _f(key, default=""):
             return form.get(key, existing.get(key, default))
@@ -3301,7 +3332,7 @@ async def admin_service_page_save(
                 "og_description":   _f("og_description"),
             })
 
-        _save_service_page(slug, lang, existing)
+        _save_service_page(slug, lang, existing, db=db)
 
     except Exception as e:
         import traceback
