@@ -20,6 +20,7 @@ from .models import (
     Lead, Order, FinanceTransaction, QuoteRequest, AccountTransaction,
     Page, PageTranslation, FaqItem, SiteSettings,
     CategoryContent, CategoryTranslation, CategoryFaq,
+    ServicePageContent,
     HomepageContent, StockItem, StockConsumption,
     FormulaItem, PackagingItem,
 )
@@ -3073,14 +3074,9 @@ SERVICE_IMAGE_FIELDS = [
 ]
 
 
-def _service_page_key(slug: str, lang: str) -> str:
-    """HomepageContent tablosunda kullanılacak benzersiz anahtarı üretir."""
-    return f"{slug}__{lang}"
-
-
 def _load_service_page(slug: str, lang: str, db=None) -> dict:
     """
-    Servis sayfası verisini HomepageContent tablosundan çeker.
+    Servis sayfası verisini ServicePageContent tablosundan çeker.
     db parametresi verilmezse SessionLocal ile geçici oturum açar.
     """
     from .database import SessionLocal as _SL
@@ -3088,8 +3084,10 @@ def _load_service_page(slug: str, lang: str, db=None) -> dict:
     if _own_session:
         db = _SL()
     try:
-        key = _service_page_key(slug, lang)
-        row = db.query(HomepageContent).filter(HomepageContent.lang == key).first()
+        row = db.query(ServicePageContent).filter(
+            ServicePageContent.slug == slug,
+            ServicePageContent.lang == lang,
+        ).first()
         return row.get_data() if row else {}
     finally:
         if _own_session:
@@ -3098,7 +3096,7 @@ def _load_service_page(slug: str, lang: str, db=None) -> dict:
 
 def _save_service_page(slug: str, lang: str, data: dict, db=None) -> None:
     """
-    Servis sayfası verisini HomepageContent tablosuna kaydeder.
+    Servis sayfası verisini ServicePageContent tablosuna kaydeder.
     Kayıt yoksa oluşturur, varsa günceller.
     db parametresi verilmezse kendi oturumunu açıp kapatır.
     """
@@ -3107,10 +3105,12 @@ def _save_service_page(slug: str, lang: str, data: dict, db=None) -> None:
     if _own_session:
         db = _SL()
     try:
-        key = _service_page_key(slug, lang)
-        row = db.query(HomepageContent).filter(HomepageContent.lang == key).first()
+        row = db.query(ServicePageContent).filter(
+            ServicePageContent.slug == slug,
+            ServicePageContent.lang == lang,
+        ).first()
         if not row:
-            row = HomepageContent(lang=key, data="{}")
+            row = ServicePageContent(slug=slug, lang=lang, data="{}")
             db.add(row)
             db.flush()
         row.set_data(data)

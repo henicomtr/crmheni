@@ -502,6 +502,44 @@ class HomepageContent(Base):
         flag_modified(self, "data")   # SQLAlchemy'ye Text alanının değiştiğini bildir
 
 
+# ─────────────────────────────────────────────────────────────────────
+# HİZMET SAYFASI CMS — slug × dil başına içerik (JSON blob)
+# ─────────────────────────────────────────────────────────────────────
+
+class ServicePageContent(Base):
+    """
+    Hizmet sayfaları (deterjan, kozmetik, parfüm) için içerik deposu.
+    slug: Sayfa anahtarı (ör. "deterjan", "kozmetik", "parfum")
+    lang: Dil kodu (ör. "tr", "en", "de")
+    data: Tüm bölümlerin JSON olarak tutulduğu tek alan.
+    """
+    __tablename__ = "service_page_contents"
+    __table_args__ = (
+        UniqueConstraint("slug", "lang", name="uq_service_page_slug_lang"),
+    )
+
+    id         = Column(Integer, primary_key=True, index=True)
+    slug       = Column(String(32), nullable=False, index=True)
+    lang       = Column(String(5),  nullable=False, index=True)
+    data       = Column(Text, nullable=True)        # JSON blob
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def get_data(self) -> dict:
+        import json
+        if self.data:
+            try:
+                return json.loads(self.data)
+            except Exception:
+                return {}
+        return {}
+
+    def set_data(self, d: dict):
+        import json
+        from sqlalchemy.orm.attributes import flag_modified
+        self.data = json.dumps(d, ensure_ascii=False)
+        flag_modified(self, "data")   # SQLAlchemy'ye Text alanının değiştiğini bildir
+
+
 class SiteSettings(Base):
     """
     Tek satır site ayarları (singleton tablo).

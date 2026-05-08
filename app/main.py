@@ -1,4 +1,4 @@
-from .models import User, CategoryContent, HomepageContent, ProductRating
+from .models import User, CategoryContent, HomepageContent, ProductRating, ServicePageContent
 from .auth import hash_password
 from .database import SessionLocal
 
@@ -158,7 +158,7 @@ _seed_homepage()
 # ── ServicePage seed + JSON→DB migrasyonu ───────────────────────────
 def _seed_and_migrate_service_pages():
     """
-    Servis sayfaları (deterjan/kozmetik/parfüm) için HomepageContent
+    Servis sayfaları (deterjan/kozmetik/parfüm) için ServicePageContent
     kayıtlarını oluşturur. Eğer eski data/pages/ JSON dosyaları varsa
     içeriklerini DB'ye taşır — tek seferlik, var olan DB kaydına dokunmaz.
     """
@@ -168,13 +168,18 @@ def _seed_and_migrate_service_pages():
     LANGS = ["en", "tr", "de", "fr", "ar", "ru", "es"]
     SLUGS = ["deterjan", "kozmetik", "parfum"]
 
+    # Tabloyu oluştur (ilk deploy veya yeni ortam için)
+    from .models import ServicePageContent as _SPC
+    from .database import Base as _Base
+    _Base.metadata.create_all(bind=engine, tables=[_SPC.__table__])
+
     _db = SessionLocal()
     try:
         for slug in SLUGS:
             for lc in LANGS:
-                key = f"{slug}__{lc}"
-                exists = _db.query(HomepageContent).filter(
-                    HomepageContent.lang == key
+                exists = _db.query(ServicePageContent).filter(
+                    ServicePageContent.slug == slug,
+                    ServicePageContent.lang == lc,
                 ).first()
 
                 if exists:
@@ -195,7 +200,7 @@ def _seed_and_migrate_service_pages():
                     except Exception:
                         pass  # Bozuk JSON — boş kayıt oluştur
 
-                _db.add(HomepageContent(lang=key, data=initial_data))
+                _db.add(ServicePageContent(slug=slug, lang=lc, data=initial_data))
 
         _db.commit()
     finally:
