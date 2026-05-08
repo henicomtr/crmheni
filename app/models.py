@@ -521,7 +521,7 @@ class ServicePageContent(Base):
     id         = Column(Integer, primary_key=True, index=True)
     slug       = Column(String(32), nullable=False, index=True)
     lang       = Column(String(5),  nullable=False, index=True)
-    data       = Column(Text, nullable=True)        # JSON blob
+    data       = Column(Text, nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_data(self) -> dict:
@@ -537,7 +537,7 @@ class ServicePageContent(Base):
         import json
         from sqlalchemy.orm.attributes import flag_modified
         self.data = json.dumps(d, ensure_ascii=False)
-        flag_modified(self, "data")   # SQLAlchemy'ye Text alanının değiştiğini bildir
+        flag_modified(self, "data")
 
 
 class SiteSettings(Base):

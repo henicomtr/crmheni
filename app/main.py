@@ -9,7 +9,6 @@ from .routes_admin import router as admin_router
 from .routes_showroom import router as showroom_router
 from .routes_webhook import router as webhook_router
 from .routes_pricing import router as pricing_router
-from .routes_feeds import router as feeds_router
 from sqlalchemy import text, inspect
 import os
 
@@ -155,23 +154,23 @@ def _seed_homepage():
 _seed_homepage()
 
 
-# ── ServicePage seed + JSON→DB migrasyonu ───────────────────────────
-def _seed_and_migrate_service_pages():
+# ── ServicePageContent tablosu + seed + JSON→DB migrasyonu ─────────
+def _seed_service_pages():
     """
-    Servis sayfaları (deterjan/kozmetik/parfüm) için ServicePageContent
-    kayıtlarını oluşturur. Eğer eski data/pages/ JSON dosyaları varsa
-    içeriklerini DB'ye taşır — tek seferlik, var olan DB kaydına dokunmaz.
+    service_page_contents tablosunu oluşturur (yoksa) ve
+    deterjan/kozmetik/parfüm × 7 dil için kayıt açar.
+    Eski data/pages/ JSON dosyaları varsa içeriklerini tek seferlik
+    DB'ye taşır — dolu kayıtlara dokunmaz.
     """
     import json as _jsp
     import os as _os
+    from .models import ServicePageContent as _SPC
+
+    # Tabloyu oluştur (PostgreSQL'de yoksa CREATE TABLE çalışır, varsa atlar)
+    Base.metadata.create_all(bind=engine, tables=[_SPC.__table__])
 
     LANGS = ["en", "tr", "de", "fr", "ar", "ru", "es"]
     SLUGS = ["deterjan", "kozmetik", "parfum"]
-
-    # Tabloyu oluştur (ilk deploy veya yeni ortam için)
-    from .models import ServicePageContent as _SPC
-    from .database import Base as _Base
-    _Base.metadata.create_all(bind=engine, tables=[_SPC.__table__])
 
     _db = SessionLocal()
     try:
@@ -181,12 +180,10 @@ def _seed_and_migrate_service_pages():
                     ServicePageContent.slug == slug,
                     ServicePageContent.lang == lc,
                 ).first()
-
                 if exists:
-                    # Kayıt zaten var — dokunma
-                    continue
+                    continue  # Kayıt var — dokunma
 
-                # Eski JSON dosyasını kontrol et (veri varsa taşı, yoksa boş oluştur)
+                # Eski JSON dosyası varsa içeriği taşı
                 json_path = _os.path.join(
                     _os.path.dirname(__file__), "..", "data", "pages", slug, f"{lc}.json"
                 )
@@ -198,7 +195,7 @@ def _seed_and_migrate_service_pages():
                         if parsed:
                             initial_data = _jsp.dumps(parsed, ensure_ascii=False)
                     except Exception:
-                        pass  # Bozuk JSON — boş kayıt oluştur
+                        pass
 
                 _db.add(ServicePageContent(slug=slug, lang=lc, data=initial_data))
 
@@ -206,7 +203,7 @@ def _seed_and_migrate_service_pages():
     finally:
         _db.close()
 
-_seed_and_migrate_service_pages()
+_seed_service_pages()
 
 
 # ── HomepageContent veri migrasyonu ─────────────────────────────────
@@ -406,4 +403,3 @@ app.include_router(admin_router)
 app.include_router(showroom_router)
 app.include_router(webhook_router)
 app.include_router(pricing_router)
-app.include_router(feeds_router)

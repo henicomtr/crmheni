@@ -3057,7 +3057,7 @@ async def admin_homepage_save(
 
 
 # =========================================================
-# HİZMET SAYFALARI — JSON dosyası tabanlı içerik editörü
+# HİZMET SAYFALARI — ServicePageContent tablosu tabanlı içerik editörü
 # =========================================================
 
 import json as _json_sp
@@ -3075,13 +3075,10 @@ SERVICE_IMAGE_FIELDS = [
 
 
 def _load_service_page(slug: str, lang: str, db=None) -> dict:
-    """
-    Servis sayfası verisini ServicePageContent tablosundan çeker.
-    db parametresi verilmezse SessionLocal ile geçici oturum açar.
-    """
+    """Servis sayfası verisini ServicePageContent tablosundan çeker."""
     from .database import SessionLocal as _SL
-    _own_session = db is None
-    if _own_session:
+    _own = db is None
+    if _own:
         db = _SL()
     try:
         row = db.query(ServicePageContent).filter(
@@ -3090,19 +3087,15 @@ def _load_service_page(slug: str, lang: str, db=None) -> dict:
         ).first()
         return row.get_data() if row else {}
     finally:
-        if _own_session:
+        if _own:
             db.close()
 
 
 def _save_service_page(slug: str, lang: str, data: dict, db=None) -> None:
-    """
-    Servis sayfası verisini ServicePageContent tablosuna kaydeder.
-    Kayıt yoksa oluşturur, varsa günceller.
-    db parametresi verilmezse kendi oturumunu açıp kapatır.
-    """
+    """Servis sayfası verisini ServicePageContent tablosuna kaydeder."""
     from .database import SessionLocal as _SL
-    _own_session = db is None
-    if _own_session:
+    _own = db is None
+    if _own:
         db = _SL()
     try:
         row = db.query(ServicePageContent).filter(
@@ -3114,14 +3107,14 @@ def _save_service_page(slug: str, lang: str, data: dict, db=None) -> None:
             db.add(row)
             db.flush()
         row.set_data(data)
-        if _own_session:
+        if _own:
             db.commit()
     except Exception:
-        if _own_session:
+        if _own:
             db.rollback()
         raise
     finally:
-        if _own_session:
+        if _own:
             db.close()
 
 
