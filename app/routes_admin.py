@@ -3074,7 +3074,7 @@ SERVICE_IMAGE_FIELDS = [
 
 
 def _service_page_key(slug: str, lang: str) -> str:
-        """HomepageContent tablosunda kullanılacak benzersiz anahtarı üretir."""
+    """HomepageContent tablosunda kullanılacak benzersiz anahtarı üretir."""
     return f"{slug}__{lang}"
 
 
