@@ -2172,14 +2172,29 @@ for _internal, _lang_map in SERVICE_SLUG_MAP.items():
         _SLUG_REVERSE.setdefault(_lc, {})[_url_slug] = _internal
 
 
-def _load_service_json(slug: str, lang: str) -> dict:
+def _load_service_json(slug: str, lang: str, db=None) -> dict:
+    """Önce DB'den okur; DB yoksa veya boşsa JSON dosyasına düşer."""
+    if db is not None:
+        try:
+            from app.models import ServicePageContent
+            row = db.query(ServicePageContent).filter(
+                ServicePageContent.slug == slug,
+                ServicePageContent.lang == lang,
+            ).first()
+            if row and row.data and row.data != '{}':
+                import json as _j
+                parsed = _j.loads(row.data)
+                if parsed:
+                    return parsed
+        except Exception:
+            pass
+    # Fallback: JSON dosyası
     path = os.path.join(BASE_DIR, "data", "pages", slug, f"{lang}.json")
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
-
 
 def _service_slug_url(lang: str, internal_slug: str) -> str:
     """Dile ve iç slug'a göre herkese açık URL döner."""
@@ -2190,15 +2205,26 @@ def _service_slug_url(lang: str, internal_slug: str) -> str:
 
 
 def _service_page_detail(request: Request, lang: str, slug: str, db: Session):
-    data = _load_service_json(slug, lang)
+    data = _load_service_json(slug, lang, db=db)
     if not data:
-        # Dile özgü içerik yoksa TR verisine düş
-        data = _load_service_json(slug, "tr")
+        data = _load_service_json(slug, "tr", db=db)
     if not data:
         raise HTTPException(status_code=404, detail="Sayfa bulunamadı")
+    tr_data = _load_service_json(slug, "tr", db=db)
+    lang_urls = {lc: _service_slug_url(lc, slug) for lc in SUPPORTED_LANGS}
+    meta_title = data.get("meta_title") or (slug.capitalize() + " | Heni")
+    meta_desc  = data.get("meta_description") or ""
+    ctx = common_ctx(request, lang, db=db)
+    ctx["lang_urls"] = lang_urls
+    ctx.update({
+        "data":             data,
+        "tr_data":          tr_data,
+        "slug":             slug,
+        "meta_title":       meta_title,
+        "meta_description": meta_desc,
+    })
 
-    tr_data = _load_service_json(slug, "tr")
-
+    return templates.TemplateResponse("service_page.html", ctx)
     # Her dil için doğru URL slug'ını üret
     lang_urls = {lc: _service_slug_url(lc, slug) for lc in SUPPORTED_LANGS}
 
