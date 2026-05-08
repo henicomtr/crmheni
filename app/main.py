@@ -9,6 +9,7 @@ from .routes_admin import router as admin_router
 from .routes_showroom import router as showroom_router
 from .routes_webhook import router as webhook_router
 from .routes_pricing import router as pricing_router
+from .routes_feeds import router as feeds_router
 from sqlalchemy import text, inspect
 import os
 
@@ -403,3 +404,4 @@ app.include_router(admin_router)
 app.include_router(showroom_router)
 app.include_router(webhook_router)
 app.include_router(pricing_router)
+app.include_router(feeds_router)
