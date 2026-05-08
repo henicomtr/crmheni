@@ -3326,7 +3326,7 @@ async def admin_service_page_save(
             })
 
         _save_service_page(slug, lang, existing, db=db)
-	db.commit()
+        db.commit()
 
     except Exception as e:
         import traceback
