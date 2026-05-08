@@ -401,7 +401,7 @@ app.add_middleware(StaticCacheMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
+app.include_router(feeds_router)     # catch-all /{slug}'den önce kayıtlı olmalı
 app.include_router(showroom_router)
 app.include_router(webhook_router)
 app.include_router(pricing_router)
-app.include_router(feeds_router)
