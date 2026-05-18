@@ -150,16 +150,41 @@ class ProductRating(Base):
 
 class QuoteRequest(Base):
     __tablename__ = "quote_requests"
-    id             = Column(Integer, primary_key=True, index=True)
-    company_name   = Column(String, nullable=False)
-    contact_person = Column(String, nullable=False)
-    email          = Column(String, nullable=False)
-    phone          = Column(String, nullable=True)
-    country        = Column(String, nullable=True)
-    total_price    = Column(Float, nullable=False)
-    currency       = Column(String, default="USD")
-    cart_data      = Column(Text, nullable=False)
-    created_at     = Column(DateTime(timezone=True), server_default=func.now())
+    id                = Column(Integer, primary_key=True, index=True)
+    company_name      = Column(String, nullable=False)
+    contact_person    = Column(String, nullable=False)
+    email             = Column(String, nullable=False)
+    phone             = Column(String, nullable=True)
+    country           = Column(String, nullable=True)
+    total_price       = Column(Float, nullable=False)
+    currency          = Column(String, default="USD")
+    cart_data         = Column(Text, nullable=False)
+    created_at        = Column(DateTime(timezone=True), server_default=func.now())
+    # Okundu/okunmadı takibi
+    is_read           = Column(Boolean, default=False)
+    # Son iletişim tarihi — listeleme sıralaması için
+    last_contacted_at = Column(DateTime, nullable=True)
+
+    messages = relationship(
+        "RequestMessage",
+        back_populates="request",
+        cascade="all, delete-orphan",
+    )
+
+
+class RequestMessage(Base):
+    """Talep konuşma geçmişi — mail, whatsapp veya dahili not."""
+    __tablename__ = "request_messages"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    request_id = Column(Integer, ForeignKey("quote_requests.id", ondelete="CASCADE"), nullable=False)
+    # Kanal: email | whatsapp | note
+    channel    = Column(String(20), nullable=False)
+    content    = Column(Text, nullable=False)
+    admin_name = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    request = relationship("QuoteRequest", back_populates="messages")
 
 
 class Message(Base):
@@ -581,6 +606,16 @@ class SiteSettings(Base):
     cert_logo_vegan_url    = Column(String, nullable=True)
     # Her dil için showroom sayfası meta başlık/açıklama — JSON: {"en":{"title":"...","description":"..."},...}
     showroom_i18n_meta     = Column(Text, nullable=True)
+    # SMTP mail gönderim ayarları
+    smtp_host          = Column(String, nullable=True)
+    smtp_port          = Column(Integer, nullable=True, default=587)
+    smtp_user          = Column(String, nullable=True)
+    smtp_password      = Column(String, nullable=True)
+    smtp_from_email    = Column(String, nullable=True)
+    # Evolution API (WhatsApp) entegrasyon ayarları
+    evolution_api_url  = Column(String, nullable=True)
+    evolution_api_key  = Column(String, nullable=True)
+    evolution_instance = Column(String, nullable=True)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

@@ -17,7 +17,7 @@ from .auth import verify_password, create_token, hash_password
 from .services.currency_service import get_rates, FALLBACK_RATES, format_price, LANG_CURRENCY
 from .models import (
     User, Product, ProductTranslation, Customer, Supplier,
-    Lead, Order, FinanceTransaction, QuoteRequest, AccountTransaction,
+    Lead, Order, FinanceTransaction, QuoteRequest, RequestMessage, AccountTransaction,
     Page, PageTranslation, FaqItem, SiteSettings,
     CategoryContent, CategoryTranslation, CategoryFaq,
     ServicePageContent,
@@ -1433,6 +1433,60 @@ def delete_supplier_account_transaction(
 # REQUESTS (Teklif Talepleri)
 # =========================================================
 
+def _send_email_smtp(settings: SiteSettings, to_email: str, subject: str, body: str) -> bool:
+    """SMTP üzerinden mail gönderir. Başarıda True döner."""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    if not (settings and settings.smtp_host and settings.smtp_user and settings.smtp_password):
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"]    = settings.smtp_from_email or settings.smtp_user
+        msg["To"]      = to_email
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        port = int(settings.smtp_port or 587)
+        if port == 465:
+            # SSL bağlantısı — doğrudan şifreli (SMTP_SSL)
+            with smtplib.SMTP_SSL(settings.smtp_host, port, timeout=15) as server:
+                server.login(settings.smtp_user, settings.smtp_password)
+                server.sendmail(msg["From"], to_email, msg.as_string())
+        else:
+            # STARTTLS bağlantısı — port 587 veya diğer
+            with smtplib.SMTP(settings.smtp_host, port, timeout=15) as server:
+                server.ehlo()
+                server.starttls()
+                server.login(settings.smtp_user, settings.smtp_password)
+                server.sendmail(msg["From"], to_email, msg.as_string())
+        return True
+    except Exception:
+        return False
+
+
+def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -> bool:
+    """Evolution API üzerinden WhatsApp mesajı gönderir. Başarıda True döner."""
+    import urllib.request
+    import urllib.error
+    import json as _json
+
+    if not (settings and settings.evolution_api_url and settings.evolution_api_key and settings.evolution_instance):
+        return False
+    # Telefon numarasındaki boşluk ve + karakterlerini temizle
+    clean_phone = phone.replace(" ", "").replace("+", "").replace("-", "")
+    url = f"{settings.evolution_api_url.rstrip('/')}/message/sendText/{settings.evolution_instance}"
+    payload = _json.dumps({"number": clean_phone, "text": message}).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("apikey", settings.evolution_api_key)
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return resp.status in (200, 201)
+    except Exception:
+        return False
+
+
 @router.get("/esk/requests", response_class=HTMLResponse)
 def requests_page(
     request: Request,
@@ -1446,10 +1500,16 @@ def requests_page(
         return redirect
 
     import json
+    from sqlalchemy import func as sqlfunc
+
     rates = get_rates()
-    # Reverse map: currency code → a representative lang for format_price
-    _CURRENCY_LANG = {v: k for k, v in LANG_CURRENCY.items()}  # USD→en, TRY→tr, EUR→de
-    quote_requests = db.query(QuoteRequest).order_by(QuoteRequest.created_at.desc()).all()
+    _CURRENCY_LANG = {v: k for k, v in LANG_CURRENCY.items()}
+
+    # Son iletişim tarihi varsa ona, yoksa oluşturma tarihine göre sırala
+    quote_requests = db.query(QuoteRequest).order_by(
+        sqlfunc.coalesce(QuoteRequest.last_contacted_at, QuoteRequest.created_at).desc()
+    ).all()
+
     for req in quote_requests:
         try:
             req.items_data = json.loads(req.cart_data) if req.cart_data else []
@@ -1458,9 +1518,140 @@ def requests_page(
         lang_for_fmt = _CURRENCY_LANG.get(req.currency or "USD", "en")
         req.price_display = format_price(req.total_price, lang_for_fmt, rates)
 
+    unread_count = sum(1 for r in quote_requests if not r.is_read)
+
     return templates.TemplateResponse("admin_requests.html", {
-        "request": request, "current_user": admin, "requests": quote_requests
+        "request": request,
+        "current_user": admin,
+        "requests": quote_requests,
+        "unread_count": unread_count,
     })
+
+
+@router.get("/esk/requests/{req_id}", response_class=HTMLResponse)
+def request_detail(
+    req_id: int,
+    request: Request,
+    wa_url: str = "",
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """Talep detay sayfası; ilk açılışta talebi okundu olarak işaretler."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+    redirect = _permission_redirect(admin, "talepler")
+    if redirect:
+        return redirect
+
+    import json
+
+    quote = db.query(QuoteRequest).filter(QuoteRequest.id == req_id).first()
+    if not quote:
+        return RedirectResponse("/esk/requests", status_code=302)
+
+    # Okundu olarak işaretle
+    if not quote.is_read:
+        quote.is_read = True
+        db.commit()
+
+    rates = get_rates()
+    _CURRENCY_LANG = {v: k for k, v in LANG_CURRENCY.items()}
+    try:
+        quote.items_data = json.loads(quote.cart_data) if quote.cart_data else []
+    except Exception:
+        quote.items_data = []
+    lang_for_fmt = _CURRENCY_LANG.get(quote.currency or "USD", "en")
+    quote.price_display = format_price(quote.total_price, lang_for_fmt, rates)
+
+    # Mesajları explicit query ile çek — relationship order_by sorununu önler
+    req_messages = db.query(RequestMessage).filter(
+        RequestMessage.request_id == req_id
+    ).order_by(RequestMessage.created_at).all()
+
+    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+    evolution_configured = bool(
+        settings and settings.evolution_api_url and settings.evolution_api_key and settings.evolution_instance
+    )
+    smtp_configured = bool(
+        settings and settings.smtp_host and settings.smtp_user and settings.smtp_password
+    )
+
+    return templates.TemplateResponse("admin_request_detail.html", {
+        "request": request,
+        "current_user": admin,
+        "quote": quote,
+        "messages": req_messages,
+        "evolution_configured": evolution_configured,
+        "smtp_configured": smtp_configured,
+        "wa_url": wa_url,
+    })
+
+
+@router.post("/esk/requests/{req_id}/reply")
+def reply_to_request(
+    req_id: int,
+    request: Request,
+    channel: str = Form(...),
+    subject: str = Form(""),
+    content: str = Form(...),
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """Talebe cevap gönderir ve konuşma geçmişine kaydeder."""
+    if not admin:
+        return RedirectResponse("/esk/login", status_code=302)
+
+    quote = db.query(QuoteRequest).filter(QuoteRequest.id == req_id).first()
+    if not quote:
+        return RedirectResponse("/esk/requests", status_code=302)
+
+    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+    wa_url_param = ""
+    error_param  = ""
+
+    if channel == "email":
+        smtp_ok = bool(settings and settings.smtp_host and settings.smtp_user and settings.smtp_password)
+        if not smtp_ok:
+            error_param = "smtp_not_configured"
+        else:
+            sent = _send_email_smtp(
+                settings,
+                quote.email,
+                subject or f"Re: Talep #{quote.id}",
+                content,
+            )
+            if not sent:
+                error_param = "smtp_send_failed"
+    elif channel == "whatsapp":
+        if quote.phone:
+            sent = _send_whatsapp_evolution(settings, quote.phone, content)
+            if not sent:
+                # Evolution API yoksa wa.me linki hazırla
+                clean = quote.phone.replace(" ", "").replace("+", "").replace("-", "")
+                import urllib.parse
+                wa_url_param = f"https://wa.me/{clean}?text={urllib.parse.quote(content, safe='')}"
+        # else: telefon yoksa sadece not olarak kaydet
+
+    # Mesajı konuşma geçmişine ekle
+    db.add(RequestMessage(
+        request_id=req_id,
+        channel=channel,
+        content=content,
+        admin_name=getattr(admin, "email", "Admin"),
+    ))
+
+    # Son iletişim tarihini güncelle
+    quote.last_contacted_at = datetime.now(timezone.utc)
+    db.commit()
+
+    redirect_url = f"/esk/requests/{req_id}"
+    if wa_url_param:
+        import urllib.parse
+        redirect_url += f"?wa_url={urllib.parse.quote(wa_url_param, safe='')}"
+    elif error_param:
+        redirect_url += f"?error={error_param}"
+
+    return RedirectResponse(redirect_url, status_code=302)
 
 
 @router.post("/esk/requests/approve/{req_id}")
@@ -2210,6 +2401,14 @@ async def settings_post(
     social_whatsapp: str = Form(""),
     analytics_code: str = Form(""),
     custom_css: str = Form(""),
+    smtp_host: str = Form(""),
+    smtp_port: str = Form("587"),
+    smtp_user: str = Form(""),
+    smtp_password: str = Form(""),
+    smtp_from_email: str = Form(""),
+    evolution_api_url: str = Form(""),
+    evolution_api_key: str = Form(""),
+    evolution_instance: str = Form(""),
     logo: UploadFile = File(None),
     logo_white: UploadFile = File(None),
     favicon: UploadFile = File(None),
@@ -2245,6 +2444,20 @@ async def settings_post(
     s.social_whatsapp    = social_whatsapp
     s.analytics_code     = analytics_code
     s.custom_css         = custom_css
+
+    # SMTP ayarları
+    s.smtp_host          = smtp_host or None
+    s.smtp_port          = int(smtp_port) if smtp_port.isdigit() else 587
+    s.smtp_user          = smtp_user or None
+    # Şifre boş gönderilmişse mevcut değeri koru
+    if smtp_password:
+        s.smtp_password  = smtp_password
+    s.smtp_from_email    = smtp_from_email or None
+
+    # Evolution API ayarları
+    s.evolution_api_url  = evolution_api_url or None
+    s.evolution_api_key  = evolution_api_key or None
+    s.evolution_instance = evolution_instance or None
 
     if logo and logo.filename:
         os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)

@@ -1,0 +1,616 @@
+{% extends "admin_layout.html" %}
+{% block content %}
+
+<style>
+    .detail-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        transition: var(--transition);
+    }
+
+    .back-link:hover { background: var(--surface-2); color: var(--text-primary); }
+
+    .detail-title {
+        font-size: 20px;
+        font-weight: 700;
+        flex: 1;
+    }
+
+    .detail-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-approve {
+        padding: 8px 16px;
+        background: var(--success-bg);
+        color: var(--success);
+        border: 1px solid rgba(26,122,74,.25);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-approve:hover { background: #1a7a4a; color: #fff; }
+
+    .btn-reject {
+        padding: 8px 16px;
+        background: transparent;
+        color: #c0392b;
+        border: 1px solid rgba(192,57,43,.25);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-reject:hover { background: #c0392b; color: #fff; }
+
+    /* Grid layout: sol (bilgi + içerik), sağ (cevapla) */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 20px 22px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 16px;
+    }
+
+    .card-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+    }
+
+    /* İletişim bilgileri grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 3px;
+    }
+
+    .info-item span {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .info-item a {
+        color: #1d4ed8;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .info-item a:hover { text-decoration: underline; }
+
+    /* Talep içerik ürünleri */
+    .req-item {
+        padding: 10px 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .req-item:last-child { margin-bottom: 0; }
+
+    .req-item-name {
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .req-item-meta {
+        color: var(--text-muted);
+        font-family: var(--mono);
+        font-size: 11px;
+    }
+
+    /* Konuşma geçmişi */
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .timeline-empty {
+        color: var(--text-muted);
+        font-size: 13px;
+        text-align: center;
+        padding: 24px 0;
+    }
+
+    .msg-item {
+        display: flex;
+        gap: 12px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .msg-item:last-child { border-bottom: none; }
+
+    .msg-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+
+    .msg-icon.email     { background: #dbeafe; }
+    .msg-icon.whatsapp  { background: #dcfce7; }
+    .msg-icon.note      { background: #fef9c3; }
+
+    .msg-body { flex: 1; min-width: 0; }
+
+    .msg-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+        flex-wrap: wrap;
+    }
+
+    .msg-channel {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 4px;
+    }
+
+    .msg-channel.email     { background: #dbeafe; color: #1d4ed8; }
+    .msg-channel.whatsapp  { background: #dcfce7; color: #15803d; }
+    .msg-channel.note      { background: #fef9c3; color: #92400e; }
+
+    .msg-admin {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .msg-date {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: var(--mono);
+        margin-left: auto;
+    }
+
+    .msg-content {
+        font-size: 13px;
+        color: var(--text-primary);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    /* Cevap formu */
+    .reply-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 16px;
+    }
+
+    .reply-tab {
+        padding: 9px 16px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: var(--text-muted);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .reply-tab.active {
+        color: var(--text-primary);
+        border-bottom-color: var(--text-primary);
+        font-weight: 700;
+    }
+
+    .reply-tab:hover { color: var(--text-primary); }
+
+    .reply-panel { display: none; }
+    .reply-panel.active { display: block; }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 5px;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-family: var(--font);
+        outline: none;
+        box-sizing: border-box;
+        background: var(--surface);
+        color: var(--text-primary);
+        transition: border-color .15s;
+    }
+
+    .form-input:focus { border-color: #3b82f6; }
+
+    textarea.form-input {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .btn-send {
+        width: 100%;
+        padding: 10px;
+        background: var(--dark);
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-send:hover { opacity: .85; }
+
+    .btn-wa-send {
+        width: 100%;
+        padding: 10px;
+        background: #16a34a;
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: var(--font);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-wa-send:hover { background: #15803d; }
+
+    .hint {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    .alert {
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 14px;
+    }
+
+    .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .alert-info  { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
+
+    @media (max-width: 900px) {
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Başlık -->
+<div class="detail-header">
+    <a href="/esk/requests" class="back-link">← Talepler</a>
+    <div class="detail-title">#{{ quote.id }} — {{ quote.company_name }}</div>
+    <div class="detail-actions">
+        <form method="POST" action="/esk/requests/approve/{{ quote.id }}" style="margin:0;">
+            <button type="submit" class="btn-approve"
+                onclick="return confirm('{{ quote.company_name }} müşteri olarak kaydedilsin mi?')">
+                ✓ Onayla
+            </button>
+        </form>
+        <form method="POST" action="/esk/requests/delete/{{ quote.id }}" style="margin:0;">
+            <button type="submit" class="btn-reject"
+                onclick="return confirm('Bu talep kalıcı olarak silinecek. Emin misiniz?')">
+                ✕ İptal
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-grid">
+
+    <!-- SOL KOLON: Bilgi + içerik + konuşma -->
+    <div>
+
+        <!-- İletişim Bilgileri -->
+        <div class="card">
+            <div class="card-title">İletişim Bilgileri</div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Firma</label>
+                    <span>{{ quote.company_name }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Yetkili</label>
+                    <span>{{ quote.contact_person }}</span>
+                </div>
+                <div class="info-item">
+                    <label>E-posta</label>
+                    <a href="mailto:{{ quote.email }}">{{ quote.email }}</a>
+                </div>
+                <div class="info-item">
+                    <label>Telefon</label>
+                    {% if quote.phone %}
+                    <a href="https://wa.me/{{ quote.phone|replace(' ','')|replace('+','') }}" target="_blank">
+                        {{ quote.phone }}
+                    </a>
+                    {% else %}<span style="color:var(--text-muted);">—</span>{% endif %}
+                </div>
+                <div class="info-item">
+                    <label>Ülke</label>
+                    <span>{{ quote.country or '—' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Tarih</label>
+                    <span>{{ quote.created_at.strftime('%d %b %Y · %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Talep İçeriği -->
+        <div class="card">
+            <div class="card-title">Talep İçeriği</div>
+            {% for item in quote.items_data %}
+            <div class="req-item">
+                {% if item.product_name %}
+                <div class="req-item-name">{{ item.product_name }}</div>
+                <div class="req-item-meta">
+                    {{ item.quantity }} adet
+                    {% if item.boxes %} · {{ item.boxes }} koli{% endif %}
+                    {% if item.pallets %} · {{ item.pallets }} palet{% endif %}
+                    {% if item.discount_rate and item.discount_rate > 0 %}
+                    · <span style="color:var(--success);font-weight:700;">%{{ (item.discount_rate * 100)|int }} indirim</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="req-item-name" style="display:flex;align-items:center;gap:8px;">
+                    <span style="background:#dbeafe;color:#1d4ed8;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">LANDING</span>
+                    {{ item.source or '—' }}
+                </div>
+                {% if item.message %}
+                <div class="req-item-meta" style="margin-top:6px;white-space:pre-wrap;color:var(--text-secondary);">{{ item.message }}</div>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% if quote.total_price > 0 %}
+            <div style="text-align:right;margin-top:10px;font-family:var(--mono);font-weight:700;font-size:15px;">
+                {{ quote.price_display }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Konuşma Geçmişi -->
+        <div class="card">
+            <div class="card-title">Konuşma Geçmişi</div>
+            {% if messages %}
+            <div class="timeline">
+                {% for msg in messages %}
+                <div class="msg-item">
+                    <div class="msg-icon {{ msg.channel }}">
+                        {% if msg.channel == 'email' %}✉️
+                        {% elif msg.channel == 'whatsapp' %}💬
+                        {% else %}📝{% endif %}
+                    </div>
+                    <div class="msg-body">
+                        <div class="msg-meta">
+                            <span class="msg-channel {{ msg.channel }}">
+                                {% if msg.channel == 'email' %}Mail
+                                {% elif msg.channel == 'whatsapp' %}WhatsApp
+                                {% else %}Not{% endif %}
+                            </span>
+                            <span class="msg-admin">{{ msg.admin_name or 'Admin' }}</span>
+                            <span class="msg-date">{{ msg.created_at.strftime('%d %b %Y · %H:%M') }}</span>
+                        </div>
+                        <div class="msg-content">{{ msg.content }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="timeline-empty">Henüz mesaj gönderilmedi.</div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- SAĞ KOLON: Cevap formu -->
+    <div>
+        <div class="card" style="position:sticky;top:20px;">
+            <div class="card-title">Cevapla</div>
+
+            {% if request.query_params.get('error') == 'smtp_not_configured' %}
+            <div class="alert alert-error">SMTP ayarları yapılandırılmamış. Lütfen <a href="/esk/settings" style="color:inherit;font-weight:700;">Site Ayarları → Entegrasyon</a> bölümünden SMTP bilgilerini girin.</div>
+            {% elif request.query_params.get('error') == 'smtp_send_failed' %}
+            <div class="alert alert-error">Mail gönderilemedi. SMTP sunucusu bağlantıyı reddetti — host, port ve şifre bilgilerini kontrol edin.</div>
+            {% endif %}
+
+            <!-- Kanal sekmeleri -->
+            <div class="reply-tabs">
+                <button class="reply-tab active" onclick="switchTab('email',this)" type="button">
+                    ✉️ Mail
+                    {% if not smtp_configured %}
+                    <span style="font-size:10px;color:#f59e0b;" title="SMTP yapılandırılmamış">⚠</span>
+                    {% endif %}
+                </button>
+                <button class="reply-tab" onclick="switchTab('whatsapp',this)" type="button">
+                    💬 WhatsApp
+                </button>
+                <button class="reply-tab" onclick="switchTab('note',this)" type="button">
+                    📝 Not
+                </button>
+            </div>
+
+            <!-- Mail paneli -->
+            <div id="panel-email" class="reply-panel active">
+                <form method="POST" action="/esk/requests/{{ quote.id }}/reply">
+                    <input type="hidden" name="channel" value="email">
+                    <div class="form-group">
+                        <label class="form-label">Konu</label>
+                        <input type="text" name="subject" class="form-input"
+                            value="Re: Talep #{{ quote.id }} — {{ quote.company_name }}"
+                            placeholder="Mail konusu">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="content" class="form-input" placeholder="Mesajınızı yazın..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-send">✉️ Gönder</button>
+                    {% if not smtp_configured %}
+                    <div class="hint">⚠ SMTP henüz yapılandırılmamış. Mesaj gönderilmez ancak nota kaydedilir.</div>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- WhatsApp paneli -->
+            <div id="panel-whatsapp" class="reply-panel">
+                <form method="POST" action="/esk/requests/{{ quote.id }}/reply" id="wa-form">
+                    <input type="hidden" name="channel" value="whatsapp">
+                    <div class="form-group">
+                        <label class="form-label">Mesaj</label>
+                        <textarea name="content" id="wa-content" class="form-input"
+                            placeholder="WhatsApp mesajınızı yazın..." required></textarea>
+                    </div>
+                    {% if evolution_configured %}
+                    <button type="submit" class="btn-wa-send">💬 Evolution API ile Gönder</button>
+                    <div class="hint">Mesaj Evolution API üzerinden {{ quote.phone or '(telefon yok)' }} numarasına gönderilecek.</div>
+                    {% elif quote.phone %}
+                    <button type="button" class="btn-wa-send" onclick="sendViaWA()">💬 WhatsApp'ta Aç & Kaydet</button>
+                    <div class="hint">WhatsApp Web yeni sekmede açılacak, mesaj konuşma geçmişine kaydedilecek.</div>
+                    {% else %}
+                    <div class="alert alert-error">Bu talep için telefon numarası girilmemiş.</div>
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- Not paneli -->
+            <div id="panel-note" class="reply-panel">
+                <form method="POST" action="/esk/requests/{{ quote.id }}/reply">
+                    <input type="hidden" name="channel" value="note">
+                    <div class="form-group">
+                        <label class="form-label">Dahili Not</label>
+                        <textarea name="content" class="form-input"
+                            placeholder="Dahili not ekleyin (müşteriye gönderilmez)..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-send">📝 Not Ekle</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+function switchTab(name, btn) {
+    ['email','whatsapp','note'].forEach(t => {
+        const el = document.getElementById('panel-' + t);
+        if (el) el.classList.remove('active');
+    });
+    document.querySelectorAll('.reply-tab').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('panel-' + name);
+    if (panel) panel.classList.add('active');
+    if (btn) btn.classList.add('active');
+}
+
+function sendViaWA() {
+    const content = document.getElementById('wa-content').value.trim();
+    if (!content) { alert('Lütfen bir mesaj yazın.'); return; }
+
+    const phone = "{{ quote.phone|replace(' ','')|replace('+','') if quote.phone else '' }}";
+    const waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(content);
+    window.open(waUrl, '_blank');
+
+    // Sunucuya notu kaydet
+    document.getElementById('wa-form').submit();
+}
+
+// wa_url parametresi varsa otomatik aç
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    const waUrl = params.get('wa_url');
+    if (waUrl) {
+        window.open(waUrl, '_blank');
+        // URL'den wa_url parametresini temizle
+        history.replaceState({}, '', '/esk/requests/{{ quote.id }}');
+        switchTab('whatsapp', document.querySelector('.reply-tab:nth-child(2)'));
+    }
+})();
+</script>
+
+{% endblock %}

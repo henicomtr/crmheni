@@ -52,6 +52,7 @@
     <button class="settings-tab" onclick="switchSettings('i18n',this)">🌐 Dil bazlı ayarlar</button>
     <button class="settings-tab" onclick="switchSettings('social',this)">🔗 Sosyal Medya</button>
     <button class="settings-tab" onclick="switchSettings('advanced',this)">⚙️ Gelişmiş</button>
+    <button class="settings-tab" onclick="switchSettings('integrations',this)">🔌 Entegrasyon</button>
 </div>
 
 <form method="post" action="/esk/settings" enctype="multipart/form-data" id="settings-form">
@@ -408,6 +409,93 @@
         </div>
     </div>
 
+    <!-- ═══ ENTEGRASYON ═══ -->
+    <div id="settings-integrations" style="display:none;">
+
+        <!-- SMTP -->
+        <div class="card">
+            <div class="card-title">✉️ SMTP Mail Ayarları</div>
+            <p style="font-size:13px;color:#666;margin-bottom:20px;">
+                Talepler sayfasından müşterilere mail göndermek için SMTP bilgilerini girin.
+                Port genellikle 587 (TLS) veya 465 (SSL)'dir.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">SMTP Sunucu (Host)</label>
+                    <input type="text" name="smtp_host" class="form-input"
+                        value="{{ s.smtp_host or '' }}"
+                        placeholder="mail.example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Port</label>
+                    <input type="number" name="smtp_port" class="form-input"
+                        value="{{ s.smtp_port or 587 }}"
+                        placeholder="587">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kullanıcı Adı</label>
+                    <input type="text" name="smtp_user" class="form-input"
+                        value="{{ s.smtp_user or '' }}"
+                        placeholder="info@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Şifre</label>
+                    <input type="password" name="smtp_password" class="form-input"
+                        value=""
+                        placeholder="{% if s.smtp_password %}••••••••{% else %}Şifre girilmedi{% endif %}">
+                    <div class="hint">Boş bırakırsanız mevcut şifre korunur.</div>
+                </div>
+                <div class="form-group" style="grid-column:1/-1;">
+                    <label class="form-label">Gönderen E-posta (From)</label>
+                    <input type="email" name="smtp_from_email" class="form-input"
+                        value="{{ s.smtp_from_email or '' }}"
+                        placeholder="Heni B2B <info@example.com>">
+                </div>
+            </div>
+        </div>
+
+        <!-- Evolution API -->
+        <div class="card">
+            <div class="card-title">💬 Evolution API (WhatsApp)</div>
+            <p style="font-size:13px;color:#666;margin-bottom:20px;">
+                Evolution API kurulu ise buradan bağlantı bilgilerini girin.
+                Yapılandırılmazsa sistem wa.me linki açarak manuel gönderim sunar.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr;gap:16px;">
+                <div class="form-group">
+                    <label class="form-label">API URL</label>
+                    <input type="url" name="evolution_api_url" class="form-input"
+                        value="{{ s.evolution_api_url or '' }}"
+                        placeholder="http://evolution-api.example.com">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" name="evolution_api_key" class="form-input"
+                            value="{{ s.evolution_api_key or '' }}"
+                            placeholder="API anahtarı">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Instance Adı</label>
+                        <input type="text" name="evolution_instance" class="form-input"
+                            value="{{ s.evolution_instance or '' }}"
+                            placeholder="heni-instance">
+                    </div>
+                </div>
+            </div>
+            {% if s.evolution_api_url and s.evolution_api_key and s.evolution_instance %}
+            <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#dcfce7;color:#15803d;border-radius:6px;font-size:12px;font-weight:600;margin-top:4px;">
+                ✓ Evolution API yapılandırıldı
+            </div>
+            {% else %}
+            <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#fef9c3;color:#92400e;border-radius:6px;font-size:12px;font-weight:600;margin-top:4px;">
+                ⚠ Yapılandırılmamış — wa.me linki modu aktif
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
     <!-- SAVE BAR -->
     <div style="position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e8eaf0;padding:14px 0;display:flex;justify-content:flex-end;gap:12px;z-index:50;">
         <button type="button" onclick="window.open('/', '_blank')"
@@ -423,7 +511,7 @@
 
 <script>
 function switchSettings(name, btn) {
-    ['brand','i18n','social','advanced'].forEach(s => {
+    ['brand','i18n','social','advanced','integrations'].forEach(s => {
         const el = document.getElementById('settings-' + s);
         if (el) el.style.display = 'none';
     });

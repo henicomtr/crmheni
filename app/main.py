@@ -95,6 +95,71 @@ def _migrate_quote_requests():
 
 _migrate_quote_requests()
 
+# ── QuoteRequest v2 migrasyonu: is_read, last_contacted_at ──────────
+def _migrate_quote_requests_v2():
+    """is_read ve last_contacted_at kolonlarını ekler."""
+    insp = inspect(engine)
+    if "quote_requests" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("quote_requests")}
+
+    # Her kolon için bağımsız connection: bir hata diğerini etkilemez
+    if "is_read" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE quote_requests ADD COLUMN is_read BOOLEAN DEFAULT 0"))
+                conn.commit()
+        except Exception:
+            pass
+
+    if "last_contacted_at" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE quote_requests ADD COLUMN last_contacted_at TIMESTAMP"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_quote_requests_v2()
+
+
+# ── RequestMessage tablosu — create_all kapsamında ama güvence için explicit ──
+def _migrate_request_messages():
+    """request_messages tablosunu oluşturur (yoksa)."""
+    from .models import RequestMessage as _RM
+    Base.metadata.create_all(bind=engine, tables=[_RM.__table__])
+
+_migrate_request_messages()
+
+# ── SiteSettings v2: SMTP + Evolution API kolonları ─────────────────
+def _migrate_site_settings_v2():
+    """SMTP ve Evolution API ayar kolonlarını ekler."""
+    _new_cols = [
+        ("smtp_host",          "VARCHAR"),
+        ("smtp_port",          "INTEGER"),
+        ("smtp_user",          "VARCHAR"),
+        ("smtp_password",      "VARCHAR"),
+        ("smtp_from_email",    "VARCHAR"),
+        ("evolution_api_url",  "VARCHAR"),
+        ("evolution_api_key",  "VARCHAR"),
+        ("evolution_instance", "VARCHAR"),
+    ]
+    insp = inspect(engine)
+    if "site_settings" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("site_settings")}
+    # Her kolon için bağımsız connection: bir hata diğerini etkilemez
+    for col_name, col_type in _new_cols:
+        if col_name not in existing:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text(f"ALTER TABLE site_settings ADD COLUMN {col_name} {col_type}"))
+                    conn.commit()
+            except Exception:
+                pass
+
+_migrate_site_settings_v2()
+
 # ── Products tablo migrasyonu ────────────────────────────────────────
 def _migrate_products():
     """
@@ -105,19 +170,20 @@ def _migrate_products():
     if "products" not in insp.get_table_names():
         return
     existing = {c["name"] for c in insp.get_columns("products")}
-    with engine.connect() as conn:
-        if "rating_count" not in existing:
-            try:
+    if "rating_count" not in existing:
+        try:
+            with engine.connect() as conn:
                 conn.execute(text("ALTER TABLE products ADD COLUMN rating_count INTEGER DEFAULT 0"))
-            except Exception:
-                pass
-        # Eski kurulumlar için updated_at kolonu ekle (TIMESTAMP: PostgreSQL uyumlu)
-        if "updated_at" not in existing:
-            try:
+                conn.commit()
+        except Exception:
+            pass
+    if "updated_at" not in existing:
+        try:
+            with engine.connect() as conn:
                 conn.execute(text("ALTER TABLE products ADD COLUMN updated_at TIMESTAMP"))
-            except Exception:
-                pass
-        conn.commit()
+                conn.commit()
+        except Exception:
+            pass
 
 _migrate_products()
 

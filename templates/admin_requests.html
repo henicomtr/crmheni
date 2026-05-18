@@ -1,23 +1,23 @@
-﻿{% extends "admin_layout.html" %}
+{% extends "admin_layout.html" %}
 {% block content %}
 
 <style>
-    .admin-page-header {
+    .page-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 28px;
+        margin-bottom: 24px;
         flex-wrap: wrap;
         gap: 12px;
     }
 
-    .admin-page-title {
+    .page-title {
         font-size: 22px;
         font-weight: 700;
         letter-spacing: -0.02em;
     }
 
-    .requests-count-badge {
+    .badge-dark {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -32,29 +32,35 @@
 
     .stats-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-        margin-bottom: 28px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
     }
 
     .stat-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-md);
-        padding: 20px 22px;
+        padding: 18px 20px;
         box-shadow: var(--shadow-sm);
     }
 
-    .stat-card .stat-val {
-        font-size: 26px;
+    .stat-card.unread-card {
+        border-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .stat-val {
+        font-size: 24px;
         font-weight: 700;
         font-family: var(--mono);
         letter-spacing: -0.03em;
-        color: var(--text-primary);
         margin-bottom: 4px;
     }
 
-    .stat-card .stat-lbl {
+    .unread-card .stat-val { color: #1d4ed8; }
+
+    .stat-lbl {
         font-size: 10px;
         font-weight: 700;
         letter-spacing: 0.10em;
@@ -62,7 +68,8 @@
         color: var(--text-muted);
     }
 
-    .requests-table-card {
+    /* Liste */
+    .requests-card {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: var(--radius-lg);
@@ -70,258 +77,207 @@
         overflow: hidden;
     }
 
-    .requests-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .requests-table th {
-        text-align: left;
-        padding: 12px 18px;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-muted);
+    .req-row {
+        display: grid;
+        grid-template-columns: 24px 1fr auto auto;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 18px;
         border-bottom: 1px solid var(--border);
-        background: var(--surface-2);
-        white-space: nowrap;
+        text-decoration: none;
+        color: inherit;
+        transition: background .12s;
+        cursor: pointer;
     }
 
-    .requests-table td {
-        padding: 0;
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
+    .req-row:last-child { border-bottom: none; }
+
+    .req-row:hover { background: var(--surface-2); }
+
+    .req-row.unread { background: #f8faff; }
+    .req-row.unread:hover { background: #eff6ff; }
+
+    /* Okunmamış nokta */
+    .unread-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #3b82f6;
+        flex-shrink: 0;
     }
 
-    .requests-table tr:last-child td {
-        border-bottom: none;
+    .read-dot {
+        width: 8px;
+        height: 8px;
+        flex-shrink: 0;
     }
 
-    .requests-table tr:hover td {
-        background: var(--surface-2);
-    }
+    /* Orta içerik */
+    .req-main { min-width: 0; }
 
-    .td-inner {
-        padding: 16px 18px;
-    }
-
-    .req-date {
-        font-size: 12px;
-        font-family: var(--mono);
-        color: var(--text-secondary);
-    }
-
-    .req-date-day {
-        font-weight: 700;
-        font-size: 13px;
-        color: var(--text-primary);
+    .req-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+        flex-wrap: wrap;
     }
 
     .req-company {
         font-weight: 700;
         font-size: 13px;
-        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    .req-person {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
+    .req-company.bold { font-weight: 800; }
 
-    .req-contact-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 12px;
-        color: var(--text-secondary);
-        margin-bottom: 3px;
-    }
-
-    .req-contact-item a {
-        color: var(--text-secondary);
-        text-decoration: none;
-    }
-
-    .req-contact-item a:hover {
-        color: var(--text-primary);
-        text-decoration: underline;
-    }
-
-    .req-country {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 3px 10px;
-        background: var(--surface-3);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        color: var(--text-secondary);
-    }
-
-    .req-items {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 200px;
-    }
-
-    .req-item {
-        padding: 8px 10px;
-        background: var(--surface-2);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-sm);
-        font-size: 12px;
-    }
-
-    .req-item-name {
+    .req-type-badge {
+        padding: 1px 7px;
+        border-radius: 4px;
+        font-size: 10px;
         font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 3px;
+        letter-spacing: .05em;
+        flex-shrink: 0;
     }
 
-    .req-item-meta {
+    .badge-landing { background: #dbeafe; color: #1d4ed8; }
+    .badge-cart    { background: #dcfce7; color: #15803d; }
+
+    .req-sub {
+        font-size: 12px;
         color: var(--text-muted);
-        font-family: var(--mono);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Sağ meta */
+    .req-meta {
+        text-align: right;
+        min-width: 90px;
+        flex-shrink: 0;
+    }
+
+    .req-date {
         font-size: 11px;
+        font-family: var(--mono);
+        color: var(--text-muted);
+        white-space: nowrap;
     }
 
-    .req-total {
-        font-family: var(--mono);
-        font-weight: 700;
-        font-size: 14px;
-        color: var(--text-primary);
+    .req-contacted {
+        font-size: 10px;
+        color: #3b82f6;
+        margin-top: 2px;
+        white-space: nowrap;
     }
 
     /* Aksiyon butonları */
     .req-actions {
         display: flex;
-        flex-direction: column;
         gap: 6px;
-        min-width: 100px;
+        flex-shrink: 0;
     }
 
-    .req-actions form {
-        margin: 0;
+    .btn-reply {
+        padding: 6px 12px;
+        background: #1d4ed8;
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: var(--transition);
     }
+
+    .btn-reply:hover { background: #1e40af; }
 
     .btn-approve {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        width: 100%;
-        padding: 8px 12px;
+        padding: 6px 10px;
         background: var(--success-bg);
         color: var(--success);
-        border: 1px solid rgba(26, 122, 74, .25);
+        border: 1px solid rgba(26,122,74,.25);
         border-radius: var(--radius-sm);
-        font-family: var(--font);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         cursor: pointer;
+        white-space: nowrap;
         transition: var(--transition);
     }
 
-    .btn-approve:hover {
-        background: #1a7a4a;
-        color: #fff;
-        border-color: #1a7a4a;
-    }
+    .btn-approve:hover { background: #1a7a4a; color: #fff; border-color: #1a7a4a; }
 
     .btn-reject {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        width: 100%;
-        padding: 8px 12px;
+        padding: 6px 10px;
         background: transparent;
         color: #c0392b;
-        border: 1px solid rgba(192, 57, 43, .25);
+        border: 1px solid rgba(192,57,43,.25);
         border-radius: var(--radius-sm);
-        font-family: var(--font);
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         cursor: pointer;
+        white-space: nowrap;
         transition: var(--transition);
     }
 
-    .btn-reject:hover {
-        background: #c0392b;
-        color: #fff;
-        border-color: #c0392b;
-    }
+    .btn-reject:hover { background: #c0392b; color: #fff; border-color: #c0392b; }
 
-    .empty-requests {
+    .empty-state {
         padding: 64px 28px;
         text-align: center;
         color: var(--text-muted);
         font-size: 14px;
     }
 
-    .mobile-req-card {
-        display: none;
+    /* Satır tıklanabilir ama butonlar ayrı */
+    .req-row-link {
+        display: contents;
     }
 
-    @media (max-width: 1000px) {
-        .stats-row {
-            grid-template-columns: 1fr 1fr;
-        }
-    }
+    @media (max-width: 900px) {
+        .stats-row { grid-template-columns: 1fr 1fr; }
 
-    @media (max-width: 768px) {
-        .stats-row {
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .req-row {
+            grid-template-columns: 24px 1fr;
+            grid-template-rows: auto auto;
         }
 
-        .requests-table-wrap {
-            display: none;
-        }
-
-        .mobile-req-card {
-            display: block;
-            border-bottom: 1px solid var(--border);
-            padding: 16px;
-        }
-
-        .mobile-req-card:last-child {
-            border-bottom: none;
-        }
-
-        .mobile-req-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .mobile-req-body {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .req-meta { display: none; }
 
         .req-actions {
-            flex-direction: row;
+            grid-column: 2;
+            flex-wrap: wrap;
         }
+    }
 
-        .req-actions form {
-            flex: 1;
-        }
+    @media (max-width: 600px) {
+        .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .req-row { padding: 12px 14px; gap: 10px; }
+
+        .btn-reply, .btn-approve, .btn-reject { padding: 5px 8px; font-size: 10px; }
     }
 </style>
 
-<div class="admin-page-header">
-    <h1 class="admin-page-title">Talep Yönetimi</h1>
-    <span class="requests-count-badge">{{ requests|length }} talep</span>
+<div class="page-header">
+    <h1 class="page-title">Talep Yönetimi</h1>
+    <span class="badge-dark">{{ requests|length }} talep</span>
 </div>
 
 {% set total_revenue = requests | sum(attribute='total_price') %}
 <div class="stats-row">
+    <div class="stat-card {% if unread_count > 0 %}unread-card{% endif %}">
+        <div class="stat-val">{{ unread_count }}</div>
+        <div class="stat-lbl">Okunmamış</div>
+    </div>
     <div class="stat-card">
         <div class="stat-val">{{ requests|length }}</div>
         <div class="stat-lbl">Toplam Talep</div>
@@ -333,181 +289,81 @@
     <div class="stat-card">
         <div class="stat-val">
             {% if requests|length > 0 %}${{ "{:,.0f}".format(total_revenue / requests|length) }}
-            {% else %}$0{% endif %}
+            {% else %}—{% endif %}
         </div>
-        <div class="stat-lbl">Ortalama Talep</div>
+        <div class="stat-lbl">Ortalama</div>
     </div>
 </div>
 
-<div class="requests-table-card">
+<div class="requests-card">
     {% if requests %}
+        {% for req in requests %}
+        {% set is_landing = req.items_data and not req.items_data[0].product_name %}
+        <div class="req-row {% if not req.is_read %}unread{% endif %}">
 
-    <!-- MASAÜSTÜ -->
-    <div class="requests-table-wrap">
-        <table class="requests-table">
-            <thead>
-                <tr>
-                    <th>Tarih</th>
-                    <th>Firma / Kişi</th>
-                    <th>İletişim</th>
-                    <th>Ülke</th>
-                    <th>Ürünler</th>
-                    <th>Toplam</th>
-                    <th>İşlem</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for req in requests %}
-                <tr>
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-date-day">{{ req.created_at.strftime('%d %b %Y') }}</div>
-                            <div class="req-date">{{ req.created_at.strftime('%H:%M') }}</div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-company">{{ req.company_name }}</div>
-                            <div class="req-person">{{ req.contact_person }}</div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-contact-item">✉️ <a href="mailto:{{ req.email }}">{{ req.email }}</a></div>
-                            {% if req.phone %}
-                            <div class="req-contact-item">
-                                📱 <a href="https://wa.me/{{ req.phone|replace(' ','')|replace('+','') }}"
-                                    target="_blank">{{ req.phone }}</a>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            {% if req.country %}
-                            <span class="req-country">🌍 {{ req.country }}</span>
-                            {% else %}<span style="color:var(--text-muted);font-size:12px;">—</span>{% endif %}
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-items">
-                                {% for item in req.items_data %}
-                                <div class="req-item">
-                                    {% if item.product_name %}
-                                    {# Sepetten gelen standart talep #}
-                                    <div class="req-item-name">{{ item.product_name }}</div>
-                                    <div class="req-item-meta">
-                                        {{ item.quantity }} adet
-                                        {% if item.boxes %} · {{ item.boxes }} koli{% endif %}
-                                        {% if item.pallets %} · {{ item.pallets }} palet{% endif %}
-                                        {% if item.discount_rate and item.discount_rate > 0 %}
-                                        · <span style="color:var(--success);font-weight:700;">%{{ (item.discount_rate *
-                                            100)|int }} indirim</span>
-                                        {% endif %}
-                                    </div>
-                                    {% else %}
-                                    {# Landing page formundan gelen talep #}
-                                    <div class="req-item-name" style="display:flex;align-items:center;gap:6px;">
-                                        <span style="background:#3b82f6;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;">LANDING</span>
-                                        {{ item.source or '—' }}
-                                    </div>
-                                    {% if item.message %}
-                                    <div class="req-item-meta" style="margin-top:4px;color:var(--text-muted);white-space:pre-wrap;">{{ item.message }}</div>
-                                    {% endif %}
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-total">{{ req.price_display }}</div>
-                        </div>
-                    </td>
-
-                    <td>
-                        <div class="td-inner">
-                            <div class="req-actions">
-                                <form method="POST" action="/esk/requests/approve/{{ req.id }}">
-                                    <button type="submit" class="btn-approve"
-                                        onclick="return confirm('{{ req.company_name }} müşteri olarak kaydedilsin mi?')">
-                                        ✓ Onayla
-                                    </button>
-                                </form>
-                                <form method="POST" action="/esk/requests/delete/{{ req.id }}">
-                                    <button type="submit" class="btn-reject"
-                                        onclick="return confirm('Bu talep kalıcı olarak silinecek. Emin misiniz?')">
-                                        ✕ İptal
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- MOBİL -->
-    {% for req in requests %}
-    <div class="mobile-req-card">
-        <div class="mobile-req-header">
+            <!-- Okundu göstergesi -->
             <div>
-                <div class="req-company">{{ req.company_name }}</div>
-                <div class="req-person">{{ req.contact_person }}</div>
-                <div class="req-date" style="margin-top:4px;">{{ req.created_at.strftime('%d %b %Y · %H:%M') }}</div>
+                {% if not req.is_read %}
+                <div class="unread-dot" title="Okunmadı"></div>
+                {% else %}
+                <div class="read-dot"></div>
+                {% endif %}
             </div>
-            <div class="req-total">{{ req.price_display }}</div>
-        </div>
-        <div class="mobile-req-body">
-            <div class="req-contact-item">✉️ <a href="mailto:{{ req.email }}">{{ req.email }}</a></div>
-            {% if req.phone %}<div class="req-contact-item">📱 {{ req.phone }}</div>{% endif %}
-            {% if req.country %}<span class="req-country">🌍 {{ req.country }}</span>{% endif %}
-            <div class="req-items">
-                {% for item in req.items_data %}
-                <div class="req-item">
-                    {% if item.product_name %}
-                    <div class="req-item-name">{{ item.product_name }}</div>
-                    <div class="req-item-meta">{{ item.quantity }} adet{% if item.pallets %} · {{ item.pallets }} palet{% endif %}</div>
-                    {% else %}
-                    <div class="req-item-name" style="display:flex;align-items:center;gap:6px;">
-                        <span style="background:#3b82f6;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:.05em;">LANDING</span>
-                        {{ item.source or '—' }}
-                    </div>
-                    {% if item.message %}
-                    <div class="req-item-meta" style="margin-top:4px;color:var(--text-muted);white-space:pre-wrap;">{{ item.message }}</div>
-                    {% endif %}
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            <div class="req-actions">
-                <form method="POST" action="/esk/requests/approve/{{ req.id }}" style="flex:1;">
-                    <button type="submit" class="btn-approve" style="width:100%;"
-                        onclick="return confirm('Müşteri olarak kaydedilsin mi?')">✓ Onayla</button>
-                </form>
-                <form method="POST" action="/esk/requests/delete/{{ req.id }}" style="flex:1;">
-                    <button type="submit" class="btn-reject" style="width:100%;"
-                        onclick="return confirm('Talep silinsin mi?')">✕ İptal</button>
-                </form>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
 
+            <!-- Ana içerik — tıklanabilir alan -->
+            <a href="/esk/requests/{{ req.id }}" style="text-decoration:none;color:inherit;min-width:0;">
+                <div class="req-main">
+                    <div class="req-top">
+                        <span class="req-company {% if not req.is_read %}bold{% endif %}">
+                            {{ req.company_name }}
+                        </span>
+                        {% if is_landing %}
+                        <span class="req-type-badge badge-landing">LANDING</span>
+                        {% else %}
+                        <span class="req-type-badge badge-cart">SEPET</span>
+                        {% endif %}
+                    </div>
+                    <div class="req-sub">
+                        {{ req.contact_person }}
+                        {% if req.country %} · {{ req.country }}{% endif %}
+                        {% if req.total_price > 0 %} · {{ req.price_display }}{% endif %}
+                    </div>
+                </div>
+            </a>
+
+            <!-- Tarih meta -->
+            <div class="req-meta">
+                <div class="req-date">{{ req.created_at.strftime('%d %b %Y') }}</div>
+                {% if req.last_contacted_at %}
+                <div class="req-contacted">↩ {{ req.last_contacted_at.strftime('%d %b') }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Aksiyonlar -->
+            <div class="req-actions" onclick="event.stopPropagation()">
+                <a href="/esk/requests/{{ req.id }}" class="btn-reply">✉ Cevapla</a>
+                <form method="POST" action="/esk/requests/approve/{{ req.id }}" style="margin:0;">
+                    <button type="submit" class="btn-approve"
+                        onclick="return confirm('{{ req.company_name }} müşteri olarak kaydedilsin mi?')">
+                        ✓
+                    </button>
+                </form>
+                <form method="POST" action="/esk/requests/delete/{{ req.id }}" style="margin:0;">
+                    <button type="submit" class="btn-reject"
+                        onclick="return confirm('Bu talep kalıcı olarak silinecek. Emin misiniz?')">
+                        ✕
+                    </button>
+                </form>
+            </div>
+
+        </div>
+        {% endfor %}
     {% else %}
-    <div class="empty-requests">
-        <div style="font-size:40px;opacity:.25;margin-bottom:12px;">📋</div>
-        <p>Henüz sipariş talebi bulunmuyor.</p>
-    </div>
+        <div class="empty-state">
+            <div style="font-size:40px;opacity:.25;margin-bottom:12px;">📋</div>
+            <p>Henüz sipariş talebi bulunmuyor.</p>
+        </div>
     {% endif %}
 </div>
+
 {% endblock %}
