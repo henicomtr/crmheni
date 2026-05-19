@@ -364,7 +364,7 @@ async def _imap_polling_loop():
             _poll_imap_once()
         except Exception as exc:
             logger.error("IMAP polling döngüsü hatası: %s", exc)
-        await asyncio.sleep(300)  # 5 dakika
+        await asyncio.sleep(90)  # 90 saniye
 
 
 def start_imap_polling(app):
