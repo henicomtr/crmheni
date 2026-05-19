@@ -148,11 +148,12 @@
         font-size: 11px;
     }
 
-    /* Konuşma geçmişi */
-    .timeline {
+    /* Konuşma geçmişi — chat bubble stili */
+    .chat-thread {
         display: flex;
         flex-direction: column;
-        gap: 0;
+        gap: 16px;
+        padding: 4px 0;
     }
 
     .timeline-empty {
@@ -162,72 +163,112 @@
         padding: 24px 0;
     }
 
-    .msg-item {
+    .bubble-row {
         display: flex;
-        gap: 12px;
-        padding: 14px 0;
-        border-bottom: 1px solid var(--border);
+        gap: 10px;
+        max-width: 90%;
     }
 
-    .msg-item:last-child { border-bottom: none; }
+    /* Müşteri cevabı: solda */
+    .bubble-row--incoming {
+        align-self: flex-start;
+        flex-direction: row;
+    }
 
-    .msg-icon {
-        width: 34px;
-        height: 34px;
+    /* Admin mesajı: sağda */
+    .bubble-row--outgoing {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .bubble-avatar {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 15px;
+        font-size: 14px;
         flex-shrink: 0;
+        margin-top: 2px;
     }
 
-    .msg-icon.email     { background: #dbeafe; }
-    .msg-icon.whatsapp  { background: #dcfce7; }
-    .msg-icon.note      { background: #fef9c3; }
+    .avatar--customer { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    .avatar--admin    { background: #eff6ff; border: 1px solid #bfdbfe; }
 
-    .msg-body { flex: 1; min-width: 0; }
+    .bubble-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
-    .msg-meta {
+    .bubble-meta {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 5px;
+        gap: 6px;
         flex-wrap: wrap;
+        font-size: 11px;
     }
 
-    .msg-channel {
+    .bubble-row--outgoing .bubble-meta { justify-content: flex-end; }
+
+    .bubble-sender { font-weight: 600; color: var(--text-secondary); }
+
+    .incoming-label {
+        background: #dcfce7;
+        color: #15803d;
+        padding: 1px 6px;
+        border-radius: 4px;
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: .06em;
         text-transform: uppercase;
-        padding: 2px 7px;
+    }
+
+    .outgoing-label {
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 1px 6px;
         border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
     }
 
-    .msg-channel.email     { background: #dbeafe; color: #1d4ed8; }
-    .msg-channel.whatsapp  { background: #dcfce7; color: #15803d; }
-    .msg-channel.note      { background: #fef9c3; color: #92400e; }
-
-    .msg-admin {
-        font-size: 12px;
+    .bubble-channel {
+        font-size: 10px;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: .04em;
     }
 
-    .msg-date {
-        font-size: 11px;
+    .bubble-time {
+        font-size: 10px;
         color: var(--text-muted);
         font-family: var(--mono);
-        margin-left: auto;
     }
 
-    .msg-content {
+    /* Baloncuk gövdesi */
+    .bubble {
+        padding: 10px 14px;
+        border-radius: 12px;
         font-size: 13px;
-        color: var(--text-primary);
-        line-height: 1.5;
+        line-height: 1.55;
         white-space: pre-wrap;
         word-break: break-word;
+        max-width: 100%;
+    }
+
+    /* Müşteriden gelen: açık yeşil-gri */
+    .bubble--incoming {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #1a1a1a;
+        border-top-left-radius: 3px;
+    }
+
+    /* Admin gönderisi: mavi */
+    .bubble--outgoing {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1a1a1a;
+        border-top-right-radius: 3px;
     }
 
     /* Cevap formu */
@@ -457,33 +498,50 @@
 
         <!-- Konuşma Geçmişi -->
         <div class="card">
-            <div class="card-title">Konuşma Geçmişi</div>
+            <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>Konuşma Geçmişi</span>
+                {% if messages %}
+                <span style="font-size:12px;font-weight:400;color:#888;">{{ messages|length }} mesaj</span>
+                {% endif %}
+            </div>
             {% if messages %}
-            <div class="timeline">
+            <div class="chat-thread">
                 {% for msg in messages %}
-                <div class="msg-item">
-                    <div class="msg-icon {{ msg.channel }}">
+                {% set is_incoming = (msg.direction == 'incoming') %}
+                <div class="bubble-row {{ 'bubble-row--incoming' if is_incoming else 'bubble-row--outgoing' }}">
+
+                    <!-- Kanal + yön ikonu -->
+                    <div class="bubble-avatar {{ 'avatar--customer' if is_incoming else 'avatar--admin' }}">
                         {% if msg.channel == 'email' %}✉️
                         {% elif msg.channel == 'whatsapp' %}💬
                         {% else %}📝{% endif %}
                     </div>
-                    <div class="msg-body">
-                        <div class="msg-meta">
-                            <span class="msg-channel {{ msg.channel }}">
+
+                    <div class="bubble-wrap">
+                        <div class="bubble-meta">
+                            {% if is_incoming %}
+                            <span class="bubble-sender">{{ msg.admin_name or quote.contact_person }}</span>
+                            <span class="bubble-direction incoming-label">Müşteri</span>
+                            {% else %}
+                            <span class="bubble-sender">{{ msg.admin_name or 'Admin' }}</span>
+                            <span class="bubble-direction outgoing-label">Gönderildi</span>
+                            {% endif %}
+                            <span class="bubble-channel {{ msg.channel }}">
                                 {% if msg.channel == 'email' %}Mail
                                 {% elif msg.channel == 'whatsapp' %}WhatsApp
                                 {% else %}Not{% endif %}
                             </span>
-                            <span class="msg-admin">{{ msg.admin_name or 'Admin' }}</span>
-                            <span class="msg-date">{{ msg.created_at.strftime('%d %b %Y · %H:%M') }}</span>
+                            <span class="bubble-time">{{ msg.created_at.strftime('%d %b %Y · %H:%M') }}</span>
                         </div>
-                        <div class="msg-content">{{ msg.content }}</div>
+                        <div class="bubble {{ 'bubble--incoming' if is_incoming else 'bubble--outgoing' }}">
+                            {{ msg.content }}
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <div class="timeline-empty">Henüz mesaj gönderilmedi.</div>
+            <div class="timeline-empty">Henüz mesaj yok. Aşağıdan müşteriye yazabilirsiniz.</div>
             {% endif %}
         </div>
 
@@ -494,10 +552,16 @@
         <div class="card" style="position:sticky;top:20px;">
             <div class="card-title">Cevapla</div>
 
-            {% if request.query_params.get('error') == 'smtp_not_configured' %}
-            <div class="alert alert-error">SMTP ayarları yapılandırılmamış. Lütfen <a href="/esk/settings" style="color:inherit;font-weight:700;">Site Ayarları → Entegrasyon</a> bölümünden SMTP bilgilerini girin.</div>
-            {% elif request.query_params.get('error') == 'smtp_send_failed' %}
-            <div class="alert alert-error">Mail gönderilemedi. SMTP sunucusu bağlantıyı reddetti — host, port ve şifre bilgilerini kontrol edin.</div>
+            {% set err = request.query_params.get('error', '') %}
+            {% if err == 'smtp_not_configured' %}
+            <div class="alert alert-error">SMTP ayarları yapılandırılmamış. <a href="/esk/settings" style="color:inherit;font-weight:700;">Site Ayarları → Entegrasyon</a> bölümünden girin.</div>
+            {% elif err == 'smtp_send_failed' %}
+            <div class="alert alert-error">Mail gönderilemedi. SMTP sunucusu bağlantıyı reddetti — ayarları kontrol edin.</div>
+            {% elif err.startswith('wa_send_failed') %}
+            <div class="alert alert-error">
+                ⚠ WhatsApp mesajı gönderilemedi ({{ err.split(':')[1] if ':' in err else '' }}).
+                <br><small>Evolution API URL'sini kontrol edin: <a href="/esk/settings" style="color:inherit;font-weight:700;">Site Ayarları → Entegrasyon</a></small>
+            </div>
             {% endif %}
 
             <!-- Kanal sekmeleri -->

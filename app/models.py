@@ -180,6 +180,8 @@ class RequestMessage(Base):
     request_id = Column(Integer, ForeignKey("quote_requests.id", ondelete="CASCADE"), nullable=False)
     # Kanal: email | whatsapp | note
     channel    = Column(String(20), nullable=False)
+    # Yön: outgoing (admin→müşteri) | incoming (müşteri→admin)
+    direction  = Column(String(20), nullable=False, default="outgoing")
     content    = Column(Text, nullable=False)
     admin_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -616,6 +618,13 @@ class SiteSettings(Base):
     evolution_api_url  = Column(String, nullable=True)
     evolution_api_key  = Column(String, nullable=True)
     evolution_instance = Column(String, nullable=True)
+    # IMAP gelen kutusu ayarları (müşteri email cevaplarını otomatik çekmek için)
+    imap_host          = Column(String, nullable=True)
+    imap_port          = Column(Integer, nullable=True, default=993)
+    imap_user          = Column(String, nullable=True)
+    imap_password      = Column(String, nullable=True)
+    # CRM'in kendi URL'si — Evolution API webhook kaydında kullanılır
+    crm_base_url       = Column(String, nullable=True)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

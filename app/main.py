@@ -160,6 +160,64 @@ def _migrate_site_settings_v2():
 
 _migrate_site_settings_v2()
 
+# ── SiteSettings v3: IMAP kolonları ─────────────────────────────────
+def _migrate_site_settings_v3():
+    """IMAP gelen kutusu ayar kolonlarını ekler."""
+    _new_cols = [
+        ("imap_host",     "VARCHAR"),
+        ("imap_port",     "INTEGER"),
+        ("imap_user",     "VARCHAR"),
+        ("imap_password", "VARCHAR"),
+    ]
+    insp = inspect(engine)
+    if "site_settings" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("site_settings")}
+    for col_name, col_type in _new_cols:
+        if col_name not in existing:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text(f"ALTER TABLE site_settings ADD COLUMN {col_name} {col_type}"))
+                    conn.commit()
+            except Exception:
+                pass
+
+_migrate_site_settings_v3()
+
+# ── SiteSettings v4: CRM kendi URL'si (webhook kaydı için) ──────────
+def _migrate_site_settings_v4():
+    """crm_base_url kolonunu ekler — Evolution API webhook kaydında kullanılır."""
+    insp = inspect(engine)
+    if "site_settings" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("site_settings")}
+    if "crm_base_url" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE site_settings ADD COLUMN crm_base_url VARCHAR"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_site_settings_v4()
+
+# ── RequestMessage: direction kolonu ────────────────────────────────
+def _migrate_request_messages_v2():
+    """direction (outgoing/incoming) kolonunu ekler."""
+    insp = inspect(engine)
+    if "request_messages" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("request_messages")}
+    if "direction" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE request_messages ADD COLUMN direction VARCHAR(20) DEFAULT 'outgoing'"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_request_messages_v2()
+
 # ── Products tablo migrasyonu ────────────────────────────────────────
 def _migrate_products():
     """
@@ -468,6 +526,14 @@ app.add_middleware(StaticCacheMiddleware)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
 app.include_router(feeds_router)     # catch-all /{slug}'den önce kayıtlı olmalı
+app.include_router(webhook_router)   # showroom catch-all'dan önce kayıtlı olmalı
 app.include_router(showroom_router)
-app.include_router(webhook_router)
 app.include_router(pricing_router)
+
+
+@app.on_event("startup")
+async def on_startup():
+    """Uygulama ayağa kalktığında IMAP polling ve Evolution webhook kaydını başlatır."""
+    from .routes_webhook import start_imap_polling, _register_evolution_webhook
+    start_imap_polling(app)
+    await _register_evolution_webhook()

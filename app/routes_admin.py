@@ -7,6 +7,7 @@ from sqlalchemy import func
 from datetime import datetime, timezone, timedelta as _timedelta
 from jose import jwt, JWTError
 from typing import Optional
+import re
 import shutil
 import os
 import hmac
@@ -1465,16 +1466,28 @@ def _send_email_smtp(settings: SiteSettings, to_email: str, subject: str, body: 
         return False
 
 
-def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -> bool:
-    """Evolution API üzerinden WhatsApp mesajı gönderir. Başarıda True döner."""
+def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -> tuple:
+    """
+    Evolution API üzerinden WhatsApp mesajı gönderir.
+    Dönüş: (success: bool, error_detail: str)
+    """
     import urllib.request
     import urllib.error
     import json as _json
+    import logging
+    _log = logging.getLogger(__name__)
 
     if not (settings and settings.evolution_api_url and settings.evolution_api_key and settings.evolution_instance):
-        return False
-    # Telefon numarasındaki boşluk ve + karakterlerini temizle
-    clean_phone = phone.replace(" ", "").replace("+", "").replace("-", "")
+        return False, "evolution_not_configured"
+
+    # Telefon numarasını uluslararası formata getir (sadece rakamlar, ülke kodu dahil)
+    clean_phone = re.sub(r"\D", "", phone)
+    # Türkiye: 0'la başlayan 11 haneli numara → başına 90 ekle (05xx → 905xx)
+    if len(clean_phone) == 11 and clean_phone.startswith("0"):
+        clean_phone = "90" + clean_phone[1:]
+    # 10 haneli Türkiye numarası: 5xx veya 2xx ile başlıyorsa → başına 90 ekle
+    elif len(clean_phone) == 10 and clean_phone[0] in ("5", "2", "3", "4"):
+        clean_phone = "90" + clean_phone
     url = f"{settings.evolution_api_url.rstrip('/')}/message/sendText/{settings.evolution_instance}"
     payload = _json.dumps({"number": clean_phone, "text": message}).encode("utf-8")
     req = urllib.request.Request(url, data=payload, method="POST")
@@ -1482,9 +1495,18 @@ def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -
     req.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status in (200, 201)
-    except Exception:
-        return False
+            ok = resp.status in (200, 201)
+            if not ok:
+                _log.warning("Evolution API yanıt kodu: %d, URL: %s", resp.status, url)
+                return False, f"api_error_{resp.status}"
+            return True, ""
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")[:300]
+        _log.error("Evolution API HTTP hatası: %d — %s — URL: %s", exc.code, body, url)
+        return False, f"http_{exc.code}"
+    except Exception as exc:
+        _log.error("Evolution API bağlantı hatası: %s — URL: %s", exc, url)
+        return False, "connection_error"
 
 
 @router.get("/esk/requests", response_class=HTMLResponse)
@@ -1624,18 +1646,27 @@ def reply_to_request(
                 error_param = "smtp_send_failed"
     elif channel == "whatsapp":
         if quote.phone:
-            sent = _send_whatsapp_evolution(settings, quote.phone, content)
+            sent, send_error = _send_whatsapp_evolution(settings, quote.phone, content)
             if not sent:
-                # Evolution API yoksa wa.me linki hazırla
-                clean = quote.phone.replace(" ", "").replace("+", "").replace("-", "")
                 import urllib.parse
-                wa_url_param = f"https://wa.me/{clean}?text={urllib.parse.quote(content, safe='')}"
+                clean = re.sub(r"\D", "", quote.phone)
+                if len(clean) == 11 and clean.startswith("0"):
+                    clean = "90" + clean[1:]
+                elif len(clean) == 10 and clean[0] in ("5", "2", "3", "4"):
+                    clean = "90" + clean
+                if send_error == "evolution_not_configured":
+                    # Evolution API kurulmamış — wa.me linkiyle manuel aç
+                    wa_url_param = f"https://wa.me/{clean}?text={urllib.parse.quote(content, safe='')}"
+                else:
+                    # API kurulu ama hata verdi — kullanıcıya bildir
+                    error_param = f"wa_send_failed:{send_error}"
         # else: telefon yoksa sadece not olarak kaydet
 
-    # Mesajı konuşma geçmişine ekle
+    # Mesajı konuşma geçmişine ekle (admin gönderdi → outgoing)
     db.add(RequestMessage(
         request_id=req_id,
         channel=channel,
+        direction="outgoing",
         content=content,
         admin_name=getattr(admin, "email", "Admin"),
     ))
@@ -2409,6 +2440,11 @@ async def settings_post(
     evolution_api_url: str = Form(""),
     evolution_api_key: str = Form(""),
     evolution_instance: str = Form(""),
+    crm_base_url: str = Form(""),
+    imap_host: str = Form(""),
+    imap_port: str = Form("993"),
+    imap_user: str = Form(""),
+    imap_password: str = Form(""),
     logo: UploadFile = File(None),
     logo_white: UploadFile = File(None),
     favicon: UploadFile = File(None),
@@ -2458,6 +2494,15 @@ async def settings_post(
     s.evolution_api_url  = evolution_api_url or None
     s.evolution_api_key  = evolution_api_key or None
     s.evolution_instance = evolution_instance or None
+    s.crm_base_url       = crm_base_url.rstrip("/") or None
+
+    # IMAP ayarları
+    s.imap_host = imap_host or None
+    s.imap_port = int(imap_port) if imap_port.isdigit() else 993
+    s.imap_user = imap_user or None
+    # Şifre boş gönderilmişse mevcut değeri koru
+    if imap_password:
+        s.imap_password = imap_password
 
     if logo and logo.filename:
         os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
