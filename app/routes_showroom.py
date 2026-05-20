@@ -10,6 +10,7 @@ from app.models import Product, ProductTranslation, ProductRating, QuoteRequest,
 from pydantic import BaseModel
 from app.config import CATEGORIES
 from app.services.currency_service import get_rates, format_price, LANG_CURRENCY
+from app.routes_push import send_push_notification
 
 router = APIRouter()
 
@@ -2008,6 +2009,11 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
     db.commit()
     db.refresh(quote)
     request.session["cart"] = {}
+    send_push_notification(
+        title="🛒 Yeni Sepet Talebi",
+        body=f"{company_name} — {contact_person}",
+        url=f"/esk/requests/{quote.id}",
+    )
     price_formatted = format_price(total_price, lang, get_rates())
     site = _get_site_settings(db, lang)
     ui   = UI.get(lang, UI["en"])
@@ -2051,6 +2057,11 @@ def _landing_quote(request: Request, lang: str,
     )
     db.add(quote)
     db.commit()
+    send_push_notification(
+        title="📋 Yeni Landing Talebi",
+        body=f"{company_name} — {contact_person}",
+        url="/esk/requests",
+    )
     # Başarı sayfasını render et — dile göre anasayfa URL'si ve UI metinleri ilet
     site = _get_site_settings(db, lang)
     ui   = UI.get(lang, UI["en"])

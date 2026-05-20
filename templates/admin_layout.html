@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0d1239">
+    <link rel="apple-touch-icon" href="/static/img/icon-192.png">
     <link rel="stylesheet" href="/static/css/main.css">
     <title>HENİ CRM — Admin</title>
     <style>
@@ -690,91 +693,153 @@
     <!-- Medya kütüphanesi seçici modal — tüm admin sayfalarında kullanılabilir -->
     {% include "partials/media_picker_modal.html" %}
 
-    <!-- Okunmamış talep sayısı + ses bildirimi scripti -->
+    <!-- PWA: Service Worker kayıt + Push abonelik + Badge/ses bildirimi -->
     <script>
-        (function () {
-            var badge = document.getElementById('unreadRequestsBadge');
-            var btn   = document.getElementById('soundToggleBtn');
-            var label = document.getElementById('soundLabel');
-            var icon  = document.getElementById('soundIcon');
-            if (!badge) return;
+    (function () {
+        // ── Ortak değişkenler ────────────────────────────────────────
+        var badge      = document.getElementById('unreadRequestsBadge');
+        var btn        = document.getElementById('soundToggleBtn');
+        var label      = document.getElementById('soundLabel');
+        var icon       = document.getElementById('soundIcon');
+        if (!badge) return;
 
-            var STORAGE_KEY = 'heni_sound_enabled';
-            var PREV_KEY    = 'heni_prev_unread_count';
+        var STORAGE_KEY = 'heni_sound_enabled';
+        var PREV_KEY    = 'heni_prev_unread_count';
 
-            var audio = new Audio('/static/sounds/notify.wav');
-            audio.preload = 'auto';
+        var audio = new Audio('/static/sounds/notify.wav');
+        audio.preload = 'auto';
 
-            function getSoundEnabled() {
-                var val = localStorage.getItem(STORAGE_KEY);
-                return val === null ? true : val === 'true';
+        // ── Ses tercihi ───────────────────────────────────────────────
+        function getSoundEnabled() {
+            var val = localStorage.getItem(STORAGE_KEY);
+            return val === null ? true : val === 'true';
+        }
+        function setSoundEnabled(val) {
+            localStorage.setItem(STORAGE_KEY, val ? 'true' : 'false');
+        }
+
+        function updateBtn(enabled) {
+            if (!btn) return;
+            btn.title = enabled ? 'Bildirim sesini kapat' : 'Bildirim sesini aç';
+            if (enabled) {
+                btn.style.color = '#22c55e';
+                if (label) label.textContent = 'Ses açık';
+                if (icon) icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
+            } else {
+                btn.style.color = '#6b7280';
+                if (label) label.textContent = 'Ses kapalı';
+                if (icon) icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
             }
+        }
 
-            function setSoundEnabled(val) {
-                localStorage.setItem(STORAGE_KEY, val ? 'true' : 'false');
-            }
+        function playNotification() {
+            if (!getSoundEnabled()) return;
+            audio.currentTime = 0;
+            audio.play().catch(function () {});
+        }
 
-            function updateBtn(enabled) {
-                if (!btn) return;
-                btn.title = enabled ? 'Bildirim sesini kapat' : 'Bildirim sesini aç';
-                if (enabled) {
-                    btn.style.color = '#22c55e';
-                    if (label) label.textContent = 'Ses açık';
-                    if (icon) icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
-                } else {
-                    btn.style.color = '#6b7280';
-                    if (label) label.textContent = 'Ses kapalı';
-                    if (icon) icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
-                }
-            }
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var nowEnabled = !getSoundEnabled();
+                setSoundEnabled(nowEnabled);
+                updateBtn(nowEnabled);
+            });
+        }
 
-            function playNotification() {
-                if (!getSoundEnabled()) return;
-                audio.currentTime = 0;
-                audio.play().catch(function () {});
-            }
+        // ── Badge polling ─────────────────────────────────────────────
+        function getPrevCount() {
+            var v = sessionStorage.getItem(PREV_KEY);
+            return v === null ? null : parseInt(v, 10);
+        }
+        function setPrevCount(n) {
+            sessionStorage.setItem(PREV_KEY, String(n));
+        }
 
-            if (btn) {
-                btn.addEventListener('click', function () {
-                    var nowEnabled = !getSoundEnabled();
-                    setSoundEnabled(nowEnabled);
-                    updateBtn(nowEnabled);
+        function refreshBadge() {
+            fetch('/esk/requests/unread-count')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var count = data.count;
+                    var prev  = getPrevCount();
+                    if (prev !== null && count > prev) {
+                        playNotification();
+                    }
+                    setPrevCount(count);
+                    if (count > 0) {
+                        badge.textContent = count > 99 ? '99+' : count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(function () { badge.style.display = 'none'; });
+        }
+
+        updateBtn(getSoundEnabled());
+        refreshBadge();
+        setInterval(refreshBadge, 30000);
+
+        // ── Service Worker + Push Notification ───────────────────────
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+        function urlBase64ToUint8Array(base64String) {
+            var padding = '='.repeat((4 - base64String.length % 4) % 4);
+            var base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            var raw     = atob(base64);
+            var arr     = new Uint8Array(raw.length);
+            for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+            return arr;
+        }
+
+        function subscribeToPush(reg) {
+            fetch('/esk/push/vapid-public-key')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var appKey = urlBase64ToUint8Array(data.publicKey);
+                    return reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: appKey,
+                    });
+                })
+                .then(function (sub) {
+                    return fetch('/esk/push/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(sub.toJSON()),
+                    });
+                })
+                .then(function () {
+                    console.log('[push] Push aboneliği kaydedildi.');
+                })
+                .catch(function (e) {
+                    console.warn('[push] Abonelik başarısız:', e);
                 });
-            }
+        }
 
-            function getPrevCount() {
-                var v = sessionStorage.getItem(PREV_KEY);
-                return v === null ? null : parseInt(v, 10);
-            }
-
-            function setPrevCount(n) {
-                sessionStorage.setItem(PREV_KEY, String(n));
-            }
-
-            function refreshBadge() {
-                fetch('/esk/requests/unread-count')
-                    .then(function (r) { return r.json(); })
-                    .then(function (data) {
-                        var count = data.count;
-                        var prev  = getPrevCount();
-                        if (prev !== null && count > prev) {
-                            playNotification();
-                        }
-                        setPrevCount(count);
-                        if (count > 0) {
-                            badge.textContent = count > 99 ? '99+' : count;
-                            badge.style.display = 'inline-block';
+        navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
+            .then(function (reg) {
+                // Bildirim izni iste (zaten verilmişse tekrar sormaz)
+                return Notification.requestPermission().then(function (perm) {
+                    if (perm !== 'granted') return;
+                    // Zaten abone mi?
+                    return reg.pushManager.getSubscription().then(function (existing) {
+                        if (!existing) {
+                            subscribeToPush(reg);
                         } else {
-                            badge.style.display = 'none';
+                            // Sunucuya tekrar kaydet (sayfa yenilemesinde abonelik güncel kalsın)
+                            fetch('/esk/push/subscribe', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(existing.toJSON()),
+                            });
                         }
-                    })
-                    .catch(function () { badge.style.display = 'none'; });
-            }
-
-            updateBtn(getSoundEnabled());
-            refreshBadge();
-            setInterval(refreshBadge, 30000);
-        })();
+                    });
+                });
+            })
+            .catch(function (e) {
+                console.warn('[SW] Kayıt başarısız:', e);
+            });
+    })();
     </script>
 
     <!-- Mobil sidebar toggle scripti -->
