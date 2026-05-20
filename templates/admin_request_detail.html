@@ -148,12 +148,12 @@
         font-size: 11px;
     }
 
-    /* Konuşma geçmişi — chat bubble stili */
+    /* ── Konuşma geçmişi ─────────────────────────────────────────────────── */
     .chat-thread {
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        padding: 4px 0;
+        gap: 14px;
+        padding: 6px 0;
     }
 
     .timeline-empty {
@@ -163,45 +163,46 @@
         padding: 24px 0;
     }
 
+    /* Satır: avatar + mesaj içeriği */
     .bubble-row {
         display: flex;
-        gap: 10px;
-        max-width: 90%;
+        align-items: flex-start;
+        gap: 8px;
+        max-width: 76%;         /* tüm satır max genişliği */
     }
 
-    /* Müşteri cevabı: solda */
-    .bubble-row--incoming {
-        align-self: flex-start;
-        flex-direction: row;
-    }
+    .bubble-row--incoming { align-self: flex-start; }
+    .bubble-row--outgoing { align-self: flex-end; flex-direction: row-reverse; }
 
-    /* Admin mesajı: sağda */
-    .bubble-row--outgoing {
-        align-self: flex-end;
-        flex-direction: row-reverse;
-    }
-
+    /* Avatar dairesi */
     .bubble-avatar {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 12px;
         flex-shrink: 0;
-        margin-top: 2px;
+        margin-top: 20px;       /* meta yüksekliği kadar aşağıya it */
     }
 
     .avatar--customer { background: #f0fdf4; border: 1px solid #bbf7d0; }
     .avatar--admin    { background: #eff6ff; border: 1px solid #bfdbfe; }
 
-    .bubble-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    /* Meta + baloncuk sarıcısı */
+    .bubble-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        flex: 0 1 auto;         /* içerik kadar genişle, daha fazla değil */
+    }
 
     .bubble-meta {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         flex-wrap: wrap;
         font-size: 11px;
     }
@@ -211,65 +212,45 @@
     .bubble-sender { font-weight: 600; color: var(--text-secondary); }
 
     .incoming-label {
-        background: #dcfce7;
-        color: #15803d;
-        padding: 1px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
+        background: #dcfce7; color: #15803d;
+        padding: 1px 6px; border-radius: 4px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
     }
-
     .outgoing-label {
-        background: #dbeafe;
-        color: #1d4ed8;
-        padding: 1px 6px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
+        background: #dbeafe; color: #1d4ed8;
+        padding: 1px 6px; border-radius: 4px;
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
     }
-
     .bubble-channel {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: .04em;
+        font-size: 10px; font-weight: 600;
+        color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em;
     }
+    .bubble-time { font-size: 10px; color: var(--text-muted); font-family: var(--mono); }
 
-    .bubble-time {
-        font-size: 10px;
-        color: var(--text-muted);
-        font-family: var(--mono);
-    }
-
-    /* Baloncuk gövdesi */
+    /* Baloncuk gövdesi — sadece içerik kadar genişler */
     .bubble {
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-size: 13px;
-        line-height: 1.55;
-        white-space: pre-wrap;
+        padding: 9px 13px;
+        border-radius: 14px;
+        font-size: 13.5px;
+        line-height: 1.5;
         word-break: break-word;
-        max-width: 100%;
+        width: fit-content;     /* içerik kadar daral */
+        max-width: 100%;        /* taşmayı önle */
     }
 
-    /* Müşteriden gelen: açık yeşil-gri */
     .bubble--incoming {
         background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-        color: #1a1a1a;
-        border-top-left-radius: 3px;
+        border: 1px solid #d1fae5;
+        color: #111;
+        border-top-left-radius: 4px;
     }
-
-    /* Admin gönderisi: mavi */
     .bubble--outgoing {
         background: #eff6ff;
         border: 1px solid #bfdbfe;
-        color: #1a1a1a;
-        border-top-right-radius: 3px;
+        color: #111;
+        border-top-right-radius: 4px;
     }
+    .bubble-text { display: block; white-space: pre-wrap; }
 
     /* Cevap formu */
     .reply-tabs {
@@ -457,8 +438,6 @@
 
     .att-doc:hover { background: var(--surface); color: var(--text-primary); }
     .att-doc-icon { font-size: 16px; flex-shrink: 0; }
-    .bubble-text { display: block; white-space: pre-wrap; }
-
     /* WhatsApp stili ses oynatıcı */
     .att-wa-audio {
         display: flex;
@@ -467,9 +446,7 @@
         padding: 10px 12px;
         background: rgba(0,0,0,0.06);
         border-radius: 12px;
-        min-width: 240px;
-        max-width: 320px;
-        width: 100%;
+        width: 280px;           /* sabit genişlik — bubble'ı gereğinden fazla germez */
     }
     .wa-audio-play {
         width: 38px;
@@ -830,13 +807,10 @@
                             <span class="bubble-time">{{ msg.created_at.strftime('%d %b %Y · %H:%M') }}</span>
                         </div>
                         <div class="bubble {{ 'bubble--incoming' if is_incoming else 'bubble--outgoing' }}">
-                            {% set msg_atts = attachments_by_msg.get(msg.id, []) %}
-                            {# Sadece medya placeholder metinleri ([Audio eki] vb.) ek varsa gizle #}
-                            {% set is_media_placeholder = msg.content and msg.content.startswith('[') and msg.content.endswith(' eki]') %}
-                            {% if not (is_media_placeholder and msg_atts) %}
-                            <span class="bubble-text">{{ msg.content }}</span>
-                            {% endif %}
-                            {% if msg_atts %}
+                            {%- set msg_atts = attachments_by_msg.get(msg.id, []) -%}
+                            {%- set is_media_placeholder = msg.content and msg.content.startswith('[') and msg.content.endswith(' eki]') -%}
+                            {%- if not (is_media_placeholder and msg_atts) %}<span class="bubble-text">{{ msg.content }}</span>{% endif -%}
+                            {%- if msg_atts %}
                             <div class="bubble-attachments">
                                 {% for att in msg_atts %}
                                 {% if att.file_type == 'image' %}
