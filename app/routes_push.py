@@ -129,10 +129,18 @@ def send_push_notification(title: str, body: str, url: str = "/esk/requests", db
                 data=payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": VAPID_CLAIMS_EMAIL},
+                ttl=86400,                          # FCM 24 saat kuyruğa al
+                headers={"Urgency": "high"},        # Anında ilet
             )
+            logger.info(f"[push] Gönderildi → {endpoint[:60]}…")
         except WebPushException as e:
             status = getattr(e.response, "status_code", None)
-            logger.warning(f"[push] Gönderilemedi ({status}): {endpoint[:60]}…")
+            detail = ""
+            try:
+                detail = e.response.text[:200] if e.response else ""
+            except Exception:
+                pass
+            logger.warning(f"[push] Gönderilemedi HTTP {status}: {endpoint[:60]}… | {detail}")
             # 404/410 → abonelik geçersiz, sil
             if status in (404, 410):
                 dead.append(endpoint)
@@ -216,6 +224,8 @@ def push_test_verbose(admin=Depends(_admin_required)):
                 data=payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": VAPID_CLAIMS_EMAIL},
+                ttl=86400,
+                headers={"Urgency": "high"},
             )
             results.append({"endpoint": endpoint[:70] + "...", "ok": True, "http_status": 201})
         except WebPushException as e:
