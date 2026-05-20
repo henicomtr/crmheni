@@ -2013,6 +2013,7 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
         title="🛒 Yeni Sepet Talebi",
         body=f"{company_name} — {contact_person}",
         url=f"/esk/requests/{quote.id}",
+        db=db,
     )
     price_formatted = format_price(total_price, lang, get_rates())
     site = _get_site_settings(db, lang)
@@ -2061,6 +2062,7 @@ def _landing_quote(request: Request, lang: str,
         title="📋 Yeni Landing Talebi",
         body=f"{company_name} — {contact_person}",
         url="/esk/requests",
+        db=db,
     )
     # Başarı sayfasını render et — dile göre anasayfa URL'si ve UI metinleri ilet
     site = _get_site_settings(db, lang)
