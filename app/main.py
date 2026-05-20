@@ -218,6 +218,32 @@ def _migrate_request_messages_v2():
 
 _migrate_request_messages_v2()
 
+# ── RequestAttachment tablosu ────────────────────────────────────────
+def _create_request_attachments_table():
+    """request_attachments tablosunu oluşturur (yoksa). Base.metadata.create_all ile oluşturulur."""
+    insp = inspect(engine)
+    if "request_attachments" not in insp.get_table_names():
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS request_attachments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        request_id INTEGER NOT NULL REFERENCES quote_requests(id) ON DELETE CASCADE,
+                        message_id INTEGER REFERENCES request_messages(id) ON DELETE SET NULL,
+                        file_path VARCHAR NOT NULL,
+                        original_filename VARCHAR NOT NULL,
+                        file_type VARCHAR(20) NOT NULL,
+                        mime_type VARCHAR(100),
+                        file_size INTEGER,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+                conn.commit()
+        except Exception:
+            pass
+
+_create_request_attachments_table()
+
 # ── Products tablo migrasyonu ────────────────────────────────────────
 def _migrate_products():
     """

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timezone, timedelta as _timedelta
 from jose import jwt, JWTError
-from typing import Optional
+from typing import Optional, List
 import re
 import shutil
 import os
@@ -18,7 +18,7 @@ from .auth import verify_password, create_token, hash_password
 from .services.currency_service import get_rates, FALLBACK_RATES, format_price, LANG_CURRENCY
 from .models import (
     User, Product, ProductTranslation, Customer, Supplier,
-    Lead, Order, FinanceTransaction, QuoteRequest, RequestMessage, AccountTransaction,
+    Lead, Order, FinanceTransaction, QuoteRequest, RequestMessage, RequestAttachment, AccountTransaction,
     Page, PageTranslation, FaqItem, SiteSettings,
     CategoryContent, CategoryTranslation, CategoryFaq,
     ServicePageContent,
@@ -37,15 +37,30 @@ LANG_LABELS = {
 # Media dosyaları: /static/css, /static/js, /static/upload/*
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_DIR = os.path.join(PROJECT_ROOT, "static")
-UPLOAD_DIR_IMAGES = os.path.join(STATIC_DIR, "upload", "images")
-UPLOAD_DIR_VIDEOS = os.path.join(STATIC_DIR, "upload", "videos")
-UPLOAD_DIR_DOCS = os.path.join(STATIC_DIR, "upload", "doc")
+UPLOAD_DIR_IMAGES   = os.path.join(STATIC_DIR, "upload", "images")
+UPLOAD_DIR_VIDEOS   = os.path.join(STATIC_DIR, "upload", "videos")
+UPLOAD_DIR_DOCS     = os.path.join(STATIC_DIR, "upload", "doc")
+UPLOAD_DIR_REQUESTS = os.path.join(STATIC_DIR, "upload", "requests")
 
 # TinyMCE görsel upload + logo/fav burada saklanır
 UPLOAD_DIR = UPLOAD_DIR_IMAGES
 
-for _d in (UPLOAD_DIR_IMAGES, UPLOAD_DIR_VIDEOS, UPLOAD_DIR_DOCS):
+for _d in (UPLOAD_DIR_IMAGES, UPLOAD_DIR_VIDEOS, UPLOAD_DIR_DOCS, UPLOAD_DIR_REQUESTS):
     os.makedirs(_d, exist_ok=True)
+
+# İzin verilen dosya uzantıları ve boyut limitleri (talep ekleri için)
+_ALLOWED_ATTACH_EXTS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp",
+    ".mp4", ".mov", ".webm",
+    ".mp3", ".ogg", ".wav", ".m4a",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv",
+}
+_ATTACH_MAX_BYTES = {
+    "image":    10 * 1024 * 1024,
+    "video":    50 * 1024 * 1024,
+    "audio":    10 * 1024 * 1024,
+    "document": 20 * 1024 * 1024,
+}
 
 # Anasayfa görselleri — aynı media standardı (/static/upload/images)
 IMAGES_DIR = UPLOAD_DIR_IMAGES
@@ -1434,20 +1449,82 @@ def delete_supplier_account_transaction(
 # REQUESTS (Teklif Talepleri)
 # =========================================================
 
-def _send_email_smtp(settings: SiteSettings, to_email: str, subject: str, body: str) -> bool:
-    """SMTP üzerinden mail gönderir. Başarıda True döner."""
+def _get_file_category(mime_type: str) -> str:
+    """MIME tipinden dosya kategorisini döner: image | video | audio | document."""
+    if mime_type.startswith("image/"):
+        return "image"
+    if mime_type.startswith("video/"):
+        return "video"
+    if mime_type.startswith("audio/"):
+        return "audio"
+    return "document"
+
+
+def _save_request_file(request_id: int, data: bytes, original_filename: str):
+    """
+    Yüklenen dosyayı talep klasörüne UUID'li isimle kaydeder.
+    (url_path, mime_type, file_size, file_type) döner.
+    Uzantı izin listesinde değilse None döner.
+    """
+    import mimetypes
+    import uuid as _uuid
+
+    ext = os.path.splitext(original_filename)[1].lower()
+    if ext not in _ALLOWED_ATTACH_EXTS:
+        return None
+
+    mime_type, _ = mimetypes.guess_type(original_filename)
+    mime_type = mime_type or "application/octet-stream"
+    file_type = _get_file_category(mime_type)
+
+    if len(data) > _ATTACH_MAX_BYTES.get(file_type, 20 * 1024 * 1024):
+        return None
+
+    safe_name = f"{_uuid.uuid4().hex}{ext}"
+    dir_path  = os.path.join(UPLOAD_DIR_REQUESTS, str(request_id))
+    os.makedirs(dir_path, exist_ok=True)
+
+    with open(os.path.join(dir_path, safe_name), "wb") as fh:
+        fh.write(data)
+
+    url_path = f"/static/upload/requests/{request_id}/{safe_name}"
+    return url_path, mime_type, len(data), file_type
+
+
+def _send_email_smtp(
+    settings: SiteSettings,
+    to_email: str,
+    subject: str,
+    body: str,
+    attachments: Optional[List[tuple]] = None,
+) -> bool:
+    """
+    SMTP üzerinden mail gönderir. Başarıda True döner.
+    attachments: [(data_bytes, filename, mime_type), ...] listesi
+    """
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
+    from email.mime.base import MIMEBase
+    from email import encoders as _encoders
 
     if not (settings and settings.smtp_host and settings.smtp_user and settings.smtp_password):
         return False
     try:
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("mixed")
         msg["Subject"] = subject
         msg["From"]    = settings.smtp_from_email or settings.smtp_user
         msg["To"]      = to_email
         msg.attach(MIMEText(body, "plain", "utf-8"))
+
+        for att_data, att_filename, att_mime in (attachments or []):
+            main_type, sub_type = att_mime.split("/", 1) if "/" in att_mime else ("application", "octet-stream")
+            part = MIMEBase(main_type, sub_type)
+            part.set_payload(att_data)
+            _encoders.encode_base64(part)
+            part.add_header("Content-Disposition", "attachment", filename=att_filename)
+            msg.attach(part)
+
         port = int(settings.smtp_port or 587)
         if port == 465:
             # SSL bağlantısı — doğrudan şifreli (SMTP_SSL)
@@ -1464,6 +1541,64 @@ def _send_email_smtp(settings: SiteSettings, to_email: str, subject: str, body: 
         return True
     except Exception:
         return False
+
+
+def _send_whatsapp_media(
+    settings: SiteSettings,
+    phone: str,
+    media_data: bytes,
+    filename: str,
+    mime_type: str,
+    caption: str = "",
+) -> tuple:
+    """
+    Evolution API üzerinden WhatsApp medya mesajı gönderir.
+    Dönüş: (success: bool, error_detail: str)
+    """
+    import urllib.request
+    import urllib.error
+    import json as _json
+    import base64 as _b64
+    import logging
+    _log = logging.getLogger(__name__)
+
+    if not (settings and settings.evolution_api_url and settings.evolution_api_key and settings.evolution_instance):
+        return False, "evolution_not_configured"
+
+    clean_phone = re.sub(r"\D", "", phone)
+    if len(clean_phone) == 11 and clean_phone.startswith("0"):
+        clean_phone = "90" + clean_phone[1:]
+    elif len(clean_phone) == 10 and clean_phone[0] in ("5", "2", "3", "4"):
+        clean_phone = "90" + clean_phone
+
+    mediatype = _get_file_category(mime_type)
+    # Evolution API "audio" türünü desteklemez — document olarak gönder
+    if mediatype == "audio":
+        mediatype = "document"
+
+    url = f"{settings.evolution_api_url.rstrip('/')}/message/sendMedia/{settings.evolution_instance}"
+    payload = _json.dumps({
+        "number":    clean_phone,
+        "mediatype": mediatype,
+        "mimetype":  mime_type,
+        "caption":   caption,
+        "media":     _b64.b64encode(media_data).decode("utf-8"),
+        "fileName":  filename,
+    }).encode("utf-8")
+
+    req = urllib.request.Request(url, data=payload, method="POST")
+    req.add_header("apikey", settings.evolution_api_key)
+    req.add_header("Content-Type", "application/json")
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status in (200, 201), ""
+    except urllib.error.HTTPError as exc:
+        body_err = exc.read().decode("utf-8", errors="replace")[:300]
+        _log.error("Evolution API medya HTTP hatası: %d — %s", exc.code, body_err)
+        return False, f"http_{exc.code}"
+    except Exception as exc:
+        _log.error("Evolution API medya bağlantı hatası: %s", exc)
+        return False, "connection_error"
 
 
 def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -> tuple:
@@ -1590,6 +1725,15 @@ def request_detail(
         RequestMessage.request_id == req_id
     ).order_by(RequestMessage.created_at).all()
 
+    # Ekleri mesaj bazında grupla — tek sorgu ile tüm ekleri çek
+    all_attachments = db.query(RequestAttachment).filter(
+        RequestAttachment.request_id == req_id
+    ).all()
+    attachments_by_msg = {}
+    for att in all_attachments:
+        key = att.message_id  # None ise talep düzeyinde ek (henüz mesaja bağlanmamış)
+        attachments_by_msg.setdefault(key, []).append(att)
+
     settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
     evolution_configured = bool(
         settings and settings.evolution_api_url and settings.evolution_api_key and settings.evolution_instance
@@ -1603,6 +1747,7 @@ def request_detail(
         "current_user": admin,
         "quote": quote,
         "messages": req_messages,
+        "attachments_by_msg": attachments_by_msg,
         "evolution_configured": evolution_configured,
         "smtp_configured": smtp_configured,
         "wa_url": wa_url,
@@ -1615,11 +1760,12 @@ def reply_to_request(
     request: Request,
     channel: str = Form(...),
     subject: str = Form(""),
-    content: str = Form(...),
+    content: str = Form(""),
+    files: List[UploadFile] = File(default=[]),
     db: Session = Depends(get_db),
     admin = Depends(admin_required)
 ):
-    """Talebe cevap gönderir ve konuşma geçmişine kaydeder."""
+    """Talebe cevap gönderir; dosya ekleriyle birlikte konuşma geçmişine kaydeder."""
     if not admin:
         return RedirectResponse("/esk/login", status_code=302)
 
@@ -1631,45 +1777,79 @@ def reply_to_request(
     wa_url_param = ""
     error_param  = ""
 
+    # Yüklenen dosyaları oku ve doğrula
+    saved_files = []  # [(data, original_filename, mime_type, file_type, url_path, size), ...]
+    for f in (files or []):
+        if not f or not f.filename:
+            continue
+        data = f.file.read()
+        result = _save_request_file(req_id, data, f.filename)
+        if result:
+            url_path, mime_type, size, file_type = result
+            saved_files.append((data, f.filename, mime_type, file_type, url_path, size))
+
     if channel == "email":
         smtp_ok = bool(settings and settings.smtp_host and settings.smtp_user and settings.smtp_password)
         if not smtp_ok:
             error_param = "smtp_not_configured"
         else:
+            email_attachments = [(d, fn, mt) for d, fn, mt, *_ in saved_files]
             sent = _send_email_smtp(
                 settings,
                 quote.email,
                 subject or f"Re: Talep #{quote.id}",
                 content,
+                attachments=email_attachments,
             )
             if not sent:
                 error_param = "smtp_send_failed"
+
     elif channel == "whatsapp":
         if quote.phone:
-            sent, send_error = _send_whatsapp_evolution(settings, quote.phone, content)
-            if not sent:
-                import urllib.parse
-                clean = re.sub(r"\D", "", quote.phone)
-                if len(clean) == 11 and clean.startswith("0"):
-                    clean = "90" + clean[1:]
-                elif len(clean) == 10 and clean[0] in ("5", "2", "3", "4"):
-                    clean = "90" + clean
-                if send_error == "evolution_not_configured":
-                    # Evolution API kurulmamış — wa.me linkiyle manuel aç
-                    wa_url_param = f"https://wa.me/{clean}?text={urllib.parse.quote(content, safe='')}"
-                else:
-                    # API kurulu ama hata verdi — kullanıcıya bildir
-                    error_param = f"wa_send_failed:{send_error}"
-        # else: telefon yoksa sadece not olarak kaydet
+            # Önce metin mesajını gönder (varsa)
+            text_sent = True
+            if content:
+                text_sent, send_error = _send_whatsapp_evolution(settings, quote.phone, content)
+                if not text_sent:
+                    import urllib.parse
+                    clean = re.sub(r"\D", "", quote.phone)
+                    if len(clean) == 11 and clean.startswith("0"):
+                        clean = "90" + clean[1:]
+                    elif len(clean) == 10 and clean[0] in ("5", "2", "3", "4"):
+                        clean = "90" + clean
+                    if send_error == "evolution_not_configured":
+                        wa_url_param = f"https://wa.me/{clean}?text={urllib.parse.quote(content, safe='')}"
+                    else:
+                        error_param = f"wa_send_failed:{send_error}"
+
+            # Sonra dosyaları gönder (Evolution yapılandırılmışsa)
+            if not wa_url_param and settings and settings.evolution_api_url:
+                for idx, (data, fn, mt, ft, up, sz) in enumerate(saved_files):
+                    cap = fn if idx == 0 and not content else ""
+                    _send_whatsapp_media(settings, quote.phone, data, fn, mt, caption=cap)
 
     # Mesajı konuşma geçmişine ekle (admin gönderdi → outgoing)
-    db.add(RequestMessage(
+    msg = RequestMessage(
         request_id=req_id,
         channel=channel,
         direction="outgoing",
-        content=content,
+        content=content or "(dosya eki)",
         admin_name=getattr(admin, "email", "Admin"),
-    ))
+    )
+    db.add(msg)
+    db.flush()  # msg.id'yi al
+
+    # Ekleri veritabanına kaydet
+    for data, fn, mt, ft, up, sz in saved_files:
+        db.add(RequestAttachment(
+            request_id=req_id,
+            message_id=msg.id,
+            file_path=up,
+            original_filename=fn,
+            file_type=ft,
+            mime_type=mt,
+            file_size=sz,
+        ))
 
     # Son iletişim tarihini güncelle
     quote.last_contacted_at = datetime.now(timezone.utc)

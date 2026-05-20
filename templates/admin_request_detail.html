@@ -396,12 +396,146 @@
     .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
     .alert-info  { background: #dbeafe; color: #1d4ed8; border: 1px solid #93c5fd; }
 
+    /* Ek dosya gösterimi */
+    .bubble-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .att-img-wrap {
+        position: relative;
+        width: 120px;
+        height: 90px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        cursor: zoom-in;
+        background: #f3f4f6;
+        flex-shrink: 0;
+    }
+
+    .att-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .att-video-wrap {
+        width: 240px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #000;
+    }
+
+    .att-video-wrap video {
+        width: 100%;
+        max-height: 160px;
+        display: block;
+    }
+
+    .att-doc {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-decoration: none;
+        background: var(--surface-2);
+        max-width: 220px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .att-doc:hover { background: var(--surface); color: var(--text-primary); }
+    .att-doc-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* Lightbox (görsel büyütme) */
+    .lightbox-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.85);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lightbox-overlay.open { display: flex; }
+
+    .lightbox-overlay img {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 6px;
+        object-fit: contain;
+        cursor: zoom-out;
+    }
+
+    /* Dosya upload alanı */
+    .file-input-wrap {
+        position: relative;
+        margin-bottom: 12px;
+    }
+
+    .file-drop-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border: 1.5px dashed var(--border);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: border-color .15s, background .15s;
+        background: var(--surface-2);
+        user-select: none;
+    }
+
+    .file-drop-label:hover { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+
+    .file-preview-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .file-preview-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        max-width: 180px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     @media (max-width: 900px) {
         .detail-grid {
             grid-template-columns: 1fr;
         }
     }
 </style>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+    <img id="lightbox-img" src="" alt="">
+</div>
 
 <!-- Başlık -->
 <div class="detail-header">
@@ -535,6 +669,29 @@
                         </div>
                         <div class="bubble {{ 'bubble--incoming' if is_incoming else 'bubble--outgoing' }}">
                             {{ msg.content }}
+                            {% set msg_atts = attachments_by_msg.get(msg.id, []) %}
+                            {% if msg_atts %}
+                            <div class="bubble-attachments">
+                                {% for att in msg_atts %}
+                                {% if att.file_type == 'image' %}
+                                <div class="att-img-wrap" onclick="openLightbox('{{ att.file_path }}')">
+                                    <img src="{{ att.file_path }}" alt="{{ att.original_filename }}" loading="lazy">
+                                </div>
+                                {% elif att.file_type == 'video' %}
+                                <div class="att-video-wrap">
+                                    <video controls preload="metadata">
+                                        <source src="{{ att.file_path }}" type="{{ att.mime_type or 'video/mp4' }}">
+                                    </video>
+                                </div>
+                                {% else %}
+                                <a class="att-doc" href="{{ att.file_path }}" target="_blank" download="{{ att.original_filename }}" title="{{ att.original_filename }}">
+                                    <span class="att-doc-icon">{% if att.mime_type and 'pdf' in att.mime_type %}📄{% elif att.file_type == 'audio' %}🎵{% else %}📎{% endif %}</span>
+                                    {{ att.original_filename }}
+                                </a>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -582,7 +739,7 @@
 
             <!-- Mail paneli -->
             <div id="panel-email" class="reply-panel active">
-                <form method="POST" action="/esk/requests/{{ quote.id }}/reply">
+                <form method="POST" action="/esk/requests/{{ quote.id }}/reply" enctype="multipart/form-data">
                     <input type="hidden" name="channel" value="email">
                     <div class="form-group">
                         <label class="form-label">Konu</label>
@@ -592,7 +749,18 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Mesaj</label>
-                        <textarea name="content" class="form-input" placeholder="Mesajınızı yazın..." required></textarea>
+                        <textarea name="content" class="form-input" placeholder="Mesajınızı yazın..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dosya Ekleri</label>
+                        <div class="file-input-wrap">
+                            <label class="file-drop-label" for="email-files">
+                                📎 Dosya seç veya sürükle (resim, video, belge)
+                            </label>
+                            <input type="file" id="email-files" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.mp3,.ogg,.wav,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+                                style="display:none;" onchange="showFilePreviews(this,'email-preview')">
+                        </div>
+                        <div class="file-preview-list" id="email-preview"></div>
                     </div>
                     <button type="submit" class="btn-send">✉️ Gönder</button>
                     {% if not smtp_configured %}
@@ -603,14 +771,25 @@
 
             <!-- WhatsApp paneli -->
             <div id="panel-whatsapp" class="reply-panel">
-                <form method="POST" action="/esk/requests/{{ quote.id }}/reply" id="wa-form">
+                <form method="POST" action="/esk/requests/{{ quote.id }}/reply" id="wa-form" enctype="multipart/form-data">
                     <input type="hidden" name="channel" value="whatsapp">
                     <div class="form-group">
                         <label class="form-label">Mesaj</label>
                         <textarea name="content" id="wa-content" class="form-input"
-                            placeholder="WhatsApp mesajınızı yazın..." required></textarea>
+                            placeholder="WhatsApp mesajınızı yazın..."></textarea>
                     </div>
                     {% if evolution_configured %}
+                    <div class="form-group">
+                        <label class="form-label">Medya Ekle</label>
+                        <div class="file-input-wrap">
+                            <label class="file-drop-label" for="wa-files">
+                                📎 Resim, video veya belge seç
+                            </label>
+                            <input type="file" id="wa-files" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.mp3,.ogg,.wav,.pdf,.doc,.docx,.xls,.xlsx"
+                                style="display:none;" onchange="showFilePreviews(this,'wa-preview')">
+                        </div>
+                        <div class="file-preview-list" id="wa-preview"></div>
+                    </div>
                     <button type="submit" class="btn-wa-send">💬 Evolution API ile Gönder</button>
                     <div class="hint">Mesaj Evolution API üzerinden {{ quote.phone or '(telefon yok)' }} numarasına gönderilecek.</div>
                     {% elif quote.phone %}
@@ -664,13 +843,38 @@ function sendViaWA() {
     document.getElementById('wa-form').submit();
 }
 
+// Dosya seçim önizlemesi
+function showFilePreviews(input, previewId) {
+    const container = document.getElementById(previewId);
+    if (!container) return;
+    container.innerHTML = '';
+    const files = Array.from(input.files);
+    files.forEach(f => {
+        const chip = document.createElement('div');
+        chip.className = 'file-preview-chip';
+        const icon = f.type.startsWith('image/') ? '🖼' : f.type.startsWith('video/') ? '🎬' : f.type.startsWith('audio/') ? '🎵' : '📎';
+        chip.textContent = icon + ' ' + f.name;
+        container.appendChild(chip);
+    });
+}
+
+// Lightbox
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lightbox-img').src = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
 // wa_url parametresi varsa otomatik aç
 (function() {
     const params = new URLSearchParams(window.location.search);
     const waUrl = params.get('wa_url');
     if (waUrl) {
         window.open(waUrl, '_blank');
-        // URL'den wa_url parametresini temizle
         history.replaceState({}, '', '/esk/requests/{{ quote.id }}');
         switchTab('whatsapp', document.querySelector('.reply-tab:nth-child(2)'));
     }

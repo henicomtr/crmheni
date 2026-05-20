@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from .database import get_db, SessionLocal
-from .models import QuoteRequest, RequestMessage, SiteSettings
+from .models import QuoteRequest, RequestMessage, RequestAttachment, SiteSettings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -79,10 +79,19 @@ def _extract_wa_text(message_data: dict) -> Optional[str]:
         if key in msg and msg[key].get("caption"):
             caption = _decode_if_base64(msg[key]["caption"])
             return f"[{key.replace('Message', '').capitalize()}] {caption}"
-    # Sadece medya, metin yok
-    for key in ("imageMessage", "videoMessage", "audioMessage", "stickerMessage"):
+    # Sadece medya, metin yok → boş string dönerek kaydedilmesini sağla
+    for key in ("imageMessage", "videoMessage", "audioMessage", "documentMessage", "stickerMessage"):
         if key in msg:
-            return f"[{key.replace('Message', '').capitalize()} mesajı]"
+            return f"[{key.replace('Message', '').capitalize()} eki]"
+    return None
+
+
+def _has_wa_media(message_data: dict) -> Optional[str]:
+    """Mesajın medya tipi varsa döner (imageMessage, videoMessage, vb.), yoksa None."""
+    msg = message_data.get("message") or {}
+    for key in ("imageMessage", "videoMessage", "audioMessage", "documentMessage"):
+        if key in msg:
+            return key
     return None
 
 
@@ -108,8 +117,8 @@ def _find_request_by_phone(db: Session, phone: str) -> Optional[QuoteRequest]:
     return None
 
 
-def _save_incoming_message(db: Session, request_id: int, channel: str, content: str, sender: Optional[str] = None):
-    """Gelen müşteri mesajını veritabanına kaydeder."""
+def _save_incoming_message(db: Session, request_id: int, channel: str, content: str, sender: Optional[str] = None) -> RequestMessage:
+    """Gelen müşteri mesajını veritabanına kaydeder. Oluşturulan mesaj nesnesini döner."""
     msg = RequestMessage(
         request_id=request_id,
         channel=channel,
@@ -124,7 +133,91 @@ def _save_incoming_message(db: Session, request_id: int, channel: str, content: 
     if req:
         req.last_contacted_at = datetime.utcnow()
         req.is_read = False  # Yeni mesaj geldi, okunmadı olarak işaretle
+    db.flush()  # msg.id'yi al
     db.commit()
+    return msg
+
+
+def _download_wa_media(settings, message_data: dict) -> Optional[tuple]:
+    """
+    Evolution API üzerinden WhatsApp medyasını indirir.
+    (data_bytes, mime_type, filename) döner. Başarısızsa None döner.
+    """
+    import urllib.request as _req
+    import urllib.error
+    import json as _json
+    import mimetypes
+
+    evo_url  = getattr(settings, "evolution_api_url", None)
+    evo_key  = getattr(settings, "evolution_api_key", None)
+    evo_inst = getattr(settings, "evolution_instance", None)
+
+    if not all([evo_url, evo_key, evo_inst]):
+        return None
+
+    endpoint = f"{evo_url.rstrip('/')}/chat/getBase64FromMediaMessage/{evo_inst}"
+    payload  = _json.dumps({"message": message_data, "convertToMp4": False}).encode("utf-8")
+    http_req = _req.Request(endpoint, data=payload, method="POST")
+    http_req.add_header("apikey", evo_key)
+    http_req.add_header("Content-Type", "application/json")
+
+    try:
+        with _req.urlopen(http_req, timeout=30) as resp:
+            result    = _json.loads(resp.read())
+        b64_data  = result.get("base64") or ""
+        mime_type = result.get("mimetype") or "application/octet-stream"
+        if not b64_data:
+            return None
+        data     = base64.b64decode(b64_data)
+        ext      = mimetypes.guess_extension(mime_type) or ".bin"
+        filename = f"wa_media{ext}"
+        return data, mime_type, filename
+    except Exception as exc:
+        logger.error("Evolution medya indirme hatası: %s", exc)
+        return None
+
+
+_MAX_INCOMING_BYTES = 50 * 1024 * 1024  # Gelen eklerde 50MB üst sınır
+
+
+def _save_attachment_file(request_id: int, data: bytes, filename: str, mime_type: str) -> Optional[str]:
+    """
+    Gelen medyayı diske kaydeder. URL yolunu (/static/...) döner.
+    50MB üzerindeki dosyalar reddedilir.
+    """
+    import os
+    import uuid as _uuid
+
+    if len(data) > _MAX_INCOMING_BYTES:
+        logger.warning("Gelen ek çok büyük (%d byte), atlandı: %s", len(data), filename)
+        return None
+
+    _STATIC_DIR   = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+    _REQUESTS_DIR = os.path.join(_STATIC_DIR, "upload", "requests", str(request_id))
+    os.makedirs(_REQUESTS_DIR, exist_ok=True)
+
+    ext       = os.path.splitext(filename)[1].lower() or ".bin"
+    safe_name = f"{_uuid.uuid4().hex}{ext}"
+    dest      = os.path.join(_REQUESTS_DIR, safe_name)
+
+    try:
+        with open(dest, "wb") as fh:
+            fh.write(data)
+        return f"/static/upload/requests/{request_id}/{safe_name}"
+    except Exception as exc:
+        logger.error("Medya dosyası kaydedilemedi: %s", exc)
+        return None
+
+
+def _get_file_category(mime_type: str) -> str:
+    """MIME tipinden dosya kategorisini döner: image | video | audio | document."""
+    if mime_type.startswith("image/"):
+        return "image"
+    if mime_type.startswith("video/"):
+        return "video"
+    if mime_type.startswith("audio/"):
+        return "audio"
+    return "document"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -181,10 +274,11 @@ async def evolution_webhook(request: Request, db: Session = Depends(get_db)):
         sender_name  = msg_data.get("pushName", None)
 
         text_content = _extract_wa_text(msg_data)
-        logger.info("Metin içerik: phone=%s, content=%r", sender_phone, text_content)
+        media_key    = _has_wa_media(msg_data)
+        logger.info("Metin içerik: phone=%s, content=%r, medya=%s", sender_phone, text_content, media_key)
 
-        if not text_content:
-            logger.info("Metin içerik yok, mesaj atlandı (phone=%s)", sender_phone)
+        if not text_content and not media_key:
+            logger.info("İçerik yok, mesaj atlandı (phone=%s)", sender_phone)
             continue
 
         # Telefon numarasıyla talep bul
@@ -193,13 +287,34 @@ async def evolution_webhook(request: Request, db: Session = Depends(get_db)):
             logger.warning("Eşleşen talep bulunamadı, telefon: %s", sender_phone)
             continue
 
-        _save_incoming_message(
+        saved_msg = _save_incoming_message(
             db=db,
             request_id=quote_req.id,
             channel="whatsapp",
-            content=text_content,
+            content=text_content or "(medya eki)",
             sender=sender_name or sender_phone,
         )
+
+        # WhatsApp medyası varsa indir ve kaydet
+        if media_key:
+            settings = db.query(SiteSettings).first()
+            media_result = _download_wa_media(settings, msg_data)
+            if media_result:
+                media_data, mime_type, filename = media_result
+                url_path = _save_attachment_file(quote_req.id, media_data, filename, mime_type)
+                if url_path:
+                    db.add(RequestAttachment(
+                        request_id=quote_req.id,
+                        message_id=saved_msg.id,
+                        file_path=url_path,
+                        original_filename=filename,
+                        file_type=_get_file_category(mime_type),
+                        mime_type=mime_type,
+                        file_size=len(media_data),
+                    ))
+                    db.commit()
+                    logger.info("WhatsApp medyası kaydedildi → %s", url_path)
+
         processed += 1
         logger.info("WhatsApp mesajı kaydedildi → Talep #%d (gönderen: %s)", quote_req.id, sender_phone)
 
@@ -231,18 +346,25 @@ def _extract_request_id_from_subject(subject: str) -> Optional[int]:
 
 
 def _get_email_body(msg: email_lib.message.Message) -> str:
-    """Email mesajından düz metin body'yi çıkarır."""
+    """
+    Email mesajından düz metin body'yi çıkarır.
+    Dosya adı olan parçaları (attachment + inline ek) ve text/html parçaları atlar.
+    """
     body_parts = []
     if msg.is_multipart():
         for part in msg.walk():
             content_type = part.get_content_type()
-            disposition  = str(part.get("Content-Disposition", ""))
-            if content_type == "text/plain" and "attachment" not in disposition:
-                charset = part.get_content_charset() or "utf-8"
-                try:
-                    body_parts.append(part.get_payload(decode=True).decode(charset, errors="replace"))
-                except Exception:
-                    pass
+            # Sadece text/plain al; dosya adı olan parçalar body değil, ek
+            if content_type != "text/plain":
+                continue
+            if part.get_filename():
+                continue
+            charset = part.get_content_charset() or "utf-8"
+            try:
+                text = part.get_payload(decode=True).decode(charset, errors="replace")
+                body_parts.append(text)
+            except Exception:
+                pass
     else:
         charset = msg.get_content_charset() or "utf-8"
         try:
@@ -331,13 +453,47 @@ def _poll_imap_once():
                         logger.info("IMAP: eşleşen talep bulunamadı, gönderen: %s", from_email)
                         continue
 
-                    _save_incoming_message(
+                    saved_msg = _save_incoming_message(
                         db=db,
                         request_id=quote_req.id,
                         channel="email",
                         content=f"Konu: {subject}\n\n{body}",
                         sender=from_field or from_email,
                     )
+
+                    # Mail eklerini kaydet (attachment + inline gömülü görseller dahil)
+                    if parsed.is_multipart():
+                        import mimetypes as _mt
+                        for part in parsed.walk():
+                            # Çok parçalı konteyner parçaları atla
+                            if part.get_content_maintype() == "multipart":
+                                continue
+                            # Dosya adı yoksa body parçasıdır, atla
+                            att_filename = part.get_filename()
+                            if not att_filename:
+                                continue
+                            # text/plain ve text/html body parçaları dosya adı taşısa bile atla
+                            content_type_str = part.get_content_type() or ""
+                            if content_type_str in ("text/plain", "text/html"):
+                                continue
+                            att_filename = _decode_header_value(att_filename)
+                            att_data = part.get_payload(decode=True)
+                            if not att_data:
+                                continue
+                            att_mime = content_type_str or _mt.guess_type(att_filename)[0] or "application/octet-stream"
+                            url_path = _save_attachment_file(quote_req.id, att_data, att_filename, att_mime)
+                            if url_path:
+                                db.add(RequestAttachment(
+                                    request_id=quote_req.id,
+                                    message_id=saved_msg.id,
+                                    file_path=url_path,
+                                    original_filename=att_filename,
+                                    file_type=_get_file_category(att_mime),
+                                    mime_type=att_mime,
+                                    file_size=len(att_data),
+                                ))
+                        db.commit()
+
                     # Maili okundu olarak işaretle
                     mail.store(msg_id, "+FLAGS", "\\Seen")
                     logger.info("Email cevabı kaydedildi → Talep #%d", quote_req.id)

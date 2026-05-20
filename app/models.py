@@ -170,6 +170,12 @@ class QuoteRequest(Base):
         back_populates="request",
         cascade="all, delete-orphan",
     )
+    attachments = relationship(
+        "RequestAttachment",
+        back_populates="request",
+        cascade="all, delete-orphan",
+        foreign_keys="RequestAttachment.request_id",
+    )
 
 
 class RequestMessage(Base):
@@ -186,7 +192,34 @@ class RequestMessage(Base):
     admin_name = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    request = relationship("QuoteRequest", back_populates="messages")
+    request     = relationship("QuoteRequest", back_populates="messages")
+    attachments = relationship(
+        "RequestAttachment",
+        back_populates="message",
+        cascade="save-update, merge",
+        foreign_keys="RequestAttachment.message_id",
+    )
+
+
+class RequestAttachment(Base):
+    """Talep mesajına bağlı dosya ekleri (görsel, video, belge)."""
+    __tablename__ = "request_attachments"
+
+    id                = Column(Integer, primary_key=True, index=True)
+    request_id        = Column(Integer, ForeignKey("quote_requests.id", ondelete="CASCADE"), nullable=False)
+    # message_id: mesaja bağlıysa dolu; doğrudan talebe eklendiyse NULL
+    message_id        = Column(Integer, ForeignKey("request_messages.id", ondelete="SET NULL"), nullable=True)
+    # URL yolu: /static/upload/requests/{id}/filename.jpg
+    file_path         = Column(String, nullable=False)
+    original_filename = Column(String, nullable=False)
+    # image | video | audio | document
+    file_type         = Column(String(20), nullable=False)
+    mime_type         = Column(String(100), nullable=True)
+    file_size         = Column(Integer, nullable=True)
+    created_at        = Column(DateTime, default=datetime.utcnow)
+
+    request = relationship("QuoteRequest", back_populates="attachments", foreign_keys=[request_id])
+    message = relationship("RequestMessage", back_populates="attachments", foreign_keys=[message_id])
 
 
 class Message(Base):
