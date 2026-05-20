@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
-
+ 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,15 +14,15 @@
         /* ================================================
            ADMIN LAYOUT — MODERN SIDEBAR
         ================================================ */
-
+ 
         *, *::before, *::after { box-sizing: border-box; }
-
+ 
         body {
             margin: 0;
             background: #f4f5f7;
             font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
-
+ 
         /* ── Sidebar ── */
         .sidebar {
             width: 230px;
@@ -37,7 +37,7 @@
             z-index: 100;
             overflow-y: auto;
         }
-
+ 
         /* Logo alanı */
         .sidebar-brand {
             display: flex;
@@ -47,7 +47,7 @@
             border-bottom: 1px solid rgba(255,255,255,0.08);
             text-decoration: none;
         }
-
+ 
         .sidebar-brand-icon {
             width: 34px;
             height: 34px;
@@ -58,17 +58,17 @@
             justify-content: center;
             flex-shrink: 0;
         }
-
+ 
         .sidebar-brand-icon svg {
             width: 20px;
             height: 20px;
         }
-
+ 
         .sidebar-brand-text {
             display: flex;
             flex-direction: column;
         }
-
+ 
         .sidebar-brand-name {
             font-size: 15px;
             font-weight: 700;
@@ -76,7 +76,7 @@
             color: #ffffff;
             line-height: 1.1;
         }
-
+ 
         .sidebar-brand-sub {
             font-size: 10px;
             color: rgba(255,255,255,0.35);
@@ -84,7 +84,7 @@
             letter-spacing: 0.06em;
             text-transform: uppercase;
         }
-
+ 
         /* Navigasyon */
         .sidebar-nav {
             flex: 1;
@@ -93,7 +93,7 @@
             flex-direction: column;
             gap: 2px;
         }
-
+ 
         .nav-section-label {
             font-size: 9px;
             font-weight: 700;
@@ -103,11 +103,11 @@
             padding: 12px 8px 6px;
             margin-top: 4px;
         }
-
+ 
         .nav-section-label:first-child {
             margin-top: 0;
         }
-
+ 
         .sidebar-link {
             display: flex;
             align-items: center;
@@ -121,17 +121,17 @@
             transition: all 0.15s ease;
             position: relative;
         }
-
+ 
         .sidebar-link:hover {
             background: rgba(255,255,255,0.08);
             color: rgba(255,255,255,0.9);
         }
-
+ 
         .sidebar-link.active {
             background: rgba(255,255,255,0.12);
             color: #ffffff;
         }
-
+ 
         .sidebar-link.active::before {
             content: '';
             position: absolute;
@@ -143,7 +143,7 @@
             background: white;
             border-radius: 0 3px 3px 0;
         }
-
+ 
         /* Okunmamış talep sayısı baloncuğu */
         .nav-badge {
             margin-left: auto;
@@ -158,7 +158,7 @@
             text-align: center;
             display: none;
         }
-
+ 
         .nav-icon {
             width: 18px;
             height: 18px;
@@ -166,18 +166,18 @@
             flex-shrink: 0;
             transition: opacity 0.15s;
         }
-
+ 
         .sidebar-link:hover .nav-icon,
         .sidebar-link.active .nav-icon {
             opacity: 1;
         }
-
+ 
         /* Çıkış butonu */
         .sidebar-footer {
             padding: 12px;
             border-top: 1px solid rgba(255,255,255,0.08);
         }
-
+ 
         .sidebar-logout {
             display: flex;
             align-items: center;
@@ -190,12 +190,12 @@
             font-weight: 500;
             transition: all 0.15s ease;
         }
-
+ 
         .sidebar-logout:hover {
             background: rgba(255,80,60,0.12);
             color: #ff5040;
         }
-
+ 
         /* ── İçerik alanı ── */
         .admin-content {
             margin-left: 230px;
@@ -203,7 +203,7 @@
             display: flex;
             flex-direction: column;
         }
-
+ 
         /* Üst bar */
         .topbar {
             background: white;
@@ -217,24 +217,24 @@
             top: 0;
             z-index: 50;
         }
-
+ 
         .topbar-title {
             font-size: 14px;
             font-weight: 600;
             color: #1d1d1f;
         }
-
+ 
         .topbar-meta {
             font-size: 12px;
             color: #9a9a9a;
         }
-
+ 
         /* Sayfa içeriği */
         .page-body {
             padding: 40px;
             flex: 1;
         }
-
+ 
         /* Genel kart stili (admin içerikleri için) */
         .admin-card {
             background: white;
@@ -242,7 +242,7 @@
             border-radius: 14px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.04);
         }
-
+ 
         /* ── Hamburger Butonu ── */
         .sidebar-toggle {
             display: none;
@@ -258,17 +258,17 @@
             flex-shrink: 0;
             transition: background 0.15s;
         }
-
+ 
         .sidebar-toggle:hover {
             background: #f4f5f7;
         }
-
+ 
         .sidebar-toggle svg {
             width: 22px;
             height: 22px;
             display: block;
         }
-
+ 
         /* ── Sidebar Overlay ── */
         .sidebar-overlay {
             display: none;
@@ -279,87 +279,87 @@
             backdrop-filter: blur(2px);
             -webkit-backdrop-filter: blur(2px);
         }
-
+ 
         .sidebar-overlay.open {
             display: block;
         }
-
+ 
         /* ── Mobil Responsive ── */
         @media (max-width: 900px) {
-
+ 
             /* Sidebar drawer: varsayılan gizli, açınca sola kayar */
             .sidebar {
                 transform: translateX(-100%);
                 transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
                 z-index: 200;
             }
-
+ 
             .sidebar.open {
                 transform: translateX(0);
                 box-shadow: 6px 0 24px rgba(0, 0, 0, 0.3);
             }
-
+ 
             /* İçerik alanı sidebar olmadan tam genişlik */
             .admin-content {
                 margin-left: 0;
             }
-
+ 
             /* Hamburger görünür */
             .sidebar-toggle {
                 display: flex;
             }
-
+ 
             /* Topbar padding azalt */
             .topbar {
                 padding: 0 12px;
                 gap: 8px;
             }
-
+ 
             /* Sayfa içi padding azalt */
             .page-body {
                 padding: 12px;
             }
-
+ 
             /* Taşma engelleyici: page-body tam genişlik, taşma kesmek */
             .page-body {
                 overflow-x: hidden;
                 box-sizing: border-box;
                 width: 100%;
             }
-
+ 
             /* KPI grid: 4→2 sütun */
             .kpi-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 12px !important;
             }
-
+ 
             /* Finans grid: sağ kolon alta düş */
             .finance-grid {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Stats satırı: 3→2 sütun */
             .stats-row {
                 grid-template-columns: repeat(2, 1fr) !important;
             }
-
+ 
             /* Dashboard alt bölüm */
             .dashboard-bottom {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Settings marka grid */
             .settings-brand-grid {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Form grid'leri: tek sütun */
             .form-grid-2,
             .form-grid-3,
             .form-grid-4 {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Tablo kartları: yatay kaydırma */
             .customers-table-card,
             .requests-table-card,
@@ -368,62 +368,62 @@
             .transactions-card {
                 overflow-x: auto !important;
             }
-
+ 
             /* Admin sayfa başlığı */
             .admin-page-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
-
+ 
             /* Arama kutusu tam genişlik */
             .search-input {
                 width: 100% !important;
             }
         }
-
+ 
         @media (max-width: 600px) {
-
+ 
             /* KPI grid: 2→1 sütun */
             .kpi-grid {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Stats: 2→1 sütun */
             .stats-row {
                 grid-template-columns: 1fr !important;
             }
-
+ 
             /* Sayfa içi padding daha da azalt */
             .page-body {
                 padding: 8px;
             }
-
+ 
             /* Period tabs kaydırılabilir */
             .period-tabs {
                 overflow-x: auto;
                 flex-wrap: nowrap;
             }
-
+ 
             /* Topbar title küçült */
             .topbar-title {
                 font-size: 13px;
             }
-
+ 
             .topbar-meta {
                 display: none;
             }
         }
     </style>
 </head>
-
+ 
 <body>
-
+ 
     <!-- Mobil sidebar overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
+ 
     <!-- ── Sidebar ── -->
     <aside class="sidebar" id="adminSidebar">
-
+ 
         <!-- Marka -->
         <a href="/esk/dashboard" class="sidebar-brand">
             <div class="sidebar-brand-icon">
@@ -437,12 +437,12 @@
                 <span class="sidebar-brand-sub">Admin Panel</span>
             </div>
         </a>
-
+ 
         <!-- Navigasyon -->
         <nav class="sidebar-nav">
-
+ 
             <span class="nav-section-label">Genel</span>
-
+ 
             <!-- Durum: Her zaman görünür -->
             <a href="/esk/dashboard" class="sidebar-link {% if request.url.path == '/esk/dashboard' %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -453,7 +453,7 @@
                 </svg>
                 Durum
             </a>
-
+ 
             {% if current_user and current_user.has_permission("anasayfa") %}
             <a href="/esk/homepage" class="sidebar-link {% if request.url.path == '/esk/homepage' %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -462,7 +462,7 @@
                 Anasayfa
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("anasayfa") %}
             <a href="/esk/service-page?slug=deterjan" class="sidebar-link {% if request.url.path == '/esk/service-page' and request.query_params.get('slug') == 'deterjan' %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -492,11 +492,11 @@
                 Parfüm Sayfası
             </a>
             {% endif %}
-
+ 
             {% if current_user and (current_user.has_permission("urunler") or current_user.has_permission("sayfalar") or current_user.has_permission("kategoriler") or current_user.has_permission("medya")) %}
             <span class="nav-section-label">İçerik</span>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("urunler") %}
             <a href="/esk/products" class="sidebar-link {% if '/esk/products' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -506,7 +506,7 @@
                 Ürünler
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("sayfalar") %}
             <a href="/esk/pages" class="sidebar-link {% if '/esk/pages' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -518,7 +518,7 @@
                 Sayfalar
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("kategoriler") %}
             <a href="/esk/categories" class="sidebar-link {% if '/esk/categories' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -530,7 +530,7 @@
                 Kategoriler
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("medya") %}
             <a href="/esk/media" class="sidebar-link {% if '/esk/media' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -541,11 +541,11 @@
                 Medya
             </a>
             {% endif %}
-
+ 
             {% if current_user and (current_user.has_permission("talepler") or current_user.has_permission("musteriler") or current_user.has_permission("tedarikciler") or current_user.has_permission("finans")) %}
             <span class="nav-section-label">İş</span>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("talepler") %}
             <a href="/esk/requests" class="sidebar-link {% if '/esk/requests' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -555,7 +555,7 @@
                 <span class="nav-badge" id="unreadRequestsBadge"></span>
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("musteriler") %}
             <a href="/esk/customers" class="sidebar-link {% if '/esk/customers' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -567,7 +567,7 @@
                 Müşteriler
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("tedarikciler") %}
             <a href="/esk/suppliers" class="sidebar-link {% if '/esk/suppliers' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -579,7 +579,7 @@
                 Tedarikçiler
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("pricing") %}
             <a href="/esk/pricing" class="sidebar-link {% if '/esk/pricing' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -590,7 +590,7 @@
                 Fiyatlandırma
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("stok") %}
             <a href="/esk/stock" class="sidebar-link {% if '/esk/stock' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -612,11 +612,11 @@
                 Finans
             </a>
             {% endif %}
-
+ 
             {% if current_user and (current_user.has_permission("site_ayarlari") or current_user.is_superadmin) %}
             <span class="nav-section-label">Sistem</span>
             {% endif %}
-
+ 
             {% if current_user and current_user.has_permission("site_ayarlari") %}
             <a href="/esk/settings" class="sidebar-link {% if '/esk/settings' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -626,7 +626,7 @@
                 Site Ayarları
             </a>
             {% endif %}
-
+ 
             {% if current_user and current_user.is_superadmin %}
             <a href="/esk/users" class="sidebar-link {% if '/esk/users' in request.url.path %}active{% endif %}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -638,9 +638,9 @@
                 Kullanıcılar
             </a>
             {% endif %}
-
+ 
         </nav>
-
+ 
         <!-- Çıkış -->
         <div class="sidebar-footer">
             <a href="/esk/logout" class="sidebar-logout">
@@ -652,12 +652,12 @@
                 Çıkış Yap
             </a>
         </div>
-
+ 
     </aside>
-
+ 
     <!-- ── Ana İçerik ── -->
     <div class="admin-content">
-
+ 
         <!-- Üst bar -->
         <header class="topbar">
             <!-- Mobil hamburger menü butonu -->
@@ -682,17 +682,17 @@
                 Admin Panel
             </span>
         </header>
-
+ 
         <!-- Sayfa içeriği -->
         <main class="page-body">
             {% block content %}{% endblock %}
         </main>
-
+ 
     </div>
-
+ 
     <!-- Medya kütüphanesi seçici modal — tüm admin sayfalarında kullanılabilir -->
     {% include "partials/media_picker_modal.html" %}
-
+ 
     <!-- PWA: Service Worker kayıt + Push abonelik + Badge/ses bildirimi -->
     <script>
     (function () {
@@ -702,13 +702,13 @@
         var label      = document.getElementById('soundLabel');
         var icon       = document.getElementById('soundIcon');
         if (!badge) return;
-
+ 
         var STORAGE_KEY = 'heni_sound_enabled';
         var PREV_KEY    = 'heni_prev_unread_count';
-
+ 
         var audio = new Audio('/static/sounds/notify.wav');
         audio.preload = 'auto';
-
+ 
         // ── Ses tercihi ───────────────────────────────────────────────
         function getSoundEnabled() {
             var val = localStorage.getItem(STORAGE_KEY);
@@ -717,7 +717,7 @@
         function setSoundEnabled(val) {
             localStorage.setItem(STORAGE_KEY, val ? 'true' : 'false');
         }
-
+ 
         function updateBtn(enabled) {
             if (!btn) return;
             btn.title = enabled ? 'Bildirim sesini kapat' : 'Bildirim sesini aç';
@@ -731,13 +731,13 @@
                 if (icon) icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
             }
         }
-
+ 
         function playNotification() {
             if (!getSoundEnabled()) return;
             audio.currentTime = 0;
             audio.play().catch(function () {});
         }
-
+ 
         if (btn) {
             btn.addEventListener('click', function () {
                 var nowEnabled = !getSoundEnabled();
@@ -745,7 +745,7 @@
                 updateBtn(nowEnabled);
             });
         }
-
+ 
         // ── Badge polling ─────────────────────────────────────────────
         function getPrevCount() {
             var v = sessionStorage.getItem(PREV_KEY);
@@ -754,7 +754,7 @@
         function setPrevCount(n) {
             sessionStorage.setItem(PREV_KEY, String(n));
         }
-
+ 
         function refreshBadge() {
             fetch('/esk/requests/unread-count')
                 .then(function (r) { return r.json(); })
@@ -774,14 +774,14 @@
                 })
                 .catch(function () { badge.style.display = 'none'; });
         }
-
+ 
         updateBtn(getSoundEnabled());
         refreshBadge();
         setInterval(refreshBadge, 30000);
-
+ 
         // ── Service Worker + Push Notification ───────────────────────
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-
+ 
         function urlBase64ToUint8Array(base64String) {
             var padding = '='.repeat((4 - base64String.length % 4) % 4);
             var base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -790,7 +790,7 @@
             for (var i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
             return arr;
         }
-
+ 
         function subscribeToPush(reg) {
             fetch('/esk/push/vapid-public-key')
                 .then(function (r) { return r.json(); })
@@ -815,55 +815,79 @@
                     console.warn('[push] Abonelik başarısız:', e);
                 });
         }
-
-        navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
-            .then(function (reg) {
-                // Bildirim izni iste (zaten verilmişse tekrar sormaz)
-                return Notification.requestPermission().then(function (perm) {
-                    if (perm !== 'granted') return;
-                    // Zaten abone mi?
-                    return reg.pushManager.getSubscription().then(function (existing) {
-                        if (!existing) {
-                            subscribeToPush(reg);
-                        } else {
-                            // Sunucuya tekrar kaydet (sayfa yenilemesinde abonelik güncel kalsın)
-                            fetch('/esk/push/subscribe', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(existing.toJSON()),
-                            });
-                        }
-                    });
+ 
+        function initPush(reg) {
+            if (Notification.permission === 'granted') {
+                reg.pushManager.getSubscription().then(function (existing) {
+                    if (!existing) { subscribeToPush(reg); }
+                    else {
+                        fetch('/esk/push/subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(existing.toJSON()),
+                        });
+                    }
                 });
+                return;
+            }
+            // İzin henüz verilmemiş — kullanıcı etkileşimiyle iste
+            // (Bildirim izni ancak kullanıcı hareketi sırasında istenebilir)
+            if (Notification.permission === 'default') {
+                // Ses butonuna tıklamak bir etkileşim sayılır — oraya ekle
+                var soundBtn = document.getElementById('soundToggleBtn');
+                function askOnce() {
+                    Notification.requestPermission().then(function (perm) {
+                        if (perm === 'granted') subscribeToPush(reg);
+                    });
+                    if (soundBtn) soundBtn.removeEventListener('click', askOnce);
+                    document.removeEventListener('click', askOnce);
+                }
+                // İlk herhangi bir tıklamada sor
+                document.addEventListener('click', askOnce, { once: true });
+            }
+        }
+ 
+        // SW'yi /sw.js'den kayıt et (root scope için /static/ dışında olmalı)
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(function (reg) {
+                console.log('[SW] Kayıt başarılı, scope:', reg.scope);
+                // SW aktif olana kadar bekle
+                if (reg.installing) {
+                    reg.installing.addEventListener('statechange', function () {
+                        if (this.state === 'activated') initPush(reg);
+                    });
+                } else {
+                    initPush(reg);
+                }
             })
             .catch(function (e) {
                 console.warn('[SW] Kayıt başarısız:', e);
             });
     })();
     </script>
-
+ 
     <!-- Mobil sidebar toggle scripti -->
     <script>
         (function () {
             const toggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('adminSidebar');
             const overlay = document.getElementById('sidebarOverlay');
-
+ 
             function openSidebar() {
                 sidebar.classList.add('open');
                 overlay.classList.add('open');
                 document.body.style.overflow = 'hidden';
             }
-
+ 
             function closeSidebar() {
                 sidebar.classList.remove('open');
                 overlay.classList.remove('open');
                 document.body.style.overflow = '';
             }
-
+ 
             if (toggle) toggle.addEventListener('click', openSidebar);
             if (overlay) overlay.addEventListener('click', closeSidebar);
-
+ 
             // Sidebar linkine tıklayınca kapat (mobilde sayfa geçişi)
             if (sidebar) {
                 sidebar.querySelectorAll('.sidebar-link, .sidebar-logout').forEach(function (link) {
@@ -874,6 +898,6 @@
             }
         })();
     </script>
-
+ 
 </body>
 </html>
