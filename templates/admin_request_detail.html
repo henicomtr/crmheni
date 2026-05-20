@@ -458,6 +458,66 @@
     .att-doc:hover { background: var(--surface); color: var(--text-primary); }
     .att-doc-icon { font-size: 16px; flex-shrink: 0; }
 
+    /* Ses dosyası oynatıcı */
+    .att-audio-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 4px;
+    }
+    .att-audio-dl {
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        flex-shrink: 0;
+        padding: 4px 6px;
+        border-radius: 4px;
+        transition: background 0.15s;
+    }
+    .att-audio-dl:hover { background: var(--surface); color: var(--text-primary); }
+
+    /* PDF kart görünümü */
+    .att-pdf-card {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface-2);
+        max-width: 280px;
+    }
+    .att-pdf-view {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 10px;
+        text-decoration: none;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 600;
+        flex: 1;
+        min-width: 0;
+        transition: background 0.15s;
+    }
+    .att-pdf-view:hover { background: var(--surface); color: var(--text-primary); }
+    .att-pdf-icon { font-size: 18px; flex-shrink: 0; }
+    .att-pdf-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .att-pdf-dl {
+        font-size: 13px;
+        padding: 7px 10px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-left: 1px solid var(--border);
+        flex-shrink: 0;
+        transition: background 0.15s;
+    }
+    .att-pdf-dl:hover { background: var(--surface); color: var(--text-primary); }
+
     /* Lightbox (görsel büyütme) */
     .lightbox-overlay {
         display: none;
@@ -683,9 +743,24 @@
                                         <source src="{{ att.file_path }}" type="{{ att.mime_type or 'video/mp4' }}">
                                     </video>
                                 </div>
+                                {% elif att.file_type == 'audio' %}
+                                <div class="att-audio-wrap">
+                                    <audio controls preload="metadata" style="width:100%;max-width:320px;">
+                                        <source src="{{ att.file_path }}" type="{{ att.mime_type or 'audio/mpeg' }}">
+                                    </audio>
+                                    <a class="att-audio-dl" href="{{ att.file_path }}" download="{{ att.original_filename }}" title="İndir">⬇</a>
+                                </div>
+                                {% elif att.mime_type and 'pdf' in att.mime_type %}
+                                <div class="att-pdf-card">
+                                    <a class="att-pdf-view" href="{{ att.file_path }}" target="_blank" title="{{ att.original_filename }}">
+                                        <span class="att-pdf-icon">📄</span>
+                                        <span class="att-pdf-name">{{ att.original_filename }}</span>
+                                    </a>
+                                    <a class="att-pdf-dl" href="{{ att.file_path }}" download="{{ att.original_filename }}" title="İndir">⬇</a>
+                                </div>
                                 {% else %}
                                 <a class="att-doc" href="{{ att.file_path }}" target="_blank" download="{{ att.original_filename }}" title="{{ att.original_filename }}">
-                                    <span class="att-doc-icon">{% if att.mime_type and 'pdf' in att.mime_type %}📄{% elif att.file_type == 'audio' %}🎵{% else %}📎{% endif %}</span>
+                                    <span class="att-doc-icon">📎</span>
                                     {{ att.original_filename }}
                                 </a>
                                 {% endif %}

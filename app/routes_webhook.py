@@ -345,10 +345,43 @@ def _extract_request_id_from_subject(subject: str) -> Optional[int]:
     return None
 
 
+def _strip_quoted_text(text: str) -> str:
+    """
+    Email cevap geçmişini (quoted text) temizler; sadece yeni yazılan kısmı döner.
+    Desteklenen ayırıcı kalıpları: '>' satırları, 'On ... wrote:', 'Yazan:', vb.
+    """
+    # Çok dilli email istemcilerinin kullandığı standart ayırıcı ifadeler
+    separator_patterns = [
+        r"^-{3,}[\s\w]*original message[\s\w]*-{3,}",   # -----Original Message-----
+        r"^_{3,}",                                         # _____________
+        r"^from\s*:",                                      # From:
+        r"^on\s.+wrote\s*:",                               # On Mon, 1 Jan wrote:
+        r"^yazan\s*:",                                     # Yazan: (TR)
+        r"^von\s*:",                                       # Von: (DE)
+        r"^de\s*:",                                        # De: (FR)
+        r"^от\s*:",                                        # От: (RU)
+        r"^el\s.+escribió\s*:",                            # El ... escribió: (ES)
+        r"^-{3,}\s*forwarded",                             # --- Forwarded message ---
+        r"^>+",                                            # > alıntı satırları
+    ]
+    compiled = [re.compile(pat, re.IGNORECASE) for pat in separator_patterns]
+
+    lines = text.splitlines()
+    clean_lines = []
+    for line in lines:
+        stripped = line.strip()
+        if any(pat.match(stripped) for pat in compiled):
+            break  # Ayırıcıya ulaşıldı, gerisini atla
+        clean_lines.append(line)
+
+    return "\n".join(clean_lines).strip()
+
+
 def _get_email_body(msg: email_lib.message.Message) -> str:
     """
     Email mesajından düz metin body'yi çıkarır.
     Dosya adı olan parçaları (attachment + inline ek) ve text/html parçaları atlar.
+    Müşteri cevaplarındaki quoted geçmiş metni temizler.
     """
     body_parts = []
     if msg.is_multipart():
@@ -371,7 +404,8 @@ def _get_email_body(msg: email_lib.message.Message) -> str:
             body_parts.append(msg.get_payload(decode=True).decode(charset, errors="replace"))
         except Exception:
             pass
-    return "\n".join(body_parts).strip()
+    raw_body = "\n".join(body_parts).strip()
+    return _strip_quoted_text(raw_body)
 
 
 def _poll_imap_once():
