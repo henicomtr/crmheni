@@ -695,6 +695,10 @@
                 <span id="pushStatusDot" title="Push bildirim durumu" style="font-size:11px;color:#9ca3af;display:none;align-items:center;gap:3px;">
                     🔔 <span id="pushStatusLabel">—</span>
                 </span>
+                <!-- SW bildirim test butonu (görsel bildirim tanısı için) -->
+                <button id="swTestBtn" onclick="testSWNotification()" title="Chrome bildirimi doğrudan test et" style="display:none;background:none;border:1px solid #d1d5db;cursor:pointer;padding:3px 8px;border-radius:5px;font-size:11px;color:#6b7280;">
+                    📋 Bildirim Test
+                </button>
                 Admin Panel
             </span>
         </header>
@@ -808,12 +812,14 @@
         }
  
         function setPushStatus(ok, msg) {
-            var dot   = document.getElementById('pushStatusDot');
-            var label = document.getElementById('pushStatusLabel');
+            var dot     = document.getElementById('pushStatusDot');
+            var label   = document.getElementById('pushStatusLabel');
+            var testBtn = document.getElementById('swTestBtn');
             if (!dot) return;
             dot.style.display = 'flex';
             dot.style.color   = ok ? '#22c55e' : '#ef4444';
-            if (label) label.textContent = msg;
+            if (label)   label.textContent    = msg;
+            if (testBtn) testBtn.style.display = ok ? 'inline-block' : 'none';
         }
 
         function subscribeToPush(reg) {
@@ -907,6 +913,23 @@
             trySubscribe();
         }
  
+        // Push altyapısını atlayıp doğrudan SW showNotification çağırır (tanı için)
+        window.testSWNotification = function () {
+            navigator.serviceWorker.ready.then(function (reg) {
+                return reg.showNotification('🔔 HENİ CRM — Doğrudan Test', {
+                    body: 'Bu bildirim görünüyorsa Chrome bildirimleri çalışıyor. Push altyapısı ayrı.',
+                    icon: '/static/img/icon-192.png',
+                    tag:  'heni-sw-test',
+                    data: { url: '/esk/requests' },
+                });
+            }).then(function () {
+                console.log('[test] SW doğrudan bildirim oluşturuldu.');
+            }).catch(function (e) {
+                console.error('[test] SW bildirim hatası:', e.message);
+                alert('Bildirim oluşturulamadı: ' + e.message);
+            });
+        };
+
         // SW'yi /sw.js'den kayıt et (root scope için /static/ dışında olmalı)
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(function (reg) {

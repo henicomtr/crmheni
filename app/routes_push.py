@@ -188,3 +188,47 @@ def push_test(admin=Depends(_admin_required), db: Session = Depends(get_db)):
         db=db,
     )
     return JSONResponse({"ok": True, "subscribers": len(_subscriptions)})
+
+
+# ── Ayrıntılı push testi — her aboneye HTTP sonucunu döner ────────────────────
+@router.post("/esk/push/test-verbose")
+def push_test_verbose(admin=Depends(_admin_required)):
+    """Her abonenin push gönderim sonucunu (ok/hata + HTTP kodu) döner."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+    if not VAPID_PRIVATE_KEY.strip() or not VAPID_PUBLIC_KEY:
+        return JSONResponse({"error": "VAPID key yapılandırılmamış"})
+    if not _subscriptions:
+        return JSONResponse({"error": "Kayıtlı abone yok"})
+
+    results = []
+    payload = json.dumps({
+        "title": "🔔 Verbose Test",
+        "body":  "Push ayrıntılı test mesajı.",
+        "url":   "/esk/requests",
+        "count": 0,
+    })
+
+    for endpoint, sub in list(_subscriptions.items()):
+        try:
+            webpush(
+                subscription_info=sub,
+                data=payload,
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_CLAIMS_EMAIL},
+            )
+            results.append({"endpoint": endpoint[:70] + "...", "ok": True, "http_status": 201})
+        except WebPushException as e:
+            http_status = getattr(e.response, "status_code", None)
+            detail = ""
+            try:
+                detail = e.response.text[:300] if e.response else str(e)[:300]
+            except Exception:
+                detail = str(e)[:300]
+            results.append({"endpoint": endpoint[:70] + "...", "ok": False,
+                            "http_status": http_status, "detail": detail})
+        except Exception as e:
+            results.append({"endpoint": endpoint[:70] + "...", "ok": False,
+                            "detail": str(e)[:300]})
+
+    return JSONResponse({"results": results, "total": len(results)})
