@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ── VAPID ayarları ─────────────────────────────────────────────────────────────
-VAPID_PRIVATE_KEY   = os.getenv("VAPID_PRIVATE_KEY", "")
+# .env dosyasındaki \n literal'leri gerçek newline'a çevir (PEM formatı için zorunlu)
+VAPID_PRIVATE_KEY   = os.getenv("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_PUBLIC_KEY    = os.getenv("VAPID_PUBLIC_KEY", "")
 VAPID_CLAIMS_EMAIL  = os.getenv("VAPID_CLAIMS_EMAIL", "mailto:admin@henib2b.com")
 
@@ -159,6 +160,19 @@ def serve_sw():
         media_type="application/javascript",
         headers={"Service-Worker-Allowed": "/"},
     )
+
+
+# ── Push kurulum durumu (hata ayıklama) ───────────────────────────────────────
+@router.get("/esk/push/debug")
+def push_debug(admin=Depends(_admin_required)):
+    """Push bildirim kurulum durumunu döner (tarayıcıdan kontrol için)."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+    return JSONResponse({
+        "vapid_configured": bool(VAPID_PRIVATE_KEY.strip() and VAPID_PUBLIC_KEY),
+        "subscriber_count": len(_subscriptions),
+        "public_key_prefix": VAPID_PUBLIC_KEY[:20] + "..." if VAPID_PUBLIC_KEY else "",
+    })
 
 
 # ── Manuel test endpoint'i ─────────────────────────────────────────────────────
