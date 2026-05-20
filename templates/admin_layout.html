@@ -699,17 +699,55 @@
             var icon  = document.getElementById('soundIcon');
             if (!badge) return;
 
-            // Ses tercihi localStorage'da saklanır; varsayılan açık
             var STORAGE_KEY = 'heni_sound_enabled';
-            var audio = new Audio('/static/sounds/notify.wav');
-            audio.preload = 'auto';
-            var previousCount = null;
-            var audioReady = false;
+            var PREV_KEY    = 'heni_prev_unread_count';
+
+            // AudioContext ile ses üret — harici dosyaya bağımlılık yok,
+            // HTTPS'de ses dosyası yüklenememe riskini ortadan kaldırır.
+            var audioCtx = null;
+            function getAudioCtx() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                return audioCtx;
+            }
+
+            // Tarayıcı autoplay kısıtlaması: AudioContext "suspended" başlar,
+            // kullanıcı etkileşimiyle "running" hale gelir.
+            var audioUnlocked = false;
             var unlockAttached = false;
+
+            function unlockAudio() {
+                if (audioUnlocked) { removeUnlockListeners(); return; }
+                try {
+                    var ctx = getAudioCtx();
+                    // Resume çağrısı kullanıcı etkileşimi sırasında yapılmalı
+                    ctx.resume().then(function () {
+                        if (ctx.state === 'running') {
+                            audioUnlocked = true;
+                            removeUnlockListeners();
+                        }
+                    }).catch(function () {});
+                } catch (e) {}
+            }
+
+            function addUnlockListeners() {
+                if (unlockAttached) return;
+                document.addEventListener('click',   unlockAudio, { once: false });
+                document.addEventListener('keydown', unlockAudio, { once: false });
+                document.addEventListener('touchend',unlockAudio, { once: false });
+                unlockAttached = true;
+            }
+
+            function removeUnlockListeners() {
+                document.removeEventListener('click',    unlockAudio);
+                document.removeEventListener('keydown',  unlockAudio);
+                document.removeEventListener('touchend', unlockAudio);
+                unlockAttached = false;
+            }
 
             function getSoundEnabled() {
                 var val = localStorage.getItem(STORAGE_KEY);
-                // Daha önce hiç ayarlanmamışsa varsayılan: açık
                 return val === null ? true : val === 'true';
             }
 
@@ -731,61 +769,68 @@
                 }
             }
 
-            // İlk kullanıcı etkileşiminde tarayıcı ses kilidini sessizce kaldır
-            function tryUnlockAudio() {
-                if (audioReady) { removeUnlockListeners(); return; }
-                audio.volume = 0;
-                audio.play().then(function () {
-                    audio.pause();
-                    audio.volume = 1;
-                    audio.currentTime = 0;
-                    audioReady = true;
-                    removeUnlockListeners();
-                }).catch(function () {});
+            // Kısa bir "ding" sesi AudioContext ile üret
+            function playNotification() {
+                if (!getSoundEnabled()) return;
+                try {
+                    var ctx = getAudioCtx();
+                    if (ctx.state === 'suspended') {
+                        // Kullanıcı henüz etkileşmemişse çalamayız; unlock bekleniyor
+                        return;
+                    }
+                    // Oscillator ile iki tonlu ding sesi
+                    function tone(freq, startTime, duration, gain) {
+                        var osc = ctx.createOscillator();
+                        var gainNode = ctx.createGain();
+                        osc.connect(gainNode);
+                        gainNode.connect(ctx.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        gainNode.gain.setValueAtTime(gain, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                        osc.start(startTime);
+                        osc.stop(startTime + duration);
+                    }
+                    var now = ctx.currentTime;
+                    tone(880, now,       0.18, 0.4);
+                    tone(660, now + 0.2, 0.28, 0.3);
+                } catch (e) {}
             }
 
-            function addUnlockListeners() {
-                if (unlockAttached) return;
-                document.addEventListener('click', tryUnlockAudio);
-                document.addEventListener('keydown', tryUnlockAudio);
-                unlockAttached = true;
-            }
-
-            function removeUnlockListeners() {
-                document.removeEventListener('click', tryUnlockAudio);
-                document.removeEventListener('keydown', tryUnlockAudio);
-                unlockAttached = false;
-            }
-
-            // Toggle butonu: her tıklamada durumu tersine çevirir ve kaydeder
+            // Toggle butonu
             if (btn) {
                 btn.addEventListener('click', function () {
                     var nowEnabled = !getSoundEnabled();
                     setSoundEnabled(nowEnabled);
                     updateBtn(nowEnabled);
                     if (nowEnabled) {
-                        // Buton tıklaması kullanıcı etkileşimi sayılır, hemen unlock dene
-                        audio.volume = 0;
-                        audio.play().then(function () {
-                            audio.pause();
-                            audio.volume = 1;
-                            audio.currentTime = 0;
-                            audioReady = true;
-                            removeUnlockListeners();
-                        }).catch(function () {
-                            addUnlockListeners();
-                        });
-                    } else {
-                        audioReady = false;
-                        removeUnlockListeners();
+                        // Buton tıklaması etkileşim sayılır — AudioContext'i hemen unlock et
+                        try {
+                            var ctx = getAudioCtx();
+                            ctx.resume().then(function () {
+                                if (ctx.state === 'running') {
+                                    audioUnlocked = true;
+                                    removeUnlockListeners();
+                                    // Küçük test sesi çal (açık olduğunu hissettir)
+                                    playNotification();
+                                }
+                            }).catch(function () {});
+                        } catch (e) {}
                     }
                 });
             }
 
-            function playNotification() {
-                if (!audioReady || !getSoundEnabled()) return;
-                audio.currentTime = 0;
-                audio.play().catch(function () {});
+            // ── Önceki sayıyı sessionStorage'da sakla ──────────────────
+            // Sayfa yenilendiğinde previousCount sıfırlanır ve her yeni talep
+            // sanki yeni gelmiş gibi ses çalar. Bunun önüne geçmek için
+            // sayıyı sessionStorage'da tutuyoruz (sekme kapanınca sıfırlanır).
+            function getPrevCount() {
+                var v = sessionStorage.getItem(PREV_KEY);
+                return v === null ? null : parseInt(v, 10);
+            }
+
+            function setPrevCount(n) {
+                sessionStorage.setItem(PREV_KEY, String(n));
             }
 
             function refreshBadge() {
@@ -793,10 +838,15 @@
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
                         var count = data.count;
-                        if (previousCount !== null && count > previousCount) {
+                        var prev  = getPrevCount();
+
+                        // Önceki değer biliniyorsa ve sayı artmışsa ses çal
+                        if (prev !== null && count > prev) {
                             playNotification();
                         }
-                        previousCount = count;
+
+                        setPrevCount(count);
+
                         if (count > 0) {
                             badge.textContent = count > 99 ? '99+' : count;
                             badge.style.display = 'inline-block';
@@ -807,10 +857,9 @@
                     .catch(function () { badge.style.display = 'none'; });
             }
 
-            // Sayfa yüklenince localStorage'dan durumu geri yükle
+            // Sayfa yüklenince durumu geri yükle
             updateBtn(getSoundEnabled());
             if (getSoundEnabled()) {
-                // Herhangi bir tıklama/tuş sesini otomatik unlock eder
                 addUnlockListeners();
             }
 
