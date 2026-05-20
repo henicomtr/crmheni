@@ -704,36 +704,6 @@
 
             var audio = new Audio('/static/sounds/notify.wav');
             audio.preload = 'auto';
-            var audioUnlocked = false;
-            var unlockAttached = false;
-
-            function unlockAudio() {
-                if (audioUnlocked) { removeUnlockListeners(); return; }
-                // Sessiz çal/durdur — tarayıcı kilidini kaldırmak için yeterli
-                audio.volume = 0;
-                audio.play().then(function () {
-                    audio.pause();
-                    audio.currentTime = 0;
-                    audio.volume = 1;
-                    audioUnlocked = true;
-                    removeUnlockListeners();
-                }).catch(function () {});
-            }
-
-            function addUnlockListeners() {
-                if (unlockAttached) return;
-                document.addEventListener('click',    unlockAudio, { once: false });
-                document.addEventListener('keydown',  unlockAudio, { once: false });
-                document.addEventListener('touchend', unlockAudio, { once: false });
-                unlockAttached = true;
-            }
-
-            function removeUnlockListeners() {
-                document.removeEventListener('click',    unlockAudio);
-                document.removeEventListener('keydown',  unlockAudio);
-                document.removeEventListener('touchend', unlockAudio);
-                unlockAttached = false;
-            }
 
             function getSoundEnabled() {
                 var val = localStorage.getItem(STORAGE_KEY);
@@ -758,42 +728,20 @@
                 }
             }
 
-            // Kısa bir "ding" sesi AudioContext ile üret
             function playNotification() {
-                if (!getSoundEnabled() || !audioUnlocked) return;
+                if (!getSoundEnabled()) return;
                 audio.currentTime = 0;
                 audio.play().catch(function () {});
             }
 
-            // Toggle butonu
             if (btn) {
                 btn.addEventListener('click', function () {
                     var nowEnabled = !getSoundEnabled();
                     setSoundEnabled(nowEnabled);
                     updateBtn(nowEnabled);
-                    if (nowEnabled) {
-                        // Buton tıklaması etkileşim sayılır — hemen unlock et
-                        audio.volume = 0;
-                        audio.play().then(function () {
-                            audio.pause();
-                            audio.currentTime = 0;
-                            audio.volume = 1;
-                            audioUnlocked = true;
-                            removeUnlockListeners();
-                        }).catch(function () {
-                            addUnlockListeners();
-                        });
-                    } else {
-                        audioUnlocked = false;
-                        removeUnlockListeners();
-                    }
                 });
             }
 
-            // ── Önceki sayıyı sessionStorage'da sakla ──────────────────
-            // Sayfa yenilendiğinde previousCount sıfırlanır ve her yeni talep
-            // sanki yeni gelmiş gibi ses çalar. Bunun önüne geçmek için
-            // sayıyı sessionStorage'da tutuyoruz (sekme kapanınca sıfırlanır).
             function getPrevCount() {
                 var v = sessionStorage.getItem(PREV_KEY);
                 return v === null ? null : parseInt(v, 10);
@@ -809,14 +757,10 @@
                     .then(function (data) {
                         var count = data.count;
                         var prev  = getPrevCount();
-
-                        // Önceki değer biliniyorsa ve sayı artmışsa ses çal
                         if (prev !== null && count > prev) {
                             playNotification();
                         }
-
                         setPrevCount(count);
-
                         if (count > 0) {
                             badge.textContent = count > 99 ? '99+' : count;
                             badge.style.display = 'inline-block';
@@ -827,12 +771,7 @@
                     .catch(function () { badge.style.display = 'none'; });
             }
 
-            // Sayfa yüklenince durumu geri yükle
             updateBtn(getSoundEnabled());
-            if (getSoundEnabled()) {
-                addUnlockListeners();
-            }
-
             refreshBadge();
             setInterval(refreshBadge, 30000);
         })();
