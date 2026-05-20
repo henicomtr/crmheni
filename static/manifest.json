@@ -2,7 +2,7 @@
   "name": "HENİ CRM",
   "short_name": "HENİ",
   "description": "HENİ B2B Admin Paneli",
-  "start_url": "/esk/dashboard",
+  "start_url": "/esk/requests",
   "display": "standalone",
   "background_color": "#0d1239",
   "theme_color": "#0d1239",

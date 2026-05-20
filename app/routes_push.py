@@ -163,7 +163,7 @@ def serve_sw():
 
 # ── Manuel test endpoint'i ─────────────────────────────────────────────────────
 @router.post("/esk/push/test")
-def push_test(admin=Depends(_admin_required)):
+def push_test(admin=Depends(_admin_required), db: Session = Depends(get_db)):
     """Admin panelinden push bildirimini test etmek için."""
     if not admin:
         return JSONResponse({"error": "Yetkisiz"}, status_code=401)
@@ -171,5 +171,6 @@ def push_test(admin=Depends(_admin_required)):
         title="🔔 Test Bildirimi",
         body="Push bildirimler çalışıyor!",
         url="/esk/requests",
+        db=db,
     )
     return JSONResponse({"ok": True, "subscribers": len(_subscriptions)})
