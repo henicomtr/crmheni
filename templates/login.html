@@ -432,6 +432,7 @@
             {% endif %}
 
             <form method="post" action="/esk/login" id="login-form">
+                <input type="hidden" name="pwa_mode" id="pwa_mode" value="0">
                 <div class="field">
                     <label class="field-label" for="email">E-Posta Adresi</label>
                     <input
@@ -490,6 +491,15 @@
 </div>
 
 <script>
+    // PWA (standalone) modunu tespit et ve hidden field'ı güncelle
+    (function detectPwa() {
+        var isPwa = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+        if (isPwa) {
+            document.getElementById('pwa_mode').value = '1';
+        }
+    })();
+
     // Sayaç animasyonu
     function animateCount(el, target, duration, suffix) {
         suffix = suffix || '';

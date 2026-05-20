@@ -555,9 +555,9 @@ app.add_middleware(StaticCacheMiddleware)
 
 class AdminTokenRefreshMiddleware(BaseHTTPMiddleware):
     """
-    Her admin isteğinde geçerli JWT token'ı 10 dakika uzatır.
-    Kullanıcı aktif olduğu sürece oturum kapanmaz;
-    10 dk hareketsizlikte token süresi dolarak otomatik çıkış yapılır.
+    Web oturumlarında her admin isteğinde token'ı 10 dk uzatır (sliding window).
+    PWA oturumlarında (payload'da pwa=True) token'a dokunulmaz; 24 saatlik token
+    olduğu gibi kalır ve sadece manuel logout ile sonlanır.
     Logout ve login route'larına dokunulmaz.
     """
     async def dispatch(self, request, call_next):
@@ -575,15 +575,18 @@ class AdminTokenRefreshMiddleware(BaseHTTPMiddleware):
         try:
             payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             email = payload.get("sub")
-            if email:
-                # Geçerli token — expiry'yi sıfırla
-                new_token = create_token({"sub": email})
+            is_pwa = payload.get("pwa", False)
+
+            if email and not is_pwa:
+                # Web oturumu — her istekte 10 dk'yı sıfırla
+                new_token = create_token({"sub": email}, pwa_mode=False)
                 response.set_cookie(
                     key="token",
                     value=new_token,
                     httponly=True,
                     samesite="lax",
                 )
+            # PWA oturumunda token'a dokunma; 24 saatlik expiry kendi kendine yönetilir
         except JWTError:
             # Geçersiz/süresi dolmuş token — dokunma, admin_required zaten login'e yönlendirir
             pass

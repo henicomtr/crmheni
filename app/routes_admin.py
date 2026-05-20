@@ -518,9 +518,10 @@ def login(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    pwa_mode: str = Form("0"),
     db: Session = Depends(get_db)
 ):
-    """Kullanıcı girişi — brute-force korumalı."""
+    """Kullanıcı girişi — brute-force korumalı. PWA modunda 24 saatlik token verilir."""
     ip = _get_client_ip(request)
 
     # PIN cookie kontrolü
@@ -559,15 +560,15 @@ def login(
 
     # Başarılı giriş — deneme sayacını sıfırla
     _reset_attempts(_login_attempts, ip)
-    token = create_token({"sub": user.email})
+    is_pwa = pwa_mode == "1"
+    token = create_token({"sub": user.email}, pwa_mode=is_pwa)
 
     response = RedirectResponse(url="/esk/dashboard", status_code=302)
-    response.set_cookie(
-        key="token",
-        value=token,
-        httponly=True,
-        samesite="lax"
-    )
+    # PWA oturumunda cookie tarayıcı kapansa da kalıcı olsun (max_age=24s)
+    cookie_kwargs = dict(key="token", value=token, httponly=True, samesite="lax")
+    if is_pwa:
+        cookie_kwargs["max_age"] = 60 * 60 * 24  # 24 saat
+    response.set_cookie(**cookie_kwargs)
     return response
 
 
