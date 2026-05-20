@@ -1644,6 +1644,18 @@ def _send_whatsapp_evolution(settings: SiteSettings, phone: str, message: str) -
         return False, "connection_error"
 
 
+@router.get("/esk/requests/unread-count")
+def get_unread_requests_count(
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """Okunmamış talep sayısını JSON olarak döner (sidebar badge için)."""
+    if not admin:
+        return JSONResponse({"count": 0})
+    count = db.query(QuoteRequest).filter(QuoteRequest.is_read == False).count()
+    return JSONResponse({"count": count})
+
+
 @router.get("/esk/requests", response_class=HTMLResponse)
 def requests_page(
     request: Request,

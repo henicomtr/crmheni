@@ -141,6 +141,21 @@
             border-radius: 0 3px 3px 0;
         }
 
+        /* Okunmamış talep sayısı baloncuğu */
+        .nav-badge {
+            margin-left: auto;
+            background: #ef4444;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            line-height: 1;
+            padding: 3px 6px;
+            border-radius: 999px;
+            min-width: 18px;
+            text-align: center;
+            display: none;
+        }
+
         .nav-icon {
             width: 18px;
             height: 18px;
@@ -534,6 +549,7 @@
                     <path d="M21 15C21 15.55 20.78 16.08 20.37 16.37C19.97 16.77 19.44 17 18.89 17H6L3 21V5C3 4.45 3.22 3.92 3.63 3.63C4.03 3.22 4.56 3 5.11 3H18.89C19.44 3 19.97 3.22 20.37 3.63C20.78 4.03 21 4.56 21 5V15Z"/>
                 </svg>
                 Talepler
+                <span class="nav-badge" id="unreadRequestsBadge"></span>
             </a>
             {% endif %}
 
@@ -662,6 +678,32 @@
 
     <!-- Medya kütüphanesi seçici modal — tüm admin sayfalarında kullanılabilir -->
     {% include "partials/media_picker_modal.html" %}
+
+    <!-- Okunmamış talep sayısı badge scripti -->
+    <script>
+        (function () {
+            const badge = document.getElementById('unreadRequestsBadge');
+            if (!badge) return;
+
+            function refreshBadge() {
+                fetch('/esk/requests/unread-count')
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.count > 0) {
+                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                            badge.style.display = 'inline-block';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    })
+                    .catch(function () { badge.style.display = 'none'; });
+            }
+
+            refreshBadge();
+            // Her 60 saniyede bir yenile
+            setInterval(refreshBadge, 60000);
+        })();
+    </script>
 
     <!-- Mobil sidebar toggle scripti -->
     <script>

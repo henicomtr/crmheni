@@ -10,7 +10,8 @@ def verify_token(token: str):
         return payload.get("sub")
     except JWTError:
         return None
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Hareketsizlik zaman aşımı — her istekte yenilenir, 10 dk işlem yapılmazsa oturum kapanır
+ACCESS_TOKEN_EXPIRE_MINUTES = 10
 
 def hash_password(password: str) -> str:
     pwd_bytes = password.encode('utf-8')

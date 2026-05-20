@@ -1,6 +1,8 @@
 from .models import User, CategoryContent, HomepageContent, ProductRating, ServicePageContent
-from .auth import hash_password
+from .auth import hash_password, create_token
+from .config import SECRET_KEY, ALGORITHM
 from .database import SessionLocal
+from jose import JWTError, jwt
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -548,6 +550,47 @@ class StaticCacheMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(StaticCacheMiddleware)
+
+
+class AdminTokenRefreshMiddleware(BaseHTTPMiddleware):
+    """
+    Her admin isteğinde geçerli JWT token'ı 10 dakika uzatır.
+    Kullanıcı aktif olduğu sürece oturum kapanmaz;
+    10 dk hareketsizlikte token süresi dolarak otomatik çıkış yapılır.
+    Logout ve login route'larına dokunulmaz.
+    """
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+
+        path = request.url.path
+        # Sadece admin alanı, logout hariç
+        if not path.startswith("/esk/") or path == "/esk/logout":
+            return response
+
+        token = request.cookies.get("token")
+        if not token:
+            return response
+
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email = payload.get("sub")
+            if email:
+                # Geçerli token — expiry'yi sıfırla
+                new_token = create_token({"sub": email})
+                response.set_cookie(
+                    key="token",
+                    value=new_token,
+                    httponly=True,
+                    samesite="lax",
+                )
+        except JWTError:
+            # Geçersiz/süresi dolmuş token — dokunma, admin_required zaten login'e yönlendirir
+            pass
+
+        return response
+
+
+app.add_middleware(AdminTokenRefreshMiddleware)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
