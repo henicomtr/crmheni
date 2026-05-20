@@ -683,10 +683,10 @@
     <script>
         (function () {
             const badge = document.getElementById('unreadRequestsBadge');
-            // Cache-bust: sunucu her başladığında notify.wav yeniden üretilir;
-            // ?v= ile tarayıcının eski sürümü kullanması engellenir.
-            const audio = new Audio('/static/sounds/notify.wav?v=' + (Math.floor(Date.now() / 3600000)));
+            // ?v= değerini ses dosyası değiştiğinde artır (cache-bust)
+            const audio = new Audio('/static/sounds/notify.wav?v=2');
             audio.preload = 'auto';
+            audio.addEventListener('error', function () { audioReady = false; });
             if (!badge) return;
 
             let previousCount = null;

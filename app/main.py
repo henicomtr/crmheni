@@ -600,44 +600,6 @@ app.include_router(showroom_router)
 app.include_router(pricing_router)
 
 
-def _generate_notify_wav():
-    """
-    Sunucu her başladığında admin bildirim sesini (notify.wav) yeniden üretir.
-    Bu sayede deploy sırasında ses dosyasını manuel kopyalamaya gerek kalmaz;
-    dosya her zaman koddan türetilir.
-    """
-    import wave, struct, math
-    sounds_dir = os.path.join(os.path.dirname(__file__), "..", "static", "sounds")
-    os.makedirs(sounds_dir, exist_ok=True)
-    path = os.path.join(sounds_dir, "notify.wav")
-
-    sample_rate = 22050
-    tones = [(880, 0.0, 0.22), (660, 0.30, 0.22)]
-    total_frames = int(sample_rate * 0.60)
-    samples = []
-
-    for i in range(total_frames):
-        s = 0.0
-        for freq, start_sec, dur_sec in tones:
-            sf = int(start_sec * sample_rate)
-            ef = sf + int(dur_sec * sample_rate)
-            if sf <= i < ef:
-                ti = i - sf
-                fade_in  = min(ti / (sample_rate * 0.02), 1.0)
-                fade_out = min((ef - i) / (sample_rate * 0.04), 1.0)
-                s += math.sin(2 * math.pi * freq * ti / sample_rate) * 0.55 * fade_in * fade_out
-        samples.append(max(-32767, min(32767, int(s * 32767))))
-
-    with wave.open(path, "w") as wf:
-        wf.setnchannels(1)
-        wf.setsampwidth(2)
-        wf.setframerate(sample_rate)
-        wf.writeframes(struct.pack("<" + "h" * len(samples), *samples))
-
-
-_generate_notify_wav()
-
-
 @app.on_event("startup")
 async def on_startup():
     """Uygulama ayağa kalktığında IMAP polling ve Evolution webhook kaydını başlatır."""
