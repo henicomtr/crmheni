@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db, SessionLocal
 from .models import QuoteRequest, RequestMessage, RequestAttachment, SiteSettings
+from .routes_push import send_push_notification
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -330,6 +331,13 @@ async def evolution_webhook(request: Request, db: Session = Depends(get_db)):
         processed += 1
         logger.info("WhatsApp mesajı kaydedildi → Talep #%d (gönderen: %s)", quote_req.id, sender_phone)
 
+        send_push_notification(
+            title="💬 Yeni WhatsApp Mesajı",
+            body=f"{sender_name or sender_phone}: {(text_content or '')[:80]}",
+            url=f"/esk/requests/{quote_req.id}",
+            db=db,
+        )
+
     return {"status": "ok", "processed": processed}
 
 
@@ -543,6 +551,13 @@ def _poll_imap_once():
                     # Maili okundu olarak işaretle
                     mail.store(msg_id, "+FLAGS", "\\Seen")
                     logger.info("Email cevabı kaydedildi → Talep #%d", quote_req.id)
+
+                    send_push_notification(
+                        title="📧 Yeni Email Cevabı",
+                        body=f"Konu: {subject[:80]}",
+                        url=f"/esk/requests/{quote_req.id}",
+                        db=db,
+                    )
 
                 except Exception as exc:
                     logger.error("IMAP mesaj işleme hatası (id=%s): %s", msg_id, exc)
