@@ -699,14 +699,27 @@
             var icon  = document.getElementById('soundIcon');
             if (!badge) return;
 
-            var NOTIFY_B64 = 'data:audio/wav;base64,UklGRjQOAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YRAOAACAgICBgH99fH1/goSEgn56eHp+hIiIhH53dHZ9hoyMh351cHN7h4+Qin5zbG95h5KVjn9xaWt3h5WZkYFwZWZzh5edlYNvYmJwhpmhmoZvXl1shJulnolvXFlogpypo41wWVRjgJytqJFxV1BefJ2wrZVzVktZeZyzspp1VUdUdZu1t594VENOcJq4vKV8VEBJa5i5waqAVDxDZpW7xrCEVTo+YZG6x7SJWTs9XY23yLeNXT07WYm0x7qRYT46VYSxx7yWZUA5UoCtxr+aaUM4TnuqxcGebkU4S3amxMKickg4SHKiwsSmdks4RW6ewcWqe044Q2mav8atf1I5QGWWvMexhFU6PmGRuse0iVk7PV2Nt8i3jV09O1mJtMe6kWE+OlWEsce8lmVAOVJ/rca/mmpEOE57qMXBnm9EOU92o8O/oXNPOlB0m765onlVRlFsmLO3pIFbS1Funq+3p4VhUE9pkKizpoloVFJnhqKwpYtqVVRlgp2spIxuWFZleZmmopB2YVlmepKgoZF6ZV1leI+en5J8Z2BmdI2bnZF/amNmd4qYmpGAbmVqdoSVl5CAcWlqdoSSlo6CdGxsdoOMkI2EenFxd4CJjYuEe3RzeICHi4mDfHd2eX+FiIeDfnl4en+DhYWCf3x7fH+Bg4KBf35+fn+AgICAgA==';
-
-            var audio = new Audio(NOTIFY_B64);
+            // Ses tercihi localStorage'da saklanır; varsayılan açık
+            var STORAGE_KEY = 'heni_sound_enabled';
+            var audio = new Audio('/static/sounds/notify.wav');
+            audio.preload = 'auto';
             var previousCount = null;
             var audioReady = false;
+            var unlockAttached = false;
+
+            function getSoundEnabled() {
+                var val = localStorage.getItem(STORAGE_KEY);
+                // Daha önce hiç ayarlanmamışsa varsayılan: açık
+                return val === null ? true : val === 'true';
+            }
+
+            function setSoundEnabled(val) {
+                localStorage.setItem(STORAGE_KEY, val ? 'true' : 'false');
+            }
 
             function updateBtn(enabled) {
                 if (!btn) return;
+                btn.title = enabled ? 'Bildirim sesini kapat' : 'Bildirim sesini aç';
                 if (enabled) {
                     btn.style.color = '#22c55e';
                     if (label) label.textContent = 'Ses açık';
@@ -718,20 +731,59 @@
                 }
             }
 
+            // İlk kullanıcı etkileşiminde tarayıcı ses kilidini sessizce kaldır
+            function tryUnlockAudio() {
+                if (audioReady) { removeUnlockListeners(); return; }
+                audio.volume = 0;
+                audio.play().then(function () {
+                    audio.pause();
+                    audio.volume = 1;
+                    audio.currentTime = 0;
+                    audioReady = true;
+                    removeUnlockListeners();
+                }).catch(function () {});
+            }
+
+            function addUnlockListeners() {
+                if (unlockAttached) return;
+                document.addEventListener('click', tryUnlockAudio);
+                document.addEventListener('keydown', tryUnlockAudio);
+                unlockAttached = true;
+            }
+
+            function removeUnlockListeners() {
+                document.removeEventListener('click', tryUnlockAudio);
+                document.removeEventListener('keydown', tryUnlockAudio);
+                unlockAttached = false;
+            }
+
+            // Toggle butonu: her tıklamada durumu tersine çevirir ve kaydeder
             if (btn) {
                 btn.addEventListener('click', function () {
-                    audio.currentTime = 0;
-                    audio.play().then(function () {
-                        audioReady = true;
-                        updateBtn(true);
-                    }).catch(function () {
-                        if (label) { label.textContent = 'Ses hatası'; btn.style.color = '#ef4444'; }
-                    });
+                    var nowEnabled = !getSoundEnabled();
+                    setSoundEnabled(nowEnabled);
+                    updateBtn(nowEnabled);
+                    if (nowEnabled) {
+                        // Buton tıklaması kullanıcı etkileşimi sayılır, hemen unlock dene
+                        audio.volume = 0;
+                        audio.play().then(function () {
+                            audio.pause();
+                            audio.volume = 1;
+                            audio.currentTime = 0;
+                            audioReady = true;
+                            removeUnlockListeners();
+                        }).catch(function () {
+                            addUnlockListeners();
+                        });
+                    } else {
+                        audioReady = false;
+                        removeUnlockListeners();
+                    }
                 });
             }
 
             function playNotification() {
-                if (!audioReady) return;
+                if (!audioReady || !getSoundEnabled()) return;
                 audio.currentTime = 0;
                 audio.play().catch(function () {});
             }
@@ -753,6 +805,13 @@
                         }
                     })
                     .catch(function () { badge.style.display = 'none'; });
+            }
+
+            // Sayfa yüklenince localStorage'dan durumu geri yükle
+            updateBtn(getSoundEnabled());
+            if (getSoundEnabled()) {
+                // Herhangi bir tıklama/tuş sesini otomatik unlock eder
+                addUnlockListeners();
             }
 
             refreshBadge();
