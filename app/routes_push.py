@@ -31,10 +31,46 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # ── VAPID ayarları ─────────────────────────────────────────────────────────────
-# .env dosyasındaki \n literal'leri gerçek newline'a çevir (PEM formatı için zorunlu)
-VAPID_PRIVATE_KEY   = os.getenv("VAPID_PRIVATE_KEY", "").replace("\\n", "\n")
 VAPID_PUBLIC_KEY    = os.getenv("VAPID_PUBLIC_KEY", "")
 VAPID_CLAIMS_EMAIL  = os.getenv("VAPID_CLAIMS_EMAIL", "mailto:admin@henib2b.com")
+
+# Raw base64url (43 char) veya PEM (\n literal'li) formatını yükler
+_raw_vapid = os.getenv("VAPID_PRIVATE_KEY", "").strip()
+
+def _build_vapid_key(raw: str) -> str:
+    """
+    VAPID private key'i normalize eder.
+    - PEM: \\n literal → gerçek newline
+    - Raw base64url (43 char): P-256 özel anahtarını PEM'e çevirir
+    """
+    if not raw:
+        return ""
+    key = raw.replace("\\n", "\n").strip()
+    if "BEGIN PRIVATE KEY" in key:
+        return key
+    # Raw base64url formatı (43 char) → PEM'e çevir
+    try:
+        import base64 as _b64
+        from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, derive_private_key
+        from cryptography.hazmat.primitives.serialization import (
+            Encoding, PrivateFormat, NoEncryption
+        )
+        padding = "=" * ((4 - len(key) % 4) % 4)
+        raw_bytes = _b64.urlsafe_b64decode(key + padding)
+        priv_int  = int.from_bytes(raw_bytes, "big")
+        priv_key  = derive_private_key(priv_int, SECP256R1())
+        return priv_key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode()
+    except Exception as exc:
+        logger.error("[push] VAPID key dönüştürme hatası: %s", exc)
+        return raw  # son çare: ham değeri dene
+
+VAPID_PRIVATE_KEY = _build_vapid_key(_raw_vapid)
+logger.info(
+    "[push] VAPID key yüklendi: format=%s, uzunluk=%d, newline_sayısı=%d",
+    "PEM" if "BEGIN" in VAPID_PRIVATE_KEY else "raw/bilinmiyor",
+    len(VAPID_PRIVATE_KEY),
+    VAPID_PRIVATE_KEY.count("\n"),
+)
 
 # ── Abonelik deposu (bellek) ───────────────────────────────────────────────────
 # { endpoint_url: subscription_dict }
