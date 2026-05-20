@@ -457,66 +457,168 @@
 
     .att-doc:hover { background: var(--surface); color: var(--text-primary); }
     .att-doc-icon { font-size: 16px; flex-shrink: 0; }
+    .bubble-text { display: block; white-space: pre-wrap; }
 
-    /* Ses dosyası oynatıcı */
-    .att-audio-wrap {
+    /* WhatsApp stili ses oynatıcı */
+    .att-wa-audio {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        background: rgba(0,0,0,0.06);
+        border-radius: 12px;
+        min-width: 240px;
+        max-width: 320px;
+        width: 100%;
+    }
+    .wa-audio-play {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+        color: #128c7e;
+        transition: box-shadow 0.15s;
+    }
+    .wa-audio-play:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+    .wa-audio-play svg { width: 16px; height: 16px; }
+    .wa-audio-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .wa-waveform {
+        position: relative;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        cursor: pointer;
+        overflow: hidden;
+    }
+    .wa-waveform-fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        background: rgba(18,140,126,0.25);
+        width: 0%;
+        pointer-events: none;
+        transition: width 0.1s linear;
+        border-radius: 3px;
+    }
+    .wa-bar {
+        width: 3px;
+        border-radius: 2px;
+        background: rgba(0,0,0,0.25);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        transition: background 0.2s;
+    }
+    .wa-bar.played { background: #128c7e; }
+    .wa-audio-time {
+        font-size: 11px;
+        color: rgba(0,0,0,0.45);
+        font-variant-numeric: tabular-nums;
+        align-self: flex-end;
+    }
+    .wa-audio-dl {
+        flex-shrink: 0;
+        color: rgba(0,0,0,0.35);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        padding: 4px;
+        border-radius: 4px;
+        transition: color 0.15s;
+    }
+    .wa-audio-dl:hover { color: rgba(0,0,0,0.65); }
+    .wa-audio-dl svg { width: 15px; height: 15px; }
+
+    /* WhatsApp stili PDF kart */
+    .att-wa-pdf {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.1);
+        background: #fff;
+        max-width: 280px;
+        width: 100%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .wa-pdf-preview {
+        position: relative;
+        height: 130px;
+        background: #f0f0f0;
+        overflow: hidden;
+    }
+    .wa-pdf-iframe {
+        width: 200%;
+        height: 200%;
+        transform: scale(0.5);
+        transform-origin: top left;
+        border: none;
+        pointer-events: none;
+    }
+    .wa-pdf-preview-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.08) 100%);
+    }
+    .wa-pdf-info {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 4px;
+        padding: 8px 10px;
+        border-top: 1px solid rgba(0,0,0,0.07);
     }
-    .att-audio-dl {
-        font-size: 14px;
-        color: var(--text-secondary);
-        text-decoration: none;
+    .wa-pdf-badge {
+        background: #e53935;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        padding: 2px 5px;
+        border-radius: 3px;
         flex-shrink: 0;
-        padding: 4px 6px;
-        border-radius: 4px;
-        transition: background 0.15s;
     }
-    .att-audio-dl:hover { background: var(--surface); color: var(--text-primary); }
-
-    /* PDF kart görünümü */
-    .att-pdf-card {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        overflow: hidden;
-        background: var(--surface-2);
-        max-width: 280px;
-    }
-    .att-pdf-view {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 10px;
-        text-decoration: none;
-        color: var(--text-secondary);
+    .wa-pdf-name {
         font-size: 12px;
         font-weight: 600;
-        flex: 1;
-        min-width: 0;
-        transition: background 0.15s;
-    }
-    .att-pdf-view:hover { background: var(--surface); color: var(--text-primary); }
-    .att-pdf-icon { font-size: 18px; flex-shrink: 0; }
-    .att-pdf-name {
+        color: var(--text-primary);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        flex: 1;
     }
-    .att-pdf-dl {
-        font-size: 13px;
-        padding: 7px 10px;
+    .wa-pdf-meta {
+        font-size: 10px;
         color: var(--text-secondary);
-        text-decoration: none;
-        border-left: 1px solid var(--border);
+        margin-left: auto;
         flex-shrink: 0;
+    }
+    .wa-pdf-actions {
+        display: flex;
+        border-top: 1px solid rgba(0,0,0,0.07);
+    }
+    .wa-pdf-btn {
+        flex: 1;
+        text-align: center;
+        padding: 9px 6px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        color: #128c7e;
         transition: background 0.15s;
     }
-    .att-pdf-dl:hover { background: var(--surface); color: var(--text-primary); }
+    .wa-pdf-btn:hover { background: rgba(18,140,126,0.07); }
+    .wa-pdf-open { border-right: 1px solid rgba(0,0,0,0.07); }
 
     /* Lightbox (görsel büyütme) */
     .lightbox-overlay {
@@ -728,8 +830,12 @@
                             <span class="bubble-time">{{ msg.created_at.strftime('%d %b %Y · %H:%M') }}</span>
                         </div>
                         <div class="bubble {{ 'bubble--incoming' if is_incoming else 'bubble--outgoing' }}">
-                            {{ msg.content }}
                             {% set msg_atts = attachments_by_msg.get(msg.id, []) %}
+                            {# Sadece medya placeholder metinleri ([Audio eki] vb.) ek varsa gizle #}
+                            {% set is_media_placeholder = msg.content and msg.content.startswith('[') and msg.content.endswith(' eki]') %}
+                            {% if not (is_media_placeholder and msg_atts) %}
+                            <span class="bubble-text">{{ msg.content }}</span>
+                            {% endif %}
                             {% if msg_atts %}
                             <div class="bubble-attachments">
                                 {% for att in msg_atts %}
@@ -744,19 +850,49 @@
                                     </video>
                                 </div>
                                 {% elif att.file_type == 'audio' %}
-                                <div class="att-audio-wrap">
-                                    <audio controls preload="metadata" style="width:100%;max-width:320px;">
-                                        <source src="{{ att.file_path }}" type="{{ att.mime_type or 'audio/mpeg' }}">
-                                    </audio>
-                                    <a class="att-audio-dl" href="{{ att.file_path }}" download="{{ att.original_filename }}" title="İndir">⬇</a>
+                                {# WhatsApp stili ses oynatıcı #}
+                                <div class="att-wa-audio" id="wa-audio-{{ att.id }}">
+                                    <button class="wa-audio-play" onclick="waTogglePlay({{ att.id }})" title="Oynat/Durdur">
+                                        <svg class="wa-play-icon" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                                        <svg class="wa-pause-icon" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                    </button>
+                                    <div class="wa-audio-body">
+                                        <div class="wa-waveform" onclick="waSeek(event, {{ att.id }})">
+                                            <div class="wa-waveform-fill" id="wf-{{ att.id }}"></div>
+                                            {% for i in range(28) %}
+                                            <div class="wa-bar" style="height:{{ [3,5,8,12,16,20,14,10,18,22,15,9,13,19,24,17,11,7,16,21,12,8,15,20,10,14,18,6][i] }}px;"></div>
+                                            {% endfor %}
+                                        </div>
+                                        <span class="wa-audio-time" id="wt-{{ att.id }}">0:00</span>
+                                    </div>
+                                    <a href="{{ att.file_path }}" download="{{ att.original_filename }}" class="wa-audio-dl" title="İndir">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/><line x1="5" y1="21" x2="19" y2="21"/></svg>
+                                    </a>
+                                    <audio id="aud-{{ att.id }}" src="{{ att.file_path }}"
+                                        ontimeupdate="waTimeUpdate({{ att.id }})"
+                                        onended="waEnded({{ att.id }})"
+                                        onloadedmetadata="waMetaLoaded({{ att.id }})"></audio>
                                 </div>
                                 {% elif att.mime_type and 'pdf' in att.mime_type %}
-                                <div class="att-pdf-card">
-                                    <a class="att-pdf-view" href="{{ att.file_path }}" target="_blank" title="{{ att.original_filename }}">
-                                        <span class="att-pdf-icon">📄</span>
-                                        <span class="att-pdf-name">{{ att.original_filename }}</span>
-                                    </a>
-                                    <a class="att-pdf-dl" href="{{ att.file_path }}" download="{{ att.original_filename }}" title="İndir">⬇</a>
+                                {# WhatsApp stili PDF kart #}
+                                <div class="att-wa-pdf">
+                                    <div class="wa-pdf-preview">
+                                        <iframe src="{{ att.file_path }}#toolbar=0&navpanes=0&scrollbar=0"
+                                                class="wa-pdf-iframe" loading="lazy" scrolling="no"
+                                                title="{{ att.original_filename }}"></iframe>
+                                        <div class="wa-pdf-preview-overlay"></div>
+                                    </div>
+                                    <div class="wa-pdf-info">
+                                        <span class="wa-pdf-badge">PDF</span>
+                                        <span class="wa-pdf-name">{{ att.original_filename }}</span>
+                                        {% if att.file_size %}
+                                        <span class="wa-pdf-meta">PDF · {{ (att.file_size / 1024)|round(0)|int }} KB</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="wa-pdf-actions">
+                                        <a href="{{ att.file_path }}" target="_blank" class="wa-pdf-btn wa-pdf-open">Aç</a>
+                                        <a href="{{ att.file_path }}" download="{{ att.original_filename }}" class="wa-pdf-btn wa-pdf-save">Farklı kaydet</a>
+                                    </div>
                                 </div>
                                 {% else %}
                                 <a class="att-doc" href="{{ att.file_path }}" target="_blank" download="{{ att.original_filename }}" title="{{ att.original_filename }}">
@@ -931,6 +1067,71 @@ function showFilePreviews(input, previewId) {
         chip.textContent = icon + ' ' + f.name;
         container.appendChild(chip);
     });
+}
+
+// ── WhatsApp stili ses oynatıcı ──────────────────────────────────────────────
+function waTogglePlay(id) {
+    const aud  = document.getElementById('aud-' + id);
+    const wrap = document.getElementById('wa-audio-' + id);
+    const playIcon  = wrap.querySelector('.wa-play-icon');
+    const pauseIcon = wrap.querySelector('.wa-pause-icon');
+    if (!aud) return;
+    if (aud.paused) {
+        // Diğer tüm oynatıcıları durdur
+        document.querySelectorAll('audio').forEach(a => { if (a !== aud) a.pause(); });
+        document.querySelectorAll('.wa-pause-icon').forEach(i => i.style.display = 'none');
+        document.querySelectorAll('.wa-play-icon').forEach(i => i.style.display = '');
+        aud.play();
+        playIcon.style.display  = 'none';
+        pauseIcon.style.display = '';
+    } else {
+        aud.pause();
+        playIcon.style.display  = '';
+        pauseIcon.style.display = 'none';
+    }
+}
+function waTimeUpdate(id) {
+    const aud  = document.getElementById('aud-' + id);
+    const fill = document.getElementById('wf-' + id);
+    const time = document.getElementById('wt-' + id);
+    if (!aud || !aud.duration) return;
+    const pct = (aud.currentTime / aud.duration) * 100;
+    if (fill) fill.style.width = pct + '%';
+    const bars = document.querySelectorAll('#wa-audio-' + id + ' .wa-bar');
+    const playedCount = Math.floor(bars.length * pct / 100);
+    bars.forEach((b, i) => { b.classList.toggle('played', i < playedCount); });
+    if (time) time.textContent = waFmtTime(aud.currentTime);
+}
+function waEnded(id) {
+    const wrap = document.getElementById('wa-audio-' + id);
+    const fill = document.getElementById('wf-' + id);
+    if (fill) fill.style.width = '0%';
+    if (wrap) {
+        wrap.querySelectorAll('.wa-bar').forEach(b => b.classList.remove('played'));
+        wrap.querySelector('.wa-play-icon').style.display  = '';
+        wrap.querySelector('.wa-pause-icon').style.display = 'none';
+    }
+    const aud = document.getElementById('aud-' + id);
+    if (aud) { aud.currentTime = 0; }
+}
+function waMetaLoaded(id) {
+    const aud  = document.getElementById('aud-' + id);
+    const time = document.getElementById('wt-' + id);
+    if (aud && time && aud.duration && isFinite(aud.duration))
+        time.textContent = waFmtTime(aud.duration);
+}
+function waSeek(e, id) {
+    const aud  = document.getElementById('aud-' + id);
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!aud || !aud.duration) return;
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    aud.currentTime = pct * aud.duration;
+    waTimeUpdate(id);
+}
+function waFmtTime(sec) {
+    if (!sec || !isFinite(sec)) return '0:00';
+    const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+    return m + ':' + String(s).padStart(2, '0');
 }
 
 // Lightbox

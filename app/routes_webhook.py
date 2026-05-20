@@ -168,10 +168,22 @@ def _download_wa_media(settings, message_data: dict) -> Optional[tuple]:
         mime_type = result.get("mimetype") or "application/octet-stream"
         if not b64_data:
             return None
-        data     = base64.b64decode(b64_data)
-        ext      = mimetypes.guess_extension(mime_type) or ".bin"
+        data = base64.b64decode(b64_data)
+
+        # MIME parametrelerini sil: "audio/ogg; codecs=opus" → "audio/ogg"
+        clean_mime = mime_type.split(";")[0].strip()
+
+        # Yaygın MIME → uzantı eşlemesi (mimetypes modülü eksik kalabilir)
+        _MIME_EXT = {
+            "audio/ogg": ".ogg", "audio/mpeg": ".mp3", "audio/mp4": ".m4a",
+            "audio/wav": ".wav", "audio/webm": ".webm", "audio/aac": ".aac",
+            "audio/opus": ".opus", "video/mp4": ".mp4", "video/webm": ".webm",
+            "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp",
+            "application/pdf": ".pdf",
+        }
+        ext = _MIME_EXT.get(clean_mime) or mimetypes.guess_extension(clean_mime) or ".bin"
         filename = f"wa_media{ext}"
-        return data, mime_type, filename
+        return data, clean_mime, filename
     except Exception as exc:
         logger.error("Evolution medya indirme hatası: %s", exc)
         return None
