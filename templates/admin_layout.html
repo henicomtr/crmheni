@@ -683,14 +683,47 @@
     <script>
         (function () {
             const badge = document.getElementById('unreadRequestsBadge');
+            // Cache-bust: sunucu her başladığında notify.wav yeniden üretilir;
+            // ?v= ile tarayıcının eski sürümü kullanması engellenir.
+            const audio = new Audio('/static/sounds/notify.wav?v=' + (Math.floor(Date.now() / 3600000)));
+            audio.preload = 'auto';
             if (!badge) return;
+
+            let previousCount = null;
+            let audioReady = false;
+
+            // İlk kullanıcı etkileşiminde <audio> elementini unlock et:
+            // play() → hemen pause() → tarayıcı bu elementi "izinli" olarak işaretler,
+            // sonraki play() çağrıları (fetch callback dahil) engellenmez.
+            function unlockAudio() {
+                if (audioReady) return;
+                audio.play().then(function () {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    audioReady = true;
+                }).catch(function () {});
+            }
+            document.addEventListener('click',      unlockAudio);
+            document.addEventListener('keydown',    unlockAudio);
+            document.addEventListener('touchstart', unlockAudio);
+
+            function playNotification() {
+                if (!audioReady) return;
+                audio.currentTime = 0;
+                audio.play().catch(function () {});
+            }
 
             function refreshBadge() {
                 fetch('/esk/requests/unread-count')
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
-                        if (data.count > 0) {
-                            badge.textContent = data.count > 99 ? '99+' : data.count;
+                        const count = data.count;
+                        if (previousCount !== null && count > previousCount) {
+                            playNotification();
+                        }
+                        previousCount = count;
+                        if (count > 0) {
+                            badge.textContent = count > 99 ? '99+' : count;
                             badge.style.display = 'inline-block';
                         } else {
                             badge.style.display = 'none';
@@ -700,8 +733,8 @@
             }
 
             refreshBadge();
-            // Her 60 saniyede bir yenile
-            setInterval(refreshBadge, 60000);
+            // Her 30 saniyede bir yenile
+            setInterval(refreshBadge, 30000);
         })();
     </script>
 
