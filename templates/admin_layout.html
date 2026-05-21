@@ -728,6 +728,14 @@
  
         var audio = new Audio('/static/sounds/notify.wav');
         audio.preload = 'auto';
+
+        // Mobil tarayıcılarda audio.play() kullanıcı etkileşimi olmadan bloklanır.
+        // İlk dokunuş/tıklamada sessizce çalıştırıp durdurmak kilidi kaldırır.
+        function _unlockAudio() {
+            audio.play().then(function () { audio.pause(); audio.currentTime = 0; }).catch(function () {});
+        }
+        document.addEventListener('click',      _unlockAudio, { once: true, passive: true });
+        document.addEventListener('touchstart', _unlockAudio, { once: true, passive: true });
  
         // ── Ses tercihi ───────────────────────────────────────────────
         function getSoundEnabled() {
