@@ -221,6 +221,26 @@ def _migrate_request_messages_v2():
 
 _migrate_request_messages_v2()
 
+# ── RequestMessage: external_id kolonu (import deduplication) ───────
+def _migrate_request_messages_v3():
+    """
+    external_id kolonunu ekler — geçmiş email/WhatsApp import sırasında
+    aynı mesajın iki kez kaydedilmesini önler.
+    """
+    insp = inspect(engine)
+    if "request_messages" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("request_messages")}
+    if "external_id" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE request_messages ADD COLUMN external_id VARCHAR(255)"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_request_messages_v3()
+
 # ── RequestAttachment tablosu ────────────────────────────────────────
 def _create_request_attachments_table():
     """request_attachments tablosunu oluşturur (yoksa). Base.metadata.create_all ile oluşturulur."""

@@ -270,7 +270,61 @@
 <div class="page-header">
     <h1 class="page-title">Talep Yönetimi</h1>
     <span class="badge-dark">{{ requests|length }} talep</span>
+    <div style="display:flex;gap:8px;margin-left:auto;align-items:center;">
+        <button onclick="runImport('email')" id="btn-import-email"
+            style="padding:7px 14px;font-size:12px;font-weight:700;border:1px solid #3b82f6;border-radius:6px;background:#eff6ff;color:#1d4ed8;cursor:pointer;">
+            📧 Email Geçmişini Aktar
+        </button>
+        <button onclick="runImport('whatsapp')" id="btn-import-wa"
+            style="padding:7px 14px;font-size:12px;font-weight:700;border:1px solid #22c55e;border-radius:6px;background:#f0fdf4;color:#15803d;cursor:pointer;">
+            💬 WhatsApp Geçmişini Aktar
+        </button>
+    </div>
 </div>
+<div id="import-result" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:12px;"></div>
+
+<script>
+function runImport(channel) {
+    const btnId  = channel === 'email' ? 'btn-import-email' : 'btn-import-wa';
+    const btn    = document.getElementById(btnId);
+    const result = document.getElementById('import-result');
+    const url    = channel === 'email' ? '/esk/requests/import-emails' : '/esk/requests/import-whatsapp';
+    const label  = channel === 'email' ? 'Email' : 'WhatsApp';
+
+    btn.disabled    = true;
+    btn.textContent = `⏳ ${label} aktarılıyor…`;
+    result.style.display = 'none';
+
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            result.style.display = 'block';
+            if (data.ok) {
+                result.style.background = '#f0fdf4';
+                result.style.border     = '1px solid #bbf7d0';
+                result.style.color      = '#15803d';
+                result.textContent      = `✅ ${label} aktarımı tamamlandı: ${data.message}`;
+                setTimeout(() => location.reload(), 1800);
+            } else {
+                result.style.background = '#fef2f2';
+                result.style.border     = '1px solid #fecaca';
+                result.style.color      = '#b91c1c';
+                result.textContent      = `❌ Hata: ${data.error}`;
+                btn.disabled    = false;
+                btn.textContent = channel === 'email' ? '📧 Email Geçmişini Aktar' : '💬 WhatsApp Geçmişini Aktar';
+            }
+        })
+        .catch(err => {
+            result.style.display    = 'block';
+            result.style.background = '#fef2f2';
+            result.style.border     = '1px solid #fecaca';
+            result.style.color      = '#b91c1c';
+            result.textContent      = `❌ Bağlantı hatası: ${err}`;
+            btn.disabled    = false;
+            btn.textContent = channel === 'email' ? '📧 Email Geçmişini Aktar' : '💬 WhatsApp Geçmişini Aktar';
+        });
+}
+</script>
 
 {% set total_revenue = requests | sum(attribute='total_price') %}
 <div class="stats-row">

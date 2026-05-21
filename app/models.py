@@ -182,15 +182,17 @@ class RequestMessage(Base):
     """Talep konuşma geçmişi — mail, whatsapp veya dahili not."""
     __tablename__ = "request_messages"
 
-    id         = Column(Integer, primary_key=True, index=True)
-    request_id = Column(Integer, ForeignKey("quote_requests.id", ondelete="CASCADE"), nullable=False)
+    id          = Column(Integer, primary_key=True, index=True)
+    request_id  = Column(Integer, ForeignKey("quote_requests.id", ondelete="CASCADE"), nullable=False)
     # Kanal: email | whatsapp | note
-    channel    = Column(String(20), nullable=False)
+    channel     = Column(String(20), nullable=False)
     # Yön: outgoing (admin→müşteri) | incoming (müşteri→admin)
-    direction  = Column(String(20), nullable=False, default="outgoing")
-    content    = Column(Text, nullable=False)
-    admin_name = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    direction   = Column(String(20), nullable=False, default="outgoing")
+    content     = Column(Text, nullable=False)
+    admin_name  = Column(String, nullable=True)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+    # Geçmiş import için dış kaynak ID (IMAP Message-ID veya WA message key); duplicate önler
+    external_id = Column(String(255), nullable=True, index=True)
 
     request     = relationship("QuoteRequest", back_populates="messages")
     attachments = relationship(

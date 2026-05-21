@@ -96,6 +96,48 @@ def _has_wa_media(message_data: dict) -> Optional[str]:
     return None
 
 
+def _create_request_from_wa(db: Session, phone: str, name: Optional[str]) -> QuoteRequest:
+    """WhatsApp'tan gelen bilinmeyen numaradan otomatik QuoteRequest oluşturur."""
+    import json as _json
+    req = QuoteRequest(
+        company_name=name or phone,
+        contact_person=name or phone,
+        email="",
+        phone=phone,
+        country="",
+        total_price=0.0,
+        currency="USD",
+        cart_data=_json.dumps([]),
+        is_read=False,
+    )
+    db.add(req)
+    db.commit()
+    db.refresh(req)
+    logger.info("WhatsApp'tan yeni talep oluşturuldu → Talep #%d, telefon=%s", req.id, phone)
+    return req
+
+
+def _create_request_from_email(db: Session, from_email: str, from_name: str) -> QuoteRequest:
+    """Email'den gelen bilinmeyen göndericiden otomatik QuoteRequest oluşturur."""
+    import json as _json
+    req = QuoteRequest(
+        company_name=from_name or from_email,
+        contact_person=from_name or from_email,
+        email=from_email,
+        phone="",
+        country="",
+        total_price=0.0,
+        currency="USD",
+        cart_data=_json.dumps([]),
+        is_read=False,
+    )
+    db.add(req)
+    db.commit()
+    db.refresh(req)
+    logger.info("Email'den yeni talep oluşturuldu → Talep #%d, email=%s", req.id, from_email)
+    return req
+
+
 def _find_request_by_phone(db: Session, phone: str) -> Optional[QuoteRequest]:
     """Telefon numarasına göre en son QuoteRequest'i bulur."""
     normalized_incoming = _normalize_phone(phone)
@@ -294,11 +336,11 @@ async def evolution_webhook(request: Request, db: Session = Depends(get_db)):
             logger.info("İçerik yok, mesaj atlandı (phone=%s)", sender_phone)
             continue
 
-        # Telefon numarasıyla talep bul
+        # Telefon numarasıyla talep bul; yoksa otomatik yeni talep oluştur
         quote_req = _find_request_by_phone(db, sender_phone)
         if not quote_req:
-            logger.warning("Eşleşen talep bulunamadı, telefon: %s", sender_phone)
-            continue
+            logger.info("Eşleşen talep yok → yeni talep oluşturuluyor, telefon: %s", sender_phone)
+            quote_req = _create_request_from_wa(db, sender_phone, sender_name)
 
         saved_msg = _save_incoming_message(
             db=db,
@@ -502,9 +544,14 @@ async def _poll_imap_once():
                             .first()
                         )
 
-                    if not quote_req:
-                        # Eşleşen talep yok — okunmamış bırak, spam değil
-                        logger.info("IMAP: eşleşen talep bulunamadı, gönderen: %s", from_email)
+                    if not quote_req and from_email:
+                        # Eşleşen talep yok → otomatik yeni talep oluştur
+                        logger.info("IMAP: eşleşen talep yok → yeni talep oluşturuluyor, gönderen: %s", from_email)
+                        # Gönderen adını "Adı Soyadı <mail@ornek.com>" formatından çıkar
+                        _name_match = re.match(r'^"?([^"<]+)"?\s*<', from_field)
+                        _from_name  = _name_match.group(1).strip() if _name_match else from_email
+                        quote_req   = _create_request_from_email(db, from_email, _from_name)
+                    elif not quote_req:
                         continue
 
                     saved_msg = _save_incoming_message(
