@@ -797,7 +797,19 @@
  
         updateBtn(getSoundEnabled());
         refreshBadge();
-        // badge polling sw.js üzerinden yönetilmektedir
+        // Sayfa içi badge güncellemesi için polling (SW mesajı anlık ses için yeterli,
+        // ama sekme arka planda kalırken badge güncel kalması için polling de gereklidir)
+        setInterval(refreshBadge, 30000);
+
+        // SW'den push-received mesajı geldiğinde anında ses çal ve badge güncelle
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'push-received') {
+                    playNotification();
+                    refreshBadge();
+                }
+            });
+        }
 
         // ── Service Worker + Push Notification ───────────────────────
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;

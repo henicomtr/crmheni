@@ -186,8 +186,8 @@ async def send_push_notification(title: str, body: str, url: str = "/esk/request
             except Exception:
                 pass
             logger.warning(f"[push] Gönderilemedi HTTP {status}: {sub.endpoint[:60]}… | {detail}")
-            # 404/410 → abonelik geçersiz, temizlenecek
-            if status in (404, 410):
+            # 404/410 → abonelik geçersiz; 403 → VAPID uyuşmazlığı — ikisi de temizlenecek
+            if status in (403, 404, 410):
                 dead.append(sub.endpoint)
         except Exception as e:
             logger.warning(f"[push] Beklenmeyen hata: {e}")

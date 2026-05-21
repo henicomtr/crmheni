@@ -18,16 +18,27 @@ self.addEventListener('push', function (event) {
         navigator.setAppBadge(count).catch(function () {});
     }
 
+    // Açık admin sekmelerine mesaj gönder — sayfa içi ses ve badge güncellemesi için
+    var notifyClients = self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then(function (list) {
+            list.forEach(function (client) {
+                client.postMessage({ type: 'push-received' });
+            });
+        });
+
     event.waitUntil(
-        self.registration.showNotification(title, {
-            body:      body,
-            icon:      icon,
-            badge:     badge,   // Android bildirim çubuğundaki küçük ikon
-            tag:       'heni-request',
-            renotify:  true,
-            vibrate:   [200, 100, 200],
-            data:      { url: url },
-        })
+        Promise.all([
+            self.registration.showNotification(title, {
+                body:      body,
+                icon:      icon,
+                badge:     badge,   // Android bildirim çubuğundaki küçük ikon
+                tag:       'heni-request',
+                renotify:  true,
+                vibrate:   [200, 100, 200],
+                data:      { url: url },
+            }),
+            notifyClients,
+        ])
     );
 });
 
