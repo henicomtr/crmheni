@@ -1698,6 +1698,339 @@ def requests_page(
     })
 
 
+@router.get("/esk/requests/import-emails")
+def import_historical_emails(
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """
+    IMAP kutusundaki TÜM mailleri (okunmuş dahil) tarar.
+    Her mail için talep bulur veya oluşturur; external_id ile çift kayıt önlenir.
+    """
+    import imaplib
+    import email as email_lib
+    import email.header
+    import re as _re
+    import json as _json
+
+    if not admin:
+        return JSONResponse({"ok": False, "error": "Yetkisiz"}, status_code=403)
+
+    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+    if not settings:
+        return JSONResponse({"ok": False, "error": "Ayarlar bulunamadı"})
+
+    imap_host = settings.imap_host
+    imap_port = settings.imap_port or 993
+    imap_user = settings.imap_user or settings.smtp_user
+    imap_pass = settings.imap_password or settings.smtp_password
+
+    if not all([imap_host, imap_user, imap_pass]):
+        return JSONResponse({"ok": False, "error": "IMAP ayarları eksik. Admin → Ayarlar → Entegrasyon bölümünden girin."})
+
+    from .routes_webhook import (
+        _decode_header_value, _extract_request_id_from_subject,
+        _strip_quoted_text, _get_email_body, _save_attachment_file,
+        _get_file_category, _create_request_from_email,
+    )
+
+    try:
+        mail = imaplib.IMAP4_SSL(imap_host, imap_port)
+        mail.login(imap_user, imap_pass)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": f"IMAP bağlantı hatası: {exc}"})
+
+    imported = 0
+    skipped  = 0
+    errors   = 0
+
+    try:
+        mail.select("INBOX")
+        _, msg_ids = mail.search(None, "ALL")
+        if not msg_ids or not msg_ids[0]:
+            return JSONResponse({"ok": True, "imported": 0, "skipped": 0, "message": "Gelen kutusu boş."})
+
+        for msg_id in msg_ids[0].split():
+            try:
+                _, msg_data = mail.fetch(msg_id, "(RFC822)")
+                raw_email = msg_data[0][1]
+                parsed    = email_lib.message_from_bytes(raw_email)
+
+                message_id_header = (parsed.get("Message-ID") or "").strip()
+                if message_id_header:
+                    existing = db.query(RequestMessage).filter(
+                        RequestMessage.external_id == message_id_header
+                    ).first()
+                    if existing:
+                        skipped += 1
+                        continue
+
+                subject    = _decode_header_value(parsed.get("Subject", ""))
+                from_field = _decode_header_value(parsed.get("From", ""))
+                body       = _get_email_body(parsed)
+
+                if not body:
+                    skipped += 1
+                    continue
+
+                from_email_match = _re.search(r"[\w.\-+]+@[\w.\-]+", from_field)
+                from_email = from_email_match.group(0).lower() if from_email_match else ""
+
+                if imap_user and from_email == imap_user.lower():
+                    skipped += 1
+                    continue
+
+                date_header = parsed.get("Date", "")
+                msg_date    = None
+                if date_header:
+                    from email.utils import parsedate_to_datetime as _ptd
+                    try:
+                        msg_date = _ptd(date_header).replace(tzinfo=None)
+                    except Exception:
+                        pass
+                if not msg_date:
+                    msg_date = datetime.utcnow()
+
+                req_id_from_subject = _extract_request_id_from_subject(subject)
+                quote_req = None
+                if req_id_from_subject:
+                    quote_req = db.query(QuoteRequest).filter(QuoteRequest.id == req_id_from_subject).first()
+                if not quote_req and from_email:
+                    quote_req = (
+                        db.query(QuoteRequest)
+                        .filter(QuoteRequest.email.ilike(from_email))
+                        .order_by(QuoteRequest.created_at.desc())
+                        .first()
+                    )
+                if not quote_req and from_email:
+                    _nm = _re.match(r'^"?([^"<]+)"?\s*<', from_field)
+                    from_name = _nm.group(1).strip() if _nm else from_email
+                    quote_req = _create_request_from_email(db, from_email, from_name)
+
+                if not quote_req:
+                    skipped += 1
+                    continue
+
+                msg_obj = RequestMessage(
+                    request_id  = quote_req.id,
+                    channel     = "email",
+                    direction   = "incoming",
+                    content     = f"Konu: {subject}\n\n{body}",
+                    admin_name  = from_field or from_email,
+                    created_at  = msg_date,
+                    external_id = message_id_header or None,
+                )
+                db.add(msg_obj)
+                db.flush()
+
+                if parsed.is_multipart():
+                    import mimetypes as _mt
+                    for part in parsed.walk():
+                        if part.get_content_maintype() == "multipart":
+                            continue
+                        att_filename = part.get_filename()
+                        if not att_filename:
+                            continue
+                        content_type_str = part.get_content_type() or ""
+                        if content_type_str in ("text/plain", "text/html"):
+                            continue
+                        att_filename = _decode_header_value(att_filename)
+                        att_data = part.get_payload(decode=True)
+                        if not att_data:
+                            continue
+                        att_mime = content_type_str or _mt.guess_type(att_filename)[0] or "application/octet-stream"
+                        url_path = _save_attachment_file(quote_req.id, att_data, att_filename, att_mime)
+                        if url_path:
+                            db.add(RequestAttachment(
+                                request_id        = quote_req.id,
+                                message_id        = msg_obj.id,
+                                file_path         = url_path,
+                                original_filename = att_filename,
+                                file_type         = _get_file_category(att_mime),
+                                mime_type         = att_mime,
+                                file_size         = len(att_data),
+                            ))
+
+                db.commit()
+                imported += 1
+
+            except Exception as exc:
+                errors += 1
+                db.rollback()
+
+    finally:
+        try:
+            mail.logout()
+        except Exception:
+            pass
+
+    return JSONResponse({
+        "ok": True,
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"{imported} mail aktarıldı, {skipped} atlandı, {errors} hata.",
+    })
+
+
+@router.get("/esk/requests/import-whatsapp")
+def import_historical_whatsapp(
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """
+    Evolution API'den tüm geçmiş WhatsApp konuşmalarını çeker.
+    Her numara için mevcut talebi bulur veya yeni oluşturur;
+    external_id ile çift kayıt önlenir.
+    """
+    import urllib.request as _req
+    import urllib.error
+    import json as _json
+
+    if not admin:
+        return JSONResponse({"ok": False, "error": "Yetkisiz"}, status_code=403)
+
+    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
+    if not settings:
+        return JSONResponse({"ok": False, "error": "Ayarlar bulunamadı"})
+
+    evo_url  = getattr(settings, "evolution_api_url", None)
+    evo_key  = getattr(settings, "evolution_api_key", None)
+    evo_inst = getattr(settings, "evolution_instance", None)
+
+    if not all([evo_url, evo_key, evo_inst]):
+        return JSONResponse({"ok": False, "error": "Evolution API ayarları eksik. Admin → Ayarlar → Entegrasyon bölümünden girin."})
+
+    from .routes_webhook import (
+        _find_request_by_phone, _create_request_from_wa,
+        _normalize_phone, _decode_if_base64, _extract_wa_text,
+        _has_wa_media, _download_wa_media, _save_attachment_file, _get_file_category,
+    )
+
+    base     = evo_url.rstrip("/")
+    headers  = {"apikey": evo_key, "Content-Type": "application/json"}
+
+    def _evo_get(endpoint: str):
+        http_req = _req.Request(f"{base}{endpoint}", headers=headers)
+        with _req.urlopen(http_req, timeout=30) as r:
+            return _json.loads(r.read())
+
+    def _evo_post(endpoint: str, body: dict):
+        payload  = _json.dumps(body).encode()
+        http_req = _req.Request(f"{base}{endpoint}", data=payload, headers=headers, method="POST")
+        with _req.urlopen(http_req, timeout=30) as r:
+            return _json.loads(r.read())
+
+    try:
+        chats_raw = _evo_get(f"/chat/findChats/{evo_inst}")
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": f"Chat listesi alınamadı: {exc}"})
+
+    chats    = chats_raw if isinstance(chats_raw, list) else chats_raw.get("chats", [])
+    imported = 0
+    skipped  = 0
+    errors   = 0
+
+    for chat in chats:
+        remote_jid = chat.get("id", "") or chat.get("remoteJid", "")
+        if "@g.us" in remote_jid or "broadcast" in remote_jid:
+            continue
+
+        sender_phone = remote_jid.split("@")[0]
+        chat_name    = chat.get("name") or chat.get("pushName") or None
+
+        quote_req = _find_request_by_phone(db, sender_phone)
+        if not quote_req:
+            quote_req = _create_request_from_wa(db, sender_phone, chat_name)
+
+        try:
+            msgs_raw = _evo_post(f"/chat/findMessages/{evo_inst}", {
+                "where": {"key": {"remoteJid": remote_jid}},
+                "limit": 1000,
+            })
+        except Exception as exc:
+            errors += 1
+            continue
+
+        messages = msgs_raw if isinstance(msgs_raw, list) else msgs_raw.get("messages", {})
+        if isinstance(messages, dict):
+            messages = messages.get("records", [])
+
+        for msg_data in messages:
+            try:
+                key        = msg_data.get("key", {})
+                msg_key_id = key.get("id", "")
+                from_me    = key.get("fromMe", False)
+
+                if not msg_key_id:
+                    skipped += 1
+                    continue
+
+                ext_id = f"wa:{msg_key_id}"
+                if db.query(RequestMessage).filter(RequestMessage.external_id == ext_id).first():
+                    skipped += 1
+                    continue
+
+                text_content = _extract_wa_text(msg_data)
+                media_key    = _has_wa_media(msg_data)
+
+                if not text_content and not media_key:
+                    skipped += 1
+                    continue
+
+                msg_ts = msg_data.get("messageTimestamp")
+                try:
+                    msg_date = datetime.utcfromtimestamp(int(msg_ts)) if msg_ts else datetime.utcnow()
+                except Exception:
+                    msg_date = datetime.utcnow()
+
+                direction   = "outgoing" if from_me else "incoming"
+                sender_name = msg_data.get("pushName") or (sender_phone if not from_me else "Admin")
+
+                msg_obj = RequestMessage(
+                    request_id  = quote_req.id,
+                    channel     = "whatsapp",
+                    direction   = direction,
+                    content     = text_content or "(medya eki)",
+                    admin_name  = sender_name,
+                    created_at  = msg_date,
+                    external_id = ext_id,
+                )
+                db.add(msg_obj)
+                db.flush()
+
+                if media_key and not from_me:
+                    media_result = _download_wa_media(settings, msg_data)
+                    if media_result:
+                        media_data, mime_type, filename = media_result
+                        url_path = _save_attachment_file(quote_req.id, media_data, filename, mime_type)
+                        if url_path:
+                            db.add(RequestAttachment(
+                                request_id        = quote_req.id,
+                                message_id        = msg_obj.id,
+                                file_path         = url_path,
+                                original_filename = filename,
+                                file_type         = _get_file_category(mime_type),
+                                mime_type         = mime_type,
+                                file_size         = len(media_data),
+                            ))
+
+                db.commit()
+                imported += 1
+
+            except Exception as exc:
+                errors += 1
+                db.rollback()
+
+    return JSONResponse({
+        "ok": True,
+        "imported": imported,
+        "skipped": skipped,
+        "errors": errors,
+        "message": f"{imported} mesaj aktarıldı, {skipped} atlandı, {errors} hata.",
+    })
+
+
 @router.get("/esk/requests/{req_id}", response_class=HTMLResponse)
 def request_detail(
     req_id: int,
@@ -1918,361 +2251,6 @@ def delete_request(
         db.delete(quote)
         db.commit()
     return RedirectResponse("/esk/requests", status_code=302)
-
-
-@router.get("/esk/requests/import-emails")
-def import_historical_emails(
-    db: Session = Depends(get_db),
-    admin = Depends(admin_required)
-):
-    """
-    IMAP kutusundaki TÜM mailleri (okunmuş dahil) tarar.
-    Her mail için talep bulur veya oluşturur; external_id ile çift kayıt önlenir.
-    """
-    import imaplib
-    import email as email_lib
-    import email.header
-    import re as _re
-    import json as _json
-
-    if not admin:
-        return JSONResponse({"ok": False, "error": "Yetkisiz"}, status_code=403)
-
-    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
-    if not settings:
-        return JSONResponse({"ok": False, "error": "Ayarlar bulunamadı"})
-
-    imap_host = settings.imap_host
-    imap_port = settings.imap_port or 993
-    imap_user = settings.imap_user or settings.smtp_user
-    imap_pass = settings.imap_password or settings.smtp_password
-
-    if not all([imap_host, imap_user, imap_pass]):
-        return JSONResponse({"ok": False, "error": "IMAP ayarları eksik. Admin → Ayarlar → Entegrasyon bölümünden girin."})
-
-    # Webhook fonksiyonlarını içe aktar
-    from .routes_webhook import (
-        _decode_header_value, _extract_request_id_from_subject,
-        _strip_quoted_text, _get_email_body, _save_attachment_file,
-        _get_file_category, _create_request_from_email,
-    )
-
-    try:
-        mail = imaplib.IMAP4_SSL(imap_host, imap_port)
-        mail.login(imap_user, imap_pass)
-    except Exception as exc:
-        return JSONResponse({"ok": False, "error": f"IMAP bağlantı hatası: {exc}"})
-
-    imported = 0
-    skipped  = 0
-    errors   = 0
-
-    try:
-        mail.select("INBOX")
-        # Tüm mailleri çek (UNSEEN + SEEN)
-        _, msg_ids = mail.search(None, "ALL")
-        if not msg_ids or not msg_ids[0]:
-            return JSONResponse({"ok": True, "imported": 0, "skipped": 0, "message": "Gelen kutusu boş."})
-
-        for msg_id in msg_ids[0].split():
-            try:
-                _, msg_data = mail.fetch(msg_id, "(RFC822)")
-                raw_email = msg_data[0][1]
-                parsed    = email_lib.message_from_bytes(raw_email)
-
-                # Dış mesaj kimliği (duplicate önleme anahtarı)
-                message_id_header = (parsed.get("Message-ID") or "").strip()
-                if message_id_header:
-                    existing = db.query(RequestMessage).filter(
-                        RequestMessage.external_id == message_id_header
-                    ).first()
-                    if existing:
-                        skipped += 1
-                        continue
-
-                subject    = _decode_header_value(parsed.get("Subject", ""))
-                from_field = _decode_header_value(parsed.get("From", ""))
-                body       = _get_email_body(parsed)
-
-                if not body:
-                    skipped += 1
-                    continue
-
-                from_email_match = _re.search(r"[\w.\-+]+@[\w.\-]+", from_field)
-                from_email = from_email_match.group(0).lower() if from_email_match else ""
-
-                # Kendi sunucumuzdan gelen mailleri atla
-                if imap_user and from_email == imap_user.lower():
-                    skipped += 1
-                    continue
-
-                # Tarih başlığını parse et
-                date_header = parsed.get("Date", "")
-                msg_date    = None
-                if date_header:
-                    from email.utils import parsedate_to_datetime as _ptd
-                    try:
-                        msg_date = _ptd(date_header).replace(tzinfo=None)
-                    except Exception:
-                        pass
-                if not msg_date:
-                    msg_date = datetime.utcnow()
-
-                # Talep bul: önce konu ID'si, sonra email eşleşmesi
-                req_id_from_subject = _extract_request_id_from_subject(subject)
-                quote_req = None
-                if req_id_from_subject:
-                    quote_req = db.query(QuoteRequest).filter(QuoteRequest.id == req_id_from_subject).first()
-                if not quote_req and from_email:
-                    quote_req = (
-                        db.query(QuoteRequest)
-                        .filter(QuoteRequest.email.ilike(from_email))
-                        .order_by(QuoteRequest.created_at.desc())
-                        .first()
-                    )
-                if not quote_req and from_email:
-                    # Gönderen adını "Ad Soyad <mail@...>" formatından çıkar
-                    _nm = _re.match(r'^"?([^"<]+)"?\s*<', from_field)
-                    from_name = _nm.group(1).strip() if _nm else from_email
-                    quote_req = _create_request_from_email(db, from_email, from_name)
-
-                if not quote_req:
-                    skipped += 1
-                    continue
-
-                # Mesajı kaydet
-                msg_obj = RequestMessage(
-                    request_id  = quote_req.id,
-                    channel     = "email",
-                    direction   = "incoming",
-                    content     = f"Konu: {subject}\n\n{body}",
-                    admin_name  = from_field or from_email,
-                    created_at  = msg_date,
-                    external_id = message_id_header or None,
-                )
-                db.add(msg_obj)
-                db.flush()
-
-                # Ekleri kaydet
-                if parsed.is_multipart():
-                    import mimetypes as _mt
-                    for part in parsed.walk():
-                        if part.get_content_maintype() == "multipart":
-                            continue
-                        att_filename = part.get_filename()
-                        if not att_filename:
-                            continue
-                        content_type_str = part.get_content_type() or ""
-                        if content_type_str in ("text/plain", "text/html"):
-                            continue
-                        att_filename = _decode_header_value(att_filename)
-                        att_data = part.get_payload(decode=True)
-                        if not att_data:
-                            continue
-                        att_mime = content_type_str or _mt.guess_type(att_filename)[0] or "application/octet-stream"
-                        url_path = _save_attachment_file(quote_req.id, att_data, att_filename, att_mime)
-                        if url_path:
-                            db.add(RequestAttachment(
-                                request_id        = quote_req.id,
-                                message_id        = msg_obj.id,
-                                file_path         = url_path,
-                                original_filename = att_filename,
-                                file_type         = _get_file_category(att_mime),
-                                mime_type         = att_mime,
-                                file_size         = len(att_data),
-                            ))
-
-                db.commit()
-                imported += 1
-
-            except Exception as exc:
-                errors += 1
-                db.rollback()
-
-    finally:
-        try:
-            mail.logout()
-        except Exception:
-            pass
-
-    return JSONResponse({
-        "ok": True,
-        "imported": imported,
-        "skipped": skipped,
-        "errors": errors,
-        "message": f"{imported} mail aktarıldı, {skipped} atlandı, {errors} hata.",
-    })
-
-
-@router.get("/esk/requests/import-whatsapp")
-def import_historical_whatsapp(
-    db: Session = Depends(get_db),
-    admin = Depends(admin_required)
-):
-    """
-    Evolution API'den tüm geçmiş WhatsApp konuşmalarını çeker.
-    Her numara için mevcut talebi bulur veya yeni oluşturur;
-    external_id ile çift kayıt önlenir.
-    """
-    import urllib.request as _req
-    import urllib.error
-    import json as _json
-
-    if not admin:
-        return JSONResponse({"ok": False, "error": "Yetkisiz"}, status_code=403)
-
-    settings = db.query(SiteSettings).filter(SiteSettings.id == 1).first()
-    if not settings:
-        return JSONResponse({"ok": False, "error": "Ayarlar bulunamadı"})
-
-    evo_url  = getattr(settings, "evolution_api_url", None)
-    evo_key  = getattr(settings, "evolution_api_key", None)
-    evo_inst = getattr(settings, "evolution_instance", None)
-
-    if not all([evo_url, evo_key, evo_inst]):
-        return JSONResponse({"ok": False, "error": "Evolution API ayarları eksik. Admin → Ayarlar → Entegrasyon bölümünden girin."})
-
-    from .routes_webhook import (
-        _find_request_by_phone, _create_request_from_wa,
-        _normalize_phone, _decode_if_base64, _extract_wa_text,
-        _has_wa_media, _download_wa_media, _save_attachment_file, _get_file_category,
-    )
-
-    base = evo_url.rstrip("/")
-    headers = {"apikey": evo_key, "Content-Type": "application/json"}
-
-    def _evo_get(endpoint: str):
-        """Evolution API'ye GET isteği gönderir, JSON döner."""
-        http_req = _req.Request(f"{base}{endpoint}", headers=headers)
-        with _req.urlopen(http_req, timeout=30) as r:
-            return _json.loads(r.read())
-
-    def _evo_post(endpoint: str, body: dict):
-        """Evolution API'ye POST isteği gönderir, JSON döner."""
-        payload  = _json.dumps(body).encode()
-        http_req = _req.Request(f"{base}{endpoint}", data=payload, headers=headers, method="POST")
-        with _req.urlopen(http_req, timeout=30) as r:
-            return _json.loads(r.read())
-
-    # 1. Tüm chatleri listele
-    try:
-        chats_raw = _evo_get(f"/chat/findChats/{evo_inst}")
-    except Exception as exc:
-        return JSONResponse({"ok": False, "error": f"Chat listesi alınamadı: {exc}"})
-
-    chats = chats_raw if isinstance(chats_raw, list) else chats_raw.get("chats", [])
-
-    imported = 0
-    skipped  = 0
-    errors   = 0
-
-    for chat in chats:
-        remote_jid = chat.get("id", "") or chat.get("remoteJid", "")
-        # Grup konuşmalarını ve broadcast'i atla
-        if "@g.us" in remote_jid or "broadcast" in remote_jid:
-            continue
-
-        sender_phone = remote_jid.split("@")[0]
-        chat_name    = chat.get("name") or chat.get("pushName") or None
-
-        # Talep bul veya oluştur
-        quote_req = _find_request_by_phone(db, sender_phone)
-        if not quote_req:
-            quote_req = _create_request_from_wa(db, sender_phone, chat_name)
-
-        # 2. Bu chat'in mesajlarını çek
-        try:
-            msgs_raw = _evo_post(f"/chat/findMessages/{evo_inst}", {
-                "where": {"key": {"remoteJid": remote_jid}},
-                "limit": 1000,
-            })
-        except Exception as exc:
-            errors += 1
-            continue
-
-        messages = msgs_raw if isinstance(msgs_raw, list) else msgs_raw.get("messages", {})
-        if isinstance(messages, dict):
-            messages = messages.get("records", [])
-
-        for msg_data in messages:
-            try:
-                key        = msg_data.get("key", {})
-                msg_key_id = key.get("id", "")
-                from_me    = key.get("fromMe", False)
-
-                if not msg_key_id:
-                    skipped += 1
-                    continue
-
-                # Duplicate kontrolü
-                ext_id = f"wa:{msg_key_id}"
-                if db.query(RequestMessage).filter(RequestMessage.external_id == ext_id).first():
-                    skipped += 1
-                    continue
-
-                text_content = _extract_wa_text(msg_data)
-                media_key    = _has_wa_media(msg_data)
-
-                if not text_content and not media_key:
-                    skipped += 1
-                    continue
-
-                # Mesaj zamanını çıkar (Unix timestamp)
-                msg_ts = msg_data.get("messageTimestamp") or msg_data.get("messageTimestamp")
-                if msg_ts:
-                    try:
-                        msg_date = datetime.utcfromtimestamp(int(msg_ts))
-                    except Exception:
-                        msg_date = datetime.utcnow()
-                else:
-                    msg_date = datetime.utcnow()
-
-                direction    = "outgoing" if from_me else "incoming"
-                sender_name  = msg_data.get("pushName") or (sender_phone if not from_me else "Admin")
-
-                msg_obj = RequestMessage(
-                    request_id  = quote_req.id,
-                    channel     = "whatsapp",
-                    direction   = direction,
-                    content     = text_content or "(medya eki)",
-                    admin_name  = sender_name,
-                    created_at  = msg_date,
-                    external_id = ext_id,
-                )
-                db.add(msg_obj)
-                db.flush()
-
-                # Medya varsa indir ve kaydet
-                if media_key and not from_me:
-                    media_result = _download_wa_media(settings, msg_data)
-                    if media_result:
-                        media_data, mime_type, filename = media_result
-                        url_path = _save_attachment_file(quote_req.id, media_data, filename, mime_type)
-                        if url_path:
-                            db.add(RequestAttachment(
-                                request_id        = quote_req.id,
-                                message_id        = msg_obj.id,
-                                file_path         = url_path,
-                                original_filename = filename,
-                                file_type         = _get_file_category(mime_type),
-                                mime_type         = mime_type,
-                                file_size         = len(media_data),
-                            ))
-
-                db.commit()
-                imported += 1
-
-            except Exception as exc:
-                errors += 1
-                db.rollback()
-
-    return JSONResponse({
-        "ok": True,
-        "imported": imported,
-        "skipped": skipped,
-        "errors": errors,
-        "message": f"{imported} mesaj aktarıldı, {skipped} atlandı, {errors} hata.",
-    })
 
 
 # =========================================================
