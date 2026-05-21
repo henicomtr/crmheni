@@ -9,7 +9,8 @@ self.addEventListener('push', function (event) {
     var body    = data.body    || 'Yeni bir talep geldi.';
     var url     = data.url     || '/esk/requests';
     var icon    = data.icon    || '/static/img/icon-192.png';
-    var badge   = data.badge   || '/static/img/icon-192.png';
+    // badge ikonu 96x96 monokrom (tek renkli) PNG olmalıdır, renkli ikon kullanmayın
+    var badge   = data.badge   || '/static/img/badge-96.png';
     var count   = data.count   || 0;
 
     // Uygulama ikonuna sayı yaz (destekleyen tarayıcılarda)
@@ -58,7 +59,7 @@ self.addEventListener('notificationclick', function (event) {
 
 // Badge'i unread-count endpoint'inden çek ve güncelle
 function syncBadge() {
-    fetch('/esk/requests/unread-count')
+    fetch('/esk/requests/unread-count', { credentials: 'include' })
         .then(function (r) { return r.json(); })
         .then(function (data) {
             var count = data.count || 0;
@@ -73,14 +74,15 @@ function syncBadge() {
         .catch(function () {});
 }
 
-// Periyodik badge sync (arka planda da çalışır)
+// periodicsync yalnızca Android Chrome'da çalışır; iOS ve desktop'ta tetiklenmez.
+// Badge güncellemesi için admin_layout.html'deki 30 saniyelik polling yeterlidir.
 self.addEventListener('periodicsync', function (event) {
     if (event.tag === 'badge-sync') {
         event.waitUntil(syncBadge());
     }
 });
 
-self.addEventListener('install',  function () { self.skipWaiting(); });
+self.addEventListener('install',  function (e) { e.waitUntil(self.skipWaiting()); });
 self.addEventListener('activate', function (e) {
     e.waitUntil(
         clients.claim().then(function () { syncBadge(); })

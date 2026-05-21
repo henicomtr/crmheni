@@ -728,6 +728,21 @@ class StockConsumption(Base):
 
 
 # ─────────────────────────────────────────────────────────────────────
+# WEB PUSH ABONELİKLERİ — restart'ta silinmemesi için DB'de saklanır
+# ─────────────────────────────────────────────────────────────────────
+
+class PushSubscription(Base):
+    """Web Push abonelik kaydı (VAPID). Uygulama yeniden başlasa bile silinmez."""
+    __tablename__ = "push_subscriptions"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    endpoint   = Column(Text, unique=True, nullable=False)
+    p256dh     = Column(Text, nullable=False)
+    auth       = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+# ─────────────────────────────────────────────────────────────────────
 # FİYATLANDIRMA MOTORU — 3 aşamalı maliyet ve satış fiyatı hesaplama
 # ─────────────────────────────────────────────────────────────────────
 

@@ -797,8 +797,8 @@
  
         updateBtn(getSoundEnabled());
         refreshBadge();
-        setInterval(refreshBadge, 30000);
- 
+        // badge polling sw.js üzerinden yönetilmektedir
+
         // ── Service Worker + Push Notification ───────────────────────
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
  

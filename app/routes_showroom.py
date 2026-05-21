@@ -1940,35 +1940,35 @@ def api_search(request: Request, q: str = "", lang: str = "en", db: Session = De
 # =========================================================
 
 @router.post("/quote-request")
-def quote_en(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "en", company_name, contact_person, email, phone, country, db)
+async def quote_en(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "en", company_name, contact_person, email, phone, country, db)
 
 @router.post("/tr/quote-request")
-def quote_tr(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "tr", company_name, contact_person, email, phone, country, db)
+async def quote_tr(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "tr", company_name, contact_person, email, phone, country, db)
 
 @router.post("/de/quote-request")
-def quote_de(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "de", company_name, contact_person, email, phone, country, db)
+async def quote_de(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "de", company_name, contact_person, email, phone, country, db)
 
 @router.post("/fr/quote-request")
-def quote_fr(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "fr", company_name, contact_person, email, phone, country, db)
+async def quote_fr(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "fr", company_name, contact_person, email, phone, country, db)
 
 @router.post("/ar/quote-request")
-def quote_ar(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "ar", company_name, contact_person, email, phone, country, db)
+async def quote_ar(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "ar", company_name, contact_person, email, phone, country, db)
 
 @router.post("/ru/quote-request")
-def quote_ru(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "ru", company_name, contact_person, email, phone, country, db)
+async def quote_ru(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "ru", company_name, contact_person, email, phone, country, db)
 
 @router.post("/es/quote-request")
-def quote_es(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
-    return _quote(request, "es", company_name, contact_person, email, phone, country, db)
+async def quote_es(request: Request, company_name: str = Form(...), contact_person: str = Form(...), email: str = Form(...), phone: str = Form(None), country: str = Form(None), db: Session = Depends(get_db)):
+    return await _quote(request, "es", company_name, contact_person, email, phone, country, db)
 
 
-def _quote(request, lang, company_name, contact_person, email, phone, country, db):
+async def _quote(request, lang, company_name, contact_person, email, phone, country, db):
     cart = request.session.get("cart", {})
     if not cart:
         raise HTTPException(status_code=400, detail="Cart is empty")
@@ -2009,7 +2009,7 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
     db.commit()
     db.refresh(quote)
     request.session["cart"] = {}
-    send_push_notification(
+    await send_push_notification(
         title="🛒 Yeni Sepet Talebi",
         body=f"{company_name} — {contact_person}",
         url=f"/esk/requests/{quote.id}",
@@ -2036,10 +2036,10 @@ def _quote(request, lang, company_name, contact_person, email, phone, country, d
 # LANDING PAGE TEKLİF FORMU  — sepet gerektirmez, QuoteRequest'e kaydeder
 # =========================================================
 
-def _landing_quote(request: Request, lang: str,
-                   company_name: str, contact_person: str, email: str,
-                   phone: str, message: str, source_page: str, country: str,
-                   db: Session):
+async def _landing_quote(request: Request, lang: str,
+                        company_name: str, contact_person: str, email: str,
+                        phone: str, message: str, source_page: str, country: str,
+                        db: Session):
     # Landing page'den gelen teklif talebini kaydeder; sepet zorunluluğu yoktur
     currency = LANG_CURRENCY.get(lang, "USD")
     cart_payload = json.dumps([{
@@ -2058,10 +2058,11 @@ def _landing_quote(request: Request, lang: str,
     )
     db.add(quote)
     db.commit()
-    send_push_notification(
+    db.refresh(quote)
+    await send_push_notification(
         title="📋 Yeni Landing Talebi",
         body=f"{company_name} — {contact_person}",
-        url="/esk/requests",
+        url=f"/esk/requests/{quote.id}",
         db=db,
     )
     # Başarı sayfasını render et — dile göre anasayfa URL'si ve UI metinleri ilet
@@ -2078,67 +2079,67 @@ def _landing_quote(request: Request, lang: str,
 
 
 @router.post("/landing-quote")
-def landing_quote_en(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "en", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_en(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "en", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/tr/landing-quote")
-def landing_quote_tr(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "tr", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_tr(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "tr", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/de/landing-quote")
-def landing_quote_de(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "de", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_de(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "de", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/fr/landing-quote")
-def landing_quote_fr(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "fr", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_fr(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "fr", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/ar/landing-quote")
-def landing_quote_ar(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "ar", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_ar(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "ar", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/ru/landing-quote")
-def landing_quote_ru(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "ru", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_ru(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "ru", company_name, contact_person, email, phone, message, source_page, country, db)
 
 @router.post("/es/landing-quote")
-def landing_quote_es(request: Request,
-                     company_name: str = Form(...), contact_person: str = Form(...),
-                     email: str = Form(...), phone: str = Form(""),
-                     message: str = Form(""), source_page: str = Form(""),
-                     country: str = Form(""),
-                     db: Session = Depends(get_db)):
-    return _landing_quote(request, "es", company_name, contact_person, email, phone, message, source_page, country, db)
+async def landing_quote_es(request: Request,
+                           company_name: str = Form(...), contact_person: str = Form(...),
+                           email: str = Form(...), phone: str = Form(""),
+                           message: str = Form(""), source_page: str = Form(""),
+                           country: str = Form(""),
+                           db: Session = Depends(get_db)):
+    return await _landing_quote(request, "es", company_name, contact_person, email, phone, message, source_page, country, db)
 
 
 # =========================================================

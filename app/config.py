@@ -35,3 +35,6 @@ if SECRET_KEY == _DEFAULT_SECRET:
         "⚠️  SECRET_KEY ayarlanmamış! .env dosyasına güçlü bir değer ekle.",
         stacklevel=2
     )
+
+# Debug modu — .env'de DEBUG=true olursa aktif
+DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")

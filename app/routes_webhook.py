@@ -331,7 +331,7 @@ async def evolution_webhook(request: Request, db: Session = Depends(get_db)):
         processed += 1
         logger.info("WhatsApp mesajı kaydedildi → Talep #%d (gönderen: %s)", quote_req.id, sender_phone)
 
-        send_push_notification(
+        await send_push_notification(
             title="💬 Yeni WhatsApp Mesajı",
             body=f"{sender_name or sender_phone}: {(text_content or '')[:80]}",
             url=f"/esk/requests/{quote_req.id}",
@@ -428,7 +428,7 @@ def _get_email_body(msg: email_lib.message.Message) -> str:
     return _strip_quoted_text(raw_body)
 
 
-def _poll_imap_once():
+async def _poll_imap_once():
     """
     IMAP kutusunu bir kez tarar. Okunmamış mailleri işler:
     1. Subject'te Talep #ID varsa o talebe bağlar.
@@ -552,7 +552,7 @@ def _poll_imap_once():
                     mail.store(msg_id, "+FLAGS", "\\Seen")
                     logger.info("Email cevabı kaydedildi → Talep #%d", quote_req.id)
 
-                    send_push_notification(
+                    await send_push_notification(
                         title="📧 Yeni Email Cevabı",
                         body=f"Konu: {subject[:80]}",
                         url=f"/esk/requests/{quote_req.id}",
@@ -573,12 +573,12 @@ def _poll_imap_once():
 
 
 async def _imap_polling_loop():
-    """Her 5 dakikada bir IMAP kutusunu tarayan arka plan döngüsü."""
+    """Her 90 saniyede bir IMAP kutusunu tarayan arka plan döngüsü."""
     # İlk çalışmayı 30 saniye geciktir (uygulama tam ayağa kalksın)
     await asyncio.sleep(30)
     while True:
         try:
-            _poll_imap_once()
+            await _poll_imap_once()
         except Exception as exc:
             logger.error("IMAP polling döngüsü hatası: %s", exc)
         await asyncio.sleep(90)  # 90 saniye
