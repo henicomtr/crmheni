@@ -2286,6 +2286,21 @@ def delete_request(
     return RedirectResponse("/esk/requests", status_code=302)
 
 
+@router.post("/esk/requests/delete-all")
+def delete_all_requests(
+    db: Session = Depends(get_db),
+    admin = Depends(admin_required)
+):
+    """Tüm talepleri (ve cascade ile mesaj/ek dosyalarını) siler."""
+    if not admin:
+        return JSONResponse({"ok": False, "error": "Yetkisiz"}, status_code=403)
+
+    total = db.query(QuoteRequest).count()
+    db.query(QuoteRequest).delete(synchronize_session=False)
+    db.commit()
+    return JSONResponse({"ok": True, "deleted": total, "message": f"{total} talep silindi."})
+
+
 # =========================================================
 # FINANCE
 # =========================================================
