@@ -1921,10 +1921,12 @@ def import_historical_whatsapp(
         with _req.urlopen(http_req, timeout=30) as r:
             return _json.loads(r.read())
 
+    # Evolution API v2: findChats POST metodu bekliyor (GET 404 döner)
+    chats_endpoint = f"/chat/findChats/{evo_inst}"
     try:
-        chats_raw = _evo_get(f"/chat/findChats/{evo_inst}")
+        chats_raw = _evo_post(chats_endpoint, {"where": {}})
     except Exception as exc:
-        return JSONResponse({"ok": False, "error": f"Chat listesi alınamadı: {exc}"})
+        return JSONResponse({"ok": False, "error": f"Chat listesi alınamadı: {exc} | URL: {base}{chats_endpoint}"})
 
     chats    = chats_raw if isinstance(chats_raw, list) else chats_raw.get("chats", [])
     imported = 0
