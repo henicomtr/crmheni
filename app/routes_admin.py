@@ -1932,12 +1932,13 @@ def import_historical_whatsapp(
 
     # Evolution API v2: bazı hesaplar @lid (Linked Device ID) formatı kullanır.
     # Gerçek telefon numarasını almak için kontaklar listesinden LID→telefon eşlemi kur.
+    # Kontakt listesinde remoteJid öncelikli kullan — id alanı Prisma cuid olabilir.
     lid_to_phone: dict = {}
     try:
         contacts_raw = _evo_post(f"/chat/findContacts/{evo_inst}", {"where": {}})
         contact_list = contacts_raw if isinstance(contacts_raw, list) else contacts_raw.get("contacts", [])
         for c in contact_list:
-            c_jid   = c.get("id") or c.get("remoteJid") or ""
+            c_jid   = c.get("remoteJid") or c.get("id") or ""
             c_phone = c.get("phone") or c.get("number") or ""
             if c_jid and c_phone:
                 lid_to_phone[c_jid] = re.sub(r"\D", "", c_phone)
@@ -1949,9 +1950,16 @@ def import_historical_whatsapp(
     errors   = 0
 
     for chat in chats:
-        remote_jid = chat.get("id", "") or chat.get("remoteJid", "")
+        # Evolution API v2: id alanı Prisma cuid (cmpc...) olabilir — gerçek JID remoteJid'de.
+        remote_jid = chat.get("remoteJid") or chat.get("id") or ""
         if not remote_jid:
             continue
+
+        # Geçerli WhatsApp JID'i @ içermelidir; cuid veya bilinmeyen format → atla
+        if "@" not in remote_jid:
+            skipped += 1
+            continue
+
         if "@g.us" in remote_jid or "broadcast" in remote_jid:
             continue
 
