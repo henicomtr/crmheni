@@ -1928,18 +1928,49 @@ def import_historical_whatsapp(
     except Exception as exc:
         return JSONResponse({"ok": False, "error": f"Chat listesi alınamadı: {exc} | URL: {base}{chats_endpoint}"})
 
-    chats    = chats_raw if isinstance(chats_raw, list) else chats_raw.get("chats", [])
+    chats = chats_raw if isinstance(chats_raw, list) else chats_raw.get("chats", [])
+
+    # Evolution API v2: bazı hesaplar @lid (Linked Device ID) formatı kullanır.
+    # Gerçek telefon numarasını almak için kontaklar listesinden LID→telefon eşlemi kur.
+    lid_to_phone: dict = {}
+    try:
+        contacts_raw = _evo_post(f"/chat/findContacts/{evo_inst}", {"where": {}})
+        contact_list = contacts_raw if isinstance(contacts_raw, list) else contacts_raw.get("contacts", [])
+        for c in contact_list:
+            c_jid   = c.get("id") or c.get("remoteJid") or ""
+            c_phone = c.get("phone") or c.get("number") or ""
+            if c_jid and c_phone:
+                lid_to_phone[c_jid] = re.sub(r"\D", "", c_phone)
+    except Exception:
+        pass  # Kontakt listesi alınamazsa LID çözümü atlanır, devam edilir
+
     imported = 0
     skipped  = 0
     errors   = 0
 
     for chat in chats:
         remote_jid = chat.get("id", "") or chat.get("remoteJid", "")
+        if not remote_jid:
+            continue
         if "@g.us" in remote_jid or "broadcast" in remote_jid:
             continue
 
-        sender_phone = remote_jid.split("@")[0]
-        chat_name    = chat.get("name") or chat.get("pushName") or None
+        # @lid formatı: WhatsApp gizlilik sistemi — gerçek telefon değil.
+        # Önce kontakt eşlem tablosuna bak, yoksa chat nesnesindeki phone alanını dene.
+        if "@lid" in remote_jid:
+            resolved = (
+                lid_to_phone.get(remote_jid)
+                or re.sub(r"\D", "", chat.get("phone") or chat.get("number") or "")
+            )
+            if not resolved:
+                # LID çözülemedi — bu sohbeti atla
+                skipped += 1
+                continue
+            sender_phone = resolved
+        else:
+            sender_phone = remote_jid.split("@")[0]
+
+        chat_name = chat.get("name") or chat.get("pushName") or None
 
         quote_req = _find_request_by_phone(db, sender_phone)
         if not quote_req:
