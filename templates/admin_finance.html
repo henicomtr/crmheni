@@ -701,13 +701,41 @@
             grid-template-columns: 1fr 1fr !important;
         }
 
+        /* Kur widget aralığı */
+        .kur-widget {
+            margin-bottom: 6px !important;
+            padding: 8px 12px !important;
+        }
+
+        /* Genel Özet etiketi */
+        .finance-section-label {
+            margin-bottom: 4px !important;
+        }
+
         /* 3'lü özet kpi: 2 sütun, son kart tam genişlik */
         .kpi-grid-3 {
             grid-template-columns: repeat(2, 1fr) !important;
+            margin-bottom: 6px !important;
         }
 
         .kpi-grid-3 .kpi-card:last-child {
             grid-column: 1 / -1;
+        }
+
+        /* Hesap split: 1 sütun, sıfır gap */
+        .finance-account-split {
+            grid-template-columns: 1fr !important;
+            gap: 6px !important;
+            margin-bottom: 8px !important;
+        }
+
+        /* Hesap kart içi kompakt */
+        .finance-account-cell {
+            padding: 8px !important;
+        }
+
+        .finance-account-header {
+            padding: 6px 10px !important;
         }
 
         /* KPI kompakt */
@@ -810,7 +838,7 @@ function setCurrency(cur, btn) {
 </div>
 
 <!-- Kur Bilgisi + Para Birimi Seçici -->
-<div class="kur-widget" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
+<div class="kur-widget" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);">
 
     <!-- Kur bilgisi -->
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
@@ -845,8 +873,8 @@ function setCurrency(cur, btn) {
 </div>
 
 <!-- KPI KARTI — TOPLAM -->
-<div style="font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:10px;">Genel Özet</div>
-<div class="kpi-grid kpi-grid-3" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px;">
+<div class="finance-section-label" style="font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Genel Özet</div>
+<div class="kpi-grid kpi-grid-3" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
     <div class="kpi-card income">
         <div class="kpi-label">💰 Toplam Gelir</div>
         <div class="kpi-value positive" data-usd="{{ total_income }}" id="kpi-income">${{ "{:,.2f}".format(total_income) }}</div>
@@ -867,48 +895,48 @@ function setCurrency(cur, btn) {
 </div>
 
 <!-- KPI — RESMİ / ŞAHSİ -->
-<div class="finance-account-split" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px;">
+<div class="finance-account-split" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
 
     <!-- Resmi -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
-        <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:8px;">
-            <span style="font-size:16px;">🏢</span>
+    <div class="finance-account-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+        <div class="finance-account-header" style="padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;">🏢</span>
             <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Resmi Hesap</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
-            <div style="padding:16px;border-right:1px solid var(--border);">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gelir</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ official_income }}">${{ "{:,.0f}".format(official_income) }}</div>
+        <div class="finance-account-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+            <div class="finance-account-cell" style="padding:10px 10px;border-right:1px solid var(--border);">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Gelir</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ official_income }}">${{ "{:,.0f}".format(official_income) }}</div>
             </div>
-            <div style="padding:16px;border-right:1px solid var(--border);">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gider</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ official_expense }}">${{ "{:,.0f}".format(official_expense) }}</div>
+            <div class="finance-account-cell" style="padding:10px 10px;border-right:1px solid var(--border);">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Gider</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ official_expense }}">${{ "{:,.0f}".format(official_expense) }}</div>
             </div>
-            <div style="padding:16px;">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Net</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:{% if official_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ official_net }}">${{ "{:,.0f}".format(official_net) }}</div>
+            <div class="finance-account-cell" style="padding:10px 10px;">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Net</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:{% if official_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ official_net }}">${{ "{:,.0f}".format(official_net) }}</div>
             </div>
         </div>
     </div>
 
     <!-- Şahsi -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
-        <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:8px;">
-            <span style="font-size:16px;">👤</span>
-            <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Şahsi Hesap / Elden</span>
+    <div class="finance-account-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+        <div class="finance-account-header" style="padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;align-items:center;gap:6px;">
+            <span style="font-size:14px;">👤</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);">Şahsi Hesap</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
-            <div style="padding:16px;border-right:1px solid var(--border);">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gelir</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ personal_income }}">${{ "{:,.0f}".format(personal_income) }}</div>
+        <div class="finance-account-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;">
+            <div class="finance-account-cell" style="padding:10px 10px;border-right:1px solid var(--border);">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Gelir</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:#1a7a4a;" data-usd="{{ personal_income }}">${{ "{:,.0f}".format(personal_income) }}</div>
             </div>
-            <div style="padding:16px;border-right:1px solid var(--border);">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Gider</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ personal_expense }}">${{ "{:,.0f}".format(personal_expense) }}</div>
+            <div class="finance-account-cell" style="padding:10px 10px;border-right:1px solid var(--border);">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Gider</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:#c0392b;" data-usd="{{ personal_expense }}">${{ "{:,.0f}".format(personal_expense) }}</div>
             </div>
-            <div style="padding:16px;">
-                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Net</div>
-                <div style="font-size:18px;font-weight:700;font-family:var(--mono);color:{% if personal_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ personal_net }}">${{ "{:,.0f}".format(personal_net) }}</div>
+            <div class="finance-account-cell" style="padding:10px 10px;">
+                <div style="font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;">Net</div>
+                <div style="font-size:15px;font-weight:700;font-family:var(--mono);color:{% if personal_net >= 0 %}#1a7a4a{% else %}#c0392b{% endif %};" data-usd="{{ personal_net }}">${{ "{:,.0f}".format(personal_net) }}</div>
             </div>
         </div>
     </div>
