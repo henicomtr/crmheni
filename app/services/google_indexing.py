@@ -1,20 +1,18 @@
 import json
+import os
 import logging
 import httpx
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
 logger = logging.getLogger(__name__)
-
-# Docker container içindeki token dosyası yolu
-TOKEN_FILE = "/app/secrets/oauth_token.json"
 INDEXING_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
 
-
 def _get_credentials():
-    # Token dosyasını oku ve Credentials nesnesi oluştur
-    with open(TOKEN_FILE) as f:
-        data = json.load(f)
+    raw = os.environ.get("GOOGLE_OAUTH_TOKEN")
+    if not raw:
+        raise RuntimeError("GOOGLE_OAUTH_TOKEN environment variable eksik!")
+    data = json.loads(raw)
     creds = Credentials(
         token=data["token"],
         refresh_token=data["refresh_token"],
@@ -24,16 +22,10 @@ def _get_credentials():
         scopes=data["scopes"]
     )
     if not creds.valid:
-        # Token süresi dolmuşsa yenile ve dosyaya kaydet
         creds.refresh(Request())
-        data["token"] = creds.token
-        with open(TOKEN_FILE, "w") as f:
-            json.dump(data, f, indent=2)
     return creds
 
-
 async def notify_google(url: str, action: str = "URL_UPDATED"):
-    # Google Indexing API'ye URL güncelleme bildirimi gönder
     try:
         creds = _get_credentials()
         headers = {
