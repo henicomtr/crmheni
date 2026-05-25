@@ -7,6 +7,59 @@ from google.auth.transport.requests import Request
 
 logger = logging.getLogger(__name__)
 INDEXING_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
+BASE_URL = "https://henib2b.com"
+
+# routes_showroom.py'deki @router.get tanımlarından türetilmiş URL kalıpları
+PRODUCT_URL_MAP = {
+    "en": "/product/",
+    "tr": "/tr/urun/",
+    "de": "/de/produkt/",
+    "fr": "/fr/produit/",
+    "ar": "/ar/muntaj/",
+    "ru": "/ru/produkt/",
+    "es": "/es/producto/",
+}
+
+CATEGORY_URL_MAP = {
+    "en": "/category/",
+    "tr": "/tr/kategori/",
+    "de": "/de/kategorie/",
+    "fr": "/fr/categorie/",
+    "ar": "/ar/category/",
+    "ru": "/ru/kategoriya/",
+    "es": "/es/categoria/",
+}
+
+# EN için prefix yok (doğrudan /{slug}), diğerleri /{lang}/{slug}
+PAGE_URL_MAP = {
+    "en": "/",
+    "tr": "/tr/",
+    "de": "/de/",
+    "fr": "/fr/",
+    "ar": "/ar/",
+    "ru": "/ru/",
+    "es": "/es/",
+}
+
+
+def build_product_urls(translations) -> list:
+    """Ürün çevirilerinden tüm dil URL'lerini üretir."""
+    return [
+        f"{BASE_URL}{PRODUCT_URL_MAP[t.lang]}{t.slug}"
+        for t in translations
+        if t.slug and t.lang in PRODUCT_URL_MAP
+    ]
+
+
+def build_category_urls(cat_slug: str) -> list:
+    """Kategori için tüm dil URL'lerini üretir."""
+    return [f"{BASE_URL}{prefix}{cat_slug}" for prefix in CATEGORY_URL_MAP.values()]
+
+
+def build_page_url(lang: str, slug: str) -> str:
+    """CMS sayfa URL'sini doğru prefix ile üretir."""
+    prefix = PAGE_URL_MAP.get(lang, f"/{lang}/")
+    return f"{BASE_URL}{prefix}{slug}"
 
 def _get_credentials():
     raw = os.environ.get("GOOGLE_OAUTH_TOKEN")

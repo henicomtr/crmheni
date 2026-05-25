@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Request, Form, Depends, Cookie, UploadFile, File, BackgroundTasks
-from app.services.google_indexing import notify_google, run_notify_google
+from app.services.google_indexing import (
+    notify_google, run_notify_google,
+    build_product_urls, build_category_urls, build_page_url,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -760,6 +763,7 @@ async def save_showroom_seo(
 @router.post("/esk/products/create")
 async def create_product(
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     admin = Depends(admin_required)
 ):
@@ -875,6 +879,9 @@ async def create_product(
         db.add(translation)
 
     db.commit()
+    # Tüm dillerdeki ürün URL'lerini Google'a bildir
+    for url in build_product_urls(new_product.translations):
+        background_tasks.add_task(run_notify_google, url)
     return RedirectResponse("/esk/products", status_code=302)
 
 
@@ -1060,11 +1067,9 @@ async def update_product(
             db.add(new_t)
 
     db.commit()
-    # Google Indexing API bildirimi (arka planda çalışır)
-    en_trans = next((t for t in product.translations if t.lang == "en"), None)
-    if en_trans and en_trans.slug:
-        page_url = f"https://henib2b.com/product/{en_trans.slug}"
-        background_tasks.add_task(run_notify_google, page_url)
+    # Tüm dillerdeki ürün URL'lerini Google'a bildir
+    for url in build_product_urls(product.translations):
+        background_tasks.add_task(run_notify_google, url)
     return RedirectResponse(f"/esk/products/edit/{product_id}", status_code=302)
 
 
@@ -3382,10 +3387,9 @@ def page_edit_post(
     trans.og_description   = og_description
 
     db.commit()
-    # Google Indexing API bildirimi (arka planda çalışır)
+    # Google Indexing API bildirimi — EN için /slug, diğerleri /lang/slug
     if page.is_published and trans and trans.slug:
-        page_url = f"https://henib2b.com/{trans.lang}/{trans.slug}"
-        background_tasks.add_task(run_notify_google, page_url)
+        background_tasks.add_task(run_notify_google, build_page_url(trans.lang, trans.slug))
     return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
 
 
@@ -3522,6 +3526,7 @@ def admin_category_edit(
 @router.post("/esk/categories/{cat_id}/save")
 def admin_category_save(
     cat_id: int,
+    background_tasks: BackgroundTasks,
     lang: str = Form("tr"),
     tab: str = Form("content"),
     title: str = Form(""),
@@ -3552,6 +3557,10 @@ def admin_category_save(
     trans.og_description   = og_description or None
     cat.updated_at         = datetime.utcnow()
     db.commit()
+    # Kategori yayınlanmışsa tüm dil URL'lerini Google'a bildir
+    if cat.is_published:
+        for url in build_category_urls(cat.category_slug):
+            background_tasks.add_task(run_notify_google, url)
     return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab={tab}", status_code=302)
 
 
