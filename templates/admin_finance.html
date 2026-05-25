@@ -725,6 +725,29 @@
         .td-inner {
             padding: 8px 10px;
         }
+
+        /* Sayfa başlığı mobil */
+        .admin-page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .admin-page-title {
+            font-size: 18px;
+        }
+
+        /* İşlem kartı başlık compact */
+        .transactions-card-header {
+            padding: 12px 14px;
+        }
+
+        /* İşlem tablosunda açıklama sütunu gizle mobilde */
+        .tx-table th:nth-child(3),
+        .tx-table td:nth-child(3) {
+            display: none;
+        }
     }
 </style>
 

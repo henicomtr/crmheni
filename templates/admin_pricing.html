@@ -348,6 +348,35 @@
 @media(max-width: 900px) {
     .two-col { grid-template-columns: 1fr; }
 }
+
+@media(max-width: 600px) {
+    .pricing-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .pricing-title { font-size: 18px !important; }
+
+    .tab-bar {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+        font-size: 12px !important;
+        padding: 7px 12px !important;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .p-card { padding: 14px !important; }
+
+    .rate-inputs { gap: 10px; }
+    .rate-inputs .p-form-group { flex: 0 0 calc(50% - 5px); }
+}
 </style>
 
 <div class="pricing-header">

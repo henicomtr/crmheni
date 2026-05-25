@@ -260,28 +260,32 @@
 
     @media (max-width: 600px) {
         .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        .req-row { padding: 12px 14px; gap: 10px; }
-
+        .req-row { padding: 10px 12px; gap: 8px; }
         .btn-reply, .btn-approve, .btn-reject { padding: 5px 8px; font-size: 10px; }
+        .page-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
+        .page-title { font-size: 18px; }
+        .header-actions { width: 100% !important; margin-left: 0 !important; justify-content: flex-start !important; flex-wrap: wrap !important; }
+        .header-actions button { font-size: 11px !important; padding: 6px 10px !important; }
+        .stat-card { padding: 12px 14px; }
+        .stat-val { font-size: 20px; }
     }
 </style>
 
 <div class="page-header">
-    <h1 class="page-title">Talep Yönetimi</h1>
+    <h1 class="page-title">Talepler</h1>
     <span class="badge-dark">{{ requests|length }} talep</span>
-    <div style="display:flex;gap:8px;margin-left:auto;align-items:center;">
+    <div class="header-actions" style="display:flex;gap:8px;margin-left:auto;align-items:center;">
         <button onclick="runImport('email')" id="btn-import-email"
             style="padding:7px 14px;font-size:12px;font-weight:700;border:1px solid #3b82f6;border-radius:6px;background:#eff6ff;color:#1d4ed8;cursor:pointer;">
-            📧 Email Geçmişini Aktar
+            📧 Email Aktar
         </button>
         <button onclick="runImport('whatsapp')" id="btn-import-wa"
             style="padding:7px 14px;font-size:12px;font-weight:700;border:1px solid #22c55e;border-radius:6px;background:#f0fdf4;color:#15803d;cursor:pointer;">
-            💬 WhatsApp Geçmişini Aktar
+            💬 WA Aktar
         </button>
         <button onclick="deleteAllRequests()" id="btn-delete-all"
             style="padding:7px 14px;font-size:12px;font-weight:700;border:1px solid #ef4444;border-radius:6px;background:#fef2f2;color:#b91c1c;cursor:pointer;">
-            🗑️ Tüm Talepleri Sil
+            🗑️ Sil
         </button>
     </div>
 </div>
