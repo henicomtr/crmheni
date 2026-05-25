@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Request, Form, Depends, Cookie, UploadFile, File, BackgroundTasks
-from app.services.google_indexing import notify_google
+from app.services.google_indexing import notify_google, run_notify_google
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -1064,7 +1064,7 @@ async def update_product(
     en_trans = next((t for t in product.translations if t.lang == "en"), None)
     if en_trans and en_trans.slug:
         page_url = f"https://henib2b.com/product/{en_trans.slug}"
-        background_tasks.add_task(notify_google, page_url)
+        background_tasks.add_task(run_notify_google, page_url)
     return RedirectResponse(f"/esk/products/edit/{product_id}", status_code=302)
 
 
@@ -3385,7 +3385,7 @@ def page_edit_post(
     # Google Indexing API bildirimi (arka planda çalışır)
     if page.is_published and trans and trans.slug:
         page_url = f"https://henib2b.com/{trans.lang}/{trans.slug}"
-        background_tasks.add_task(notify_google, page_url)
+        background_tasks.add_task(run_notify_google, page_url)
     return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
 
 

@@ -24,6 +24,17 @@ def _get_credentials():
     creds.refresh(Request())
     return creds
 
+def run_notify_google(url: str, action: str = "URL_UPDATED"):
+    """BackgroundTasks için sync wrapper"""
+    import asyncio
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(notify_google(url, action))
+    finally:
+        loop.close()
+
+
 async def notify_google(url: str, action: str = "URL_UPDATED"):
     try:
         creds = _get_credentials()
