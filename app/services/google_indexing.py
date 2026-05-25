@@ -14,15 +14,14 @@ def _get_credentials():
         raise RuntimeError("GOOGLE_OAUTH_TOKEN environment variable eksik!")
     data = json.loads(raw)
     creds = Credentials(
-        token=data["token"],
+        token=None,  # her zaman refresh yap
         refresh_token=data["refresh_token"],
         token_uri=data["token_uri"],
         client_id=data["client_id"],
         client_secret=data["client_secret"],
         scopes=data["scopes"]
     )
-    if not creds.valid:
-        creds.refresh(Request())
+    creds.refresh(Request())
     return creds
 
 async def notify_google(url: str, action: str = "URL_UPDATED"):
