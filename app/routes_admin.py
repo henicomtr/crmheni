@@ -879,6 +879,7 @@ async def create_product(
         db.add(translation)
 
     db.commit()
+    db.refresh(new_product)
     # Tüm dillerdeki ürün URL'lerini Google'a bildir
     for url in build_product_urls(new_product.translations):
         background_tasks.add_task(run_notify_google, url)

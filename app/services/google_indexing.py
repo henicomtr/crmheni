@@ -5,7 +5,9 @@ import httpx
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 
-logger = logging.getLogger(__name__)
+# uvicorn.error logger'ı Docker'da her zaman stdout'a yazar
+logger = logging.getLogger("uvicorn.error")
+
 INDEXING_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
 BASE_URL = "https://henib2b.com"
 
@@ -61,6 +63,7 @@ def build_page_url(lang: str, slug: str) -> str:
     prefix = PAGE_URL_MAP.get(lang, f"/{lang}/")
     return f"{BASE_URL}{prefix}{slug}"
 
+
 def _get_credentials():
     raw = os.environ.get("GOOGLE_OAUTH_TOKEN")
     if not raw:
@@ -77,13 +80,17 @@ def _get_credentials():
     creds.refresh(Request())
     return creds
 
+
 def run_notify_google(url: str, action: str = "URL_UPDATED"):
-    """BackgroundTasks için sync wrapper"""
+    """BackgroundTasks için sync wrapper — yeni event loop açar."""
     import asyncio
+    logger.info(f"Google indexing task başlatıldı: {url}")
     try:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(notify_google(url, action))
+    except Exception as e:
+        logger.error(f"Google indexing wrapper HATA: {url} — {e}")
     finally:
         loop.close()
 
