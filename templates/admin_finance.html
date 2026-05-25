@@ -66,46 +66,83 @@
     .kpi-card {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: var(--radius-md);
-        padding: 22px 22px 18px;
-        box-shadow: var(--shadow-sm);
+        border-radius: 16px;
+        padding: 18px 20px 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04);
         position: relative;
         overflow: hidden;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        cursor: default;
     }
 
+    .kpi-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* Üst renkli çizgi */
     .kpi-card::before {
         content: '';
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
+        top: 0; left: 0; right: 0;
+        height: 4px;
+        border-radius: 16px 16px 0 0;
     }
 
-    .kpi-card.income::before {
-        background: var(--success, #1a7a4a);
+    /* Köşe dekoratif daire */
+    .kpi-card::after {
+        content: '';
+        position: absolute;
+        top: -24px; right: -24px;
+        width: 88px; height: 88px;
+        border-radius: 50%;
+        opacity: 0.07;
+        pointer-events: none;
     }
 
-    .kpi-card.expense::before {
-        background: #c0392b;
+    .kpi-card.income::before  { background: linear-gradient(90deg, #1a7a4a, #27ae60); }
+    .kpi-card.income::after   { background: #1a7a4a; }
+    .kpi-card.expense::before { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+    .kpi-card.expense::after  { background: #c0392b; }
+    .kpi-card.balance::before { background: linear-gradient(90deg, #0d1239, #1a237e); }
+    .kpi-card.balance::after  { background: #0d1239; }
+    .kpi-card.pending::before { background: linear-gradient(90deg, #e67e22, #f39c12); }
+    .kpi-card.pending::after  { background: #e67e22; }
+
+    /* Kart üst satır: ikon + etiket */
+    .kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
     }
 
-    .kpi-card.balance::before {
-        background: var(--dark);
+    .kpi-icon {
+        width: 36px; height: 36px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
     }
 
-    .kpi-card.pending::before {
-        background: #e67e22;
-    }
+    .kpi-card.income  .kpi-icon { background: rgba(26,122,74,.12); }
+    .kpi-card.expense .kpi-icon { background: rgba(192,57,43,.12); }
+    .kpi-card.balance .kpi-icon { background: rgba(13,18,57,.08); }
+    .kpi-card.pending .kpi-icon { background: rgba(230,126,34,.12); }
 
-    .kpi-label {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: .10em;
+    .kpi-tag {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: var(--text-muted);
-        margin-bottom: 10px;
+        padding: 3px 8px;
+        border-radius: 20px;
     }
+
+    .kpi-card.income  .kpi-tag { background: rgba(26,122,74,.1);  color: #1a7a4a; }
+    .kpi-card.expense .kpi-tag { background: rgba(192,57,43,.1);  color: #c0392b; }
+    .kpi-card.balance .kpi-tag { background: rgba(13,18,57,.08);  color: #0d1239; }
+    .kpi-card.pending .kpi-tag { background: rgba(230,126,34,.1); color: #e67e22; }
 
     .kpi-value {
         font-size: 26px;
@@ -113,20 +150,21 @@
         font-family: var(--mono);
         letter-spacing: -.03em;
         color: var(--text-primary);
+        line-height: 1.1;
     }
 
-    .kpi-value.positive {
-        color: var(--success, #1a7a4a);
-    }
+    .kpi-value.positive { color: var(--success, #1a7a4a); }
+    .kpi-value.negative { color: #c0392b; }
 
-    .kpi-value.negative {
-        color: #c0392b;
+    .kpi-footer {
+        display: flex;
+        align-items: center;
+        margin-top: 8px;
     }
 
     .kpi-sub {
         font-size: 11px;
         color: var(--text-muted);
-        margin-top: 6px;
     }
 
     /* ── İçerik Izgara ────────────────────────────── */
@@ -564,6 +602,37 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    /* ── Daha Fazla Göster butonu ─────────────────── */
+    .show-more-wrap {
+        padding: 16px;
+        text-align: center;
+        border-top: 1px solid var(--border);
+        display: none;
+    }
+
+    .btn-show-more {
+        padding: 9px 24px;
+        border: 1.5px solid var(--border);
+        border-radius: 20px;
+        background: var(--surface);
+        font-family: var(--font);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-show-more:hover {
+        background: var(--dark);
+        color: #fff;
+        border-color: var(--dark);
+        transform: translateY(-1px);
+    }
+
     @media (max-width: 1100px) {
         .kpi-grid {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -697,45 +766,33 @@
     }
 
     @media (max-width: 600px) {
-        .kpi-grid {
-            grid-template-columns: 1fr 1fr !important;
+        /* Genel Özet + hesap + grafik bölümünü mobilde gizle */
+        .finance-section-label,
+        .kpi-grid-3,
+        .finance-account-split,
+        .monthly-card {
+            display: none !important;
+        }
+
+        /* Finance grid: tek sütun, form üstte */
+        .finance-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important; /* grid'deki align-items:start flex'te yatay ekseni daraltıyor */
+        }
+
+        #finance-form-section  { order: -1; }
+        #finance-tx-section    { order: 1; }
+
+        /* Form kart: sticky kaldır */
+        .add-form-card {
+            position: static !important;
         }
 
         /* Kur widget aralığı */
         .kur-widget {
             margin-bottom: 6px !important;
             padding: 8px 12px !important;
-        }
-
-        /* Genel Özet etiketi */
-        .finance-section-label {
-            margin-bottom: 4px !important;
-        }
-
-        /* 3'lü özet kpi: 2 sütun, son kart tam genişlik */
-        .kpi-grid-3 {
-            grid-template-columns: repeat(2, 1fr) !important;
-            margin-bottom: 6px !important;
-        }
-
-        .kpi-grid-3 .kpi-card:last-child {
-            grid-column: 1 / -1;
-        }
-
-        /* Hesap split: 1 sütun, sıfır gap */
-        .finance-account-split {
-            grid-template-columns: 1fr !important;
-            gap: 6px !important;
-            margin-bottom: 8px !important;
-        }
-
-        /* Hesap kart içi kompakt */
-        .finance-account-cell {
-            padding: 8px !important;
-        }
-
-        .finance-account-header {
-            padding: 6px 10px !important;
         }
 
         /* KPI kompakt */
@@ -748,14 +805,8 @@
             font-size: 18px !important;
         }
 
-        .kpi-label {
-            font-size: 9px !important;
-            margin-bottom: 6px !important;
-        }
-
         .kpi-sub {
             font-size: 10px !important;
-            margin-top: 4px !important;
         }
 
         /* Tablo padding daralt */
@@ -876,21 +927,36 @@ function setCurrency(cur, btn) {
 <div class="finance-section-label" style="font-size:10px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px;">Genel Özet</div>
 <div class="kpi-grid kpi-grid-3" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px;">
     <div class="kpi-card income">
-        <div class="kpi-label">💰 Toplam Gelir</div>
+        <div class="kpi-header">
+            <div class="kpi-icon">💰</div>
+            <span class="kpi-tag">Gelir</span>
+        </div>
         <div class="kpi-value positive" data-usd="{{ total_income }}" id="kpi-income">${{ "{:,.2f}".format(total_income) }}</div>
-        <div class="kpi-sub">{{ income_count }} işlem</div>
+        <div class="kpi-footer">
+            <span class="kpi-sub">{{ income_count }} işlem</span>
+        </div>
     </div>
     <div class="kpi-card expense">
-        <div class="kpi-label">💸 Toplam Gider</div>
+        <div class="kpi-header">
+            <div class="kpi-icon">💸</div>
+            <span class="kpi-tag">Gider</span>
+        </div>
         <div class="kpi-value negative" data-usd="{{ total_expense }}" id="kpi-expense">${{ "{:,.2f}".format(total_expense) }}</div>
-        <div class="kpi-sub">{{ expense_count }} işlem</div>
+        <div class="kpi-footer">
+            <span class="kpi-sub">{{ expense_count }} işlem</span>
+        </div>
     </div>
     <div class="kpi-card balance">
-        <div class="kpi-label">🏦 Net Bakiye</div>
+        <div class="kpi-header">
+            <div class="kpi-icon">🏦</div>
+            <span class="kpi-tag">Net</span>
+        </div>
         <div class="kpi-value {% if net_balance >= 0 %}positive{% else %}negative{% endif %}" data-usd="{{ net_balance }}" id="kpi-net">
             ${{ "{:,.2f}".format(net_balance) }}
         </div>
-        <div class="kpi-sub">Seçilen periyot</div>
+        <div class="kpi-footer">
+            <span class="kpi-sub">Seçilen periyot</span>
+        </div>
     </div>
 </div>
 
@@ -976,7 +1042,7 @@ function setCurrency(cur, btn) {
 <div class="finance-grid">
 
     <!-- SOL: İşlem Tablosu -->
-    <div>
+    <div id="finance-tx-section">
         <div class="transactions-card">
             <div class="transactions-card-header">
                 <h2>İşlemler <span style="font-weight:400;opacity:.5;">— {{ transactions|length }} kayıt{% if transfer_count %} · <span style="color:#e67e22;">{{ transfer_count }} transfer</span>{% endif %}</span></h2>
@@ -1077,6 +1143,15 @@ function setCurrency(cur, btn) {
                 </tbody>
             </table>
             </div><!-- /tx-table-scroll -->
+
+            <!-- Daha Fazla Göster butonu -->
+            <div class="show-more-wrap" id="tx-show-more-wrap">
+                <button class="btn-show-more" id="btn-show-more" onclick="showMoreTx()">
+                    <span id="show-more-label">Daha Fazla Göster</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+            </div>
+
             {% else %}
             <div class="empty-state">
                 <div style="font-size:40px;opacity:.2;margin-bottom:12px;">💳</div>
@@ -1087,7 +1162,7 @@ function setCurrency(cur, btn) {
     </div>
 
     <!-- SAĞ: Kayıt Ekle Formu -->
-    <div>
+    <div id="finance-form-section">
         <div class="add-form-card">
             <div class="add-form-card-header" style="padding:0;">
                 <!-- Sekme başlıkları -->
@@ -1326,30 +1401,84 @@ function setCurrency(cur, btn) {
         document.getElementById('supplier-group').style.display = val === 'supplier' ? 'flex' : 'none';
     }
 
-    // İşlem filtresi (type + source + transfer)
-    function filterTx(type, src, btn) {
-        document.querySelectorAll('.tx-filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.tx-row').forEach(row => {
-            const isTransfer = row.dataset.transfer === '1';
-            if (type === 'transfer') {
-                row.style.display = isTransfer ? '' : 'none';
-                return;
-            }
-            if (isTransfer) { row.style.display = 'none'; return; }
-            const matchType = (type === 'all' || row.dataset.type === type);
-            const matchSrc  = (src  === 'all' || row.dataset.source === src);
-            row.style.display = (matchType && matchSrc) ? '' : 'none';
+    // ── Filtre + Sayfalama durumu ─────────────────
+    var TX_BATCH     = 10;
+    var txShown      = TX_BATCH;
+    var txClickCount = 0;
+    var curFilter    = { type: 'all', src: 'all' };
+
+    // Mevcut filtreyle eşleşen satırları döndür
+    function getFilteredRows() {
+        return Array.from(document.querySelectorAll('.tx-row')).filter(function(row) {
+            var isTransfer = row.dataset.transfer === '1';
+            if (curFilter.type === 'transfer') return isTransfer;
+            if (isTransfer) return false;
+            var okType = (curFilter.type === 'all' || row.dataset.type === curFilter.type);
+            var okSrc  = (curFilter.src  === 'all' || row.dataset.source === curFilter.src);
+            return okType && okSrc;
         });
     }
 
-    // Sayfa yüklenince TRY'ye çevir ve kategori listesini başlat
+    // Satır görünürlüğünü ve butonu güncelle
+    function applyTxDisplay() {
+        var allRows    = document.querySelectorAll('.tx-row');
+        var filtered   = getFilteredRows();
+        var filteredIds = new Set(filtered.map(function(r) { return r; }));
+
+        allRows.forEach(function(row) {
+            var inFilter = filteredIds.has(row);
+            var idx      = filtered.indexOf(row);
+            row.style.display = (inFilter && idx < txShown) ? '' : 'none';
+        });
+
+        var wrap      = document.getElementById('tx-show-more-wrap');
+        var label     = document.getElementById('show-more-label');
+        var remaining = filtered.length - txShown;
+
+        if (remaining <= 0) {
+            if (wrap) wrap.style.display = 'none';
+        } else {
+            if (wrap) wrap.style.display = '';
+            if (label) {
+                if (txClickCount >= 1) {
+                    label.textContent = 'Tümünü Göster (' + remaining + ' işlem)';
+                } else {
+                    label.textContent = 'Daha Fazla Göster (' + Math.min(TX_BATCH, remaining) + ' işlem)';
+                }
+            }
+        }
+    }
+
+    // Filtre değiştir
+    function filterTx(type, src, btn) {
+        document.querySelectorAll('.tx-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        curFilter    = { type: type, src: src };
+        txShown      = TX_BATCH;
+        txClickCount = 0;
+        applyTxDisplay();
+    }
+
+    // Daha fazla göster
+    function showMoreTx() {
+        txClickCount++;
+        if (txClickCount >= 2) {
+            txShown = 999999;
+        } else {
+            txShown += TX_BATCH;
+        }
+        applyTxDisplay();
+    }
+
+    // Sayfa yüklenince TRY'ye çevir, kategori listesini başlat, sayfalamayı başlat
     document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll("[data-usd]").forEach(el => {
+        document.querySelectorAll("[data-usd]").forEach(function(el) {
             el.textContent = fmtAmount(parseFloat(el.dataset.usd), "TRY");
         });
         // Başlangıçta gelir seçili → gelir kategorilerini yükle
         updateCategories('income');
+        // Sayfalamayı başlat
+        applyTxDisplay();
     });
 
     // Sekme değiştirme
