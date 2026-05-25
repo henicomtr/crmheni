@@ -661,21 +661,26 @@
             /* KPI grid: 2 sütun sabit */
             .kpi-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                margin-bottom: 10px !important;
             }
 
-            /* Stats: 2→1 sütun */
+            /* Stats: 2 sütun (yatay alanı verimli kullan) */
             .stats-row {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 8px !important;
+                margin-bottom: 10px !important;
             }
 
             /* Topbar mobilde kompakt */
             .topbar {
-                height: 48px;
+                height: 44px !important;
+                padding: 0 10px !important;
             }
 
-            /* Sayfa içi padding — kenar boşlukları minimize */
+            /* Sayfa içi padding — kenar boşlukları minimize, okunabilir */
             .page-body {
-                padding: 6px 4px;
+                padding: 8px 10px;
                 padding-bottom: calc(66px + env(safe-area-inset-bottom));
             }
 
@@ -683,6 +688,13 @@
             .period-tabs {
                 overflow-x: auto;
                 flex-wrap: nowrap;
+            }
+
+            /* Period butonları kompakt */
+            .period-btn {
+                padding: 5px 9px !important;
+                font-size: 11px !important;
+                white-space: nowrap;
             }
 
             /* Masaüstü topbar title gizle, mobil brand göster */
@@ -713,6 +725,115 @@
             /* Alt navigasyon göster */
             .mobile-bottom-nav {
                 display: block;
+            }
+
+            /* ── Sayfa başlığı kompakt ── */
+            .admin-page-header,
+            .page-header {
+                margin-bottom: 10px !important;
+                gap: 8px !important;
+            }
+
+            .admin-page-title,
+            .page-title {
+                font-size: 16px !important;
+                letter-spacing: -0.01em !important;
+            }
+
+            /* ── Stat kart kompakt ── */
+            .stat-card {
+                padding: 10px 12px !important;
+                border-radius: 12px !important;
+            }
+
+            .stat-val {
+                font-size: 18px !important;
+                margin-bottom: 1px !important;
+            }
+
+            .stat-lbl {
+                font-size: 9px !important;
+                letter-spacing: 0.07em !important;
+            }
+
+            /* ── KPI kart kompakt ── */
+            .kpi-card {
+                padding: 12px 12px !important;
+                border-radius: 12px !important;
+                gap: 5px !important;
+            }
+
+            .kpi-label {
+                font-size: 9px !important;
+                letter-spacing: 0.07em !important;
+            }
+
+            .kpi-value {
+                font-size: 20px !important;
+            }
+
+            .kpi-sub-row {
+                font-size: 10px !important;
+            }
+
+            /* ── Form kart kompakt ── */
+            .add-card {
+                margin-bottom: 10px !important;
+                border-radius: 14px !important;
+            }
+
+            .add-card-header {
+                padding: 10px 14px !important;
+            }
+
+            .add-card-body {
+                padding: 12px 14px !important;
+            }
+
+            /* ── Tablo/liste kartları ── */
+            .requests-card,
+            .customers-table-card,
+            .suppliers-table-card,
+            .products-table-card,
+            .transactions-card {
+                border-radius: 14px !important;
+                margin-bottom: 8px !important;
+            }
+
+            /* ── Talep satırı kompakt ── */
+            .req-row {
+                padding: 10px 12px !important;
+                gap: 10px !important;
+            }
+
+            /* ── Finans kart ── */
+            .finance-card-header,
+            .chart-card-header {
+                padding: 12px 14px !important;
+            }
+
+            .finance-card-body {
+                padding: 12px 14px !important;
+            }
+
+            .finance-row {
+                padding: 8px 0 !important;
+            }
+
+            /* ── Eylem butonu kompakt ── */
+            .btn-toggle-form {
+                padding: 7px 12px !important;
+                font-size: 12px !important;
+                gap: 5px !important;
+            }
+
+            /* ── Mobil marka küçük ── */
+            .mobile-brand-name {
+                font-size: 13px !important;
+            }
+
+            .mobile-brand-sub {
+                display: none !important;
             }
         }
     </style>

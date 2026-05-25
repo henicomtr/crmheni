@@ -351,31 +351,32 @@
 
 @media(max-width: 600px) {
     .pricing-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 14px;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
     }
 
-    .pricing-title { font-size: 18px !important; }
+    .pricing-title { font-size: 16px !important; }
 
     .tab-bar {
         width: 100%;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        margin-bottom: 10px !important;
     }
 
     .tab-btn {
-        font-size: 12px !important;
-        padding: 7px 12px !important;
+        font-size: 11px !important;
+        padding: 6px 10px !important;
         white-space: nowrap;
         flex-shrink: 0;
     }
 
-    .p-card { padding: 14px !important; }
+    .p-card { padding: 12px !important; border-radius: 12px !important; }
 
-    .rate-inputs { gap: 10px; }
-    .rate-inputs .p-form-group { flex: 0 0 calc(50% - 5px); }
+    .rate-inputs { gap: 8px; }
+    .rate-inputs .p-form-group { flex: 0 0 calc(50% - 4px); }
 }
 </style>
 

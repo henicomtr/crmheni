@@ -259,15 +259,16 @@
     }
 
     @media (max-width: 600px) {
-        .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
-        .req-row { padding: 10px 12px; gap: 8px; }
+        .stats-row { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; margin-bottom: 10px !important; }
+        .req-row { padding: 10px 12px !important; gap: 8px !important; }
         .btn-reply, .btn-approve, .btn-reject { padding: 5px 8px; font-size: 10px; }
-        .page-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
-        .page-title { font-size: 18px; }
-        .header-actions { width: 100% !important; margin-left: 0 !important; justify-content: flex-start !important; flex-wrap: wrap !important; }
-        .header-actions button { font-size: 11px !important; padding: 6px 10px !important; }
-        .stat-card { padding: 12px 14px; }
-        .stat-val { font-size: 20px; }
+        .page-header { flex-wrap: wrap; gap: 6px !important; margin-bottom: 10px !important; align-items: center !important; }
+        .page-title { font-size: 16px !important; }
+        .header-actions { flex-shrink: 0; gap: 5px !important; }
+        .header-actions button { font-size: 10px !important; padding: 5px 8px !important; }
+        .stat-card { padding: 10px 12px !important; border-radius: 12px !important; }
+        .stat-val { font-size: 18px !important; margin-bottom: 1px !important; }
+        .stat-lbl { font-size: 9px !important; }
     }
 </style>
 

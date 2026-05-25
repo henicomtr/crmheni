@@ -701,52 +701,67 @@
             grid-template-columns: 1fr 1fr !important;
         }
 
-        /* 3'lü özet kpi de 1 sütun */
+        /* 3'lü özet kpi: 2 sütun, son kart tam genişlik */
         .kpi-grid-3 {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: repeat(2, 1fr) !important;
         }
 
-        /* KPI daha da küçük */
+        .kpi-grid-3 .kpi-card:last-child {
+            grid-column: 1 / -1;
+        }
+
+        /* KPI kompakt */
         .kpi-card {
-            padding: 12px;
+            padding: 10px 12px !important;
+            border-radius: 12px !important;
         }
 
         .kpi-value {
-            font-size: 18px;
+            font-size: 18px !important;
         }
 
-        /* Tutar sütunu font küçült */
-        .tx-table th:nth-child(5),
-        .tx-table td:nth-child(5) {
-            font-size: 12px;
+        .kpi-label {
+            font-size: 9px !important;
+            margin-bottom: 6px !important;
         }
 
-        /* Tablo padding daha da daralt */
+        .kpi-sub {
+            font-size: 10px !important;
+            margin-top: 4px !important;
+        }
+
+        /* Tablo padding daralt */
         .td-inner {
             padding: 8px 10px;
         }
 
-        /* Sayfa başlığı mobil */
+        /* Sayfa başlığı mobil kompakt */
         .admin-page-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 14px;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-bottom: 10px !important;
         }
 
         .admin-page-title {
-            font-size: 18px;
+            font-size: 16px !important;
         }
 
-        /* İşlem kartı başlık compact */
+        /* İşlem kartı başlık kompakt */
         .transactions-card-header {
-            padding: 12px 14px;
+            padding: 10px 12px !important;
         }
 
         /* İşlem tablosunda açıklama sütunu gizle mobilde */
         .tx-table th:nth-child(3),
         .tx-table td:nth-child(3) {
             display: none;
+        }
+
+        /* Kur butonları kompakt */
+        .cur-btn {
+            padding: 4px 8px !important;
+            font-size: 11px !important;
         }
     }
 </style>
