@@ -612,16 +612,52 @@ def admin_dashboard(
 
     # Finans verileri - Tüm işlemleri USD'ye çevir
     all_transactions = db.query(FinanceTransaction).all()
-    
+
     total_income_usd = 0.0
     total_expense_usd = 0.0
-    
+
     for tx in all_transactions:
         amount_usd = _convert_to_usd(tx.amount, tx.currency or "TRY")
         if tx.type == "income":
             total_income_usd += amount_usd
         else:
             total_expense_usd += amount_usd
+
+    # Son 6 ay için aylık gelir/gider (mobil çizgi grafik için)
+    ay_etiketleri = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"]
+    aylik_gelir = []
+    aylik_gider = []
+    aylik_etiket = []
+
+    for i in range(5, -1, -1):
+        # Her ay için başlangıç ve bitiş tarihi
+        hedef_ay = now.month - i
+        hedef_yil = now.year
+        while hedef_ay <= 0:
+            hedef_ay += 12
+            hedef_yil -= 1
+        ay_basi = now.replace(year=hedef_yil, month=hedef_ay, day=1,
+                              hour=0, minute=0, second=0, microsecond=0)
+        # Bir sonraki ayın ilk günü
+        if hedef_ay == 12:
+            ay_sonu = ay_basi.replace(year=hedef_yil + 1, month=1)
+        else:
+            ay_sonu = ay_basi.replace(month=hedef_ay + 1)
+
+        gelir = 0.0
+        gider = 0.0
+        for tx in all_transactions:
+            tarih = tx.transaction_date or tx.created_at if hasattr(tx, 'created_at') else None
+            if tarih and ay_basi <= tarih < ay_sonu:
+                amount_usd = _convert_to_usd(tx.amount, tx.currency or "TRY")
+                if tx.type == "income":
+                    gelir += amount_usd
+                else:
+                    gider += amount_usd
+
+        aylik_gelir.append(round(gelir, 2))
+        aylik_gider.append(round(gider, 2))
+        aylik_etiket.append(ay_etiketleri[hedef_ay - 1])
 
     return templates.TemplateResponse(
         "admin_dashboard.html",
@@ -637,7 +673,10 @@ def admin_dashboard(
             "weekly_customers": weekly_customers,
             "yearly_customers": yearly_customers,
             "total_income": total_income_usd,
-            "total_expense": total_expense_usd
+            "total_expense": total_expense_usd,
+            "aylik_gelir": aylik_gelir,
+            "aylik_gider": aylik_gider,
+            "aylik_etiket": aylik_etiket,
         }
     )
 

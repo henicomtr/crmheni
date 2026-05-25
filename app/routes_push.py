@@ -14,12 +14,12 @@ import asyncio
 import logging
 from typing import List
 
-from fastapi import APIRouter, Request, Depends, Cookie, HTTPException
+from fastapi import APIRouter, Request, Depends, Cookie
 from fastapi.responses import JSONResponse
 from jose import jwt, JWTError
 from pywebpush import webpush, WebPushException
 
-from .config import SECRET_KEY, ALGORITHM, DEBUG
+from .config import SECRET_KEY, ALGORITHM
 from .database import get_db
 from .models import User, PushSubscription
 from sqlalchemy.orm import Session
@@ -221,90 +221,3 @@ def serve_sw():
     )
 
 
-# ── Push kurulum durumu (hata ayıklama) ───────────────────────────────────────
-@router.get("/esk/push/debug")
-def push_debug(admin=Depends(_admin_required), db: Session = Depends(get_db)):
-    """Push bildirim kurulum durumunu döner (tarayıcıdan kontrol için)."""
-    if not admin:
-        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
-    subscriber_count = db.query(PushSubscription).count()
-    return JSONResponse({
-        "vapid_configured": bool(VAPID_PRIVATE_KEY.strip() and VAPID_PUBLIC_KEY),
-        "subscriber_count": subscriber_count,
-        "public_key_prefix": VAPID_PUBLIC_KEY[:20] + "..." if VAPID_PUBLIC_KEY else "",
-    })
-
-
-# ── Manuel test endpoint'i ─────────────────────────────────────────────────────
-@router.post("/esk/push/test")
-async def push_test(admin=Depends(_admin_required), db: Session = Depends(get_db)):
-    """Admin panelinden push bildirimini test etmek için."""
-    if not admin:
-        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
-    await send_push_notification(
-        title="🔔 Test Bildirimi",
-        body="Push bildirimler çalışıyor!",
-        url="/esk/requests",
-        db=db,
-    )
-    subscriber_count = db.query(PushSubscription).count()
-    return JSONResponse({"ok": True, "subscribers": subscriber_count})
-
-
-# ── Ayrıntılı push testi — her aboneye HTTP sonucunu döner ────────────────────
-@router.post("/esk/push/test-verbose")
-async def push_test_verbose(admin=Depends(_admin_required), db: Session = Depends(get_db)):
-    """Her abonenin push gönderim sonucunu (ok/hata + HTTP kodu) döner."""
-    # Production ortamında bu endpoint erişime kapalıdır
-    if not DEBUG:
-        raise HTTPException(status_code=404)
-
-    if not admin:
-        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
-    if not VAPID_PRIVATE_KEY.strip() or not VAPID_PUBLIC_KEY:
-        return JSONResponse({"error": "VAPID key yapılandırılmamış"})
-
-    subscriptions = db.query(PushSubscription).all()
-    if not subscriptions:
-        return JSONResponse({"error": "Kayıtlı abone yok"})
-
-    payload = json.dumps({
-        "title": "🔔 Verbose Test",
-        "body":  "Push ayrıntılı test mesajı.",
-        "url":   "/esk/requests",
-        "count": 0,
-    })
-
-    results = []
-
-    async def _test_one(sub: PushSubscription):
-        sub_info = {
-            "endpoint": sub.endpoint,
-            "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
-        }
-        try:
-            await asyncio.to_thread(
-                webpush,
-                subscription_info=sub_info,
-                data=payload,
-                vapid_private_key=VAPID_PRIVATE_KEY,
-                vapid_claims={"sub": VAPID_CLAIMS_EMAIL},
-                ttl=86400,
-                headers={"Urgency": "high"},
-            )
-            results.append({"endpoint": sub.endpoint[:70] + "...", "ok": True, "http_status": 201})
-        except WebPushException as e:
-            http_status = getattr(e.response, "status_code", None)
-            detail = ""
-            try:
-                detail = e.response.text[:300] if e.response else str(e)[:300]
-            except Exception:
-                detail = str(e)[:300]
-            results.append({"endpoint": sub.endpoint[:70] + "...", "ok": False,
-                            "http_status": http_status, "detail": detail})
-        except Exception as e:
-            results.append({"endpoint": sub.endpoint[:70] + "...", "ok": False,
-                            "detail": str(e)[:300]})
-
-    await asyncio.gather(*[_test_one(s) for s in subscriptions])
-    return JSONResponse({"results": results, "total": len(results)})
