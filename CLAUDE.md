@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 Bu dosya, Claude Code'un bu repoda çalışırken uyması gereken kuralları ve proje rehberini içerir.
 
 ---
@@ -24,7 +26,7 @@ Bu projede henüz build adımı, linting konfigürasyonu veya test altyapısı y
 ## Proje Özeti
 
 **HENİ CRM**, güzellik ve temizlik ürünleri sektörüne yönelik çok dilli B2B e-ticaret/CRM platformudur.
-**Stack:** FastAPI + SQLAlchemy + Jinja2 + PostgreSQL
+**Stack:** FastAPI + SQLAlchemy + Jinja2 + SQLite (→ PostgreSQL geçişi planlanıyor)
 **Geliştirici:** Tek kişi (solo proje)
 **Desteklenen Diller:** EN, TR, DE, FR, AR, RU, ES
 
@@ -34,57 +36,82 @@ Bu projede henüz build adımı, linting konfigürasyonu veya test altyapısı y
 
 ### Modül Düzeni
 
-- `app/main.py` — FastAPI uygulama başlatma, middleware, DB tablo oluşturma/migrasyon, varsayılan veri seed
-- `app/models.py` — Tüm SQLAlchemy ORM modelleri
-- `app/routes_admin.py` — Admin panel route'ları (93KB, JWT ile korumalı)
-- `app/routes_showroom.py` — Müşterilere açık public route'lar (72KB)
+**Route dosyaları:**
+- `app/routes_admin.py` — Admin panel route'ları (~93KB, JWT ile korumalı, izin sistemi var)
+- `app/routes_showroom.py` — Müşterilere açık public showroom route'ları (~72KB)
+- `app/routes_pricing.py` — İç fiyatlandırma motoru (`/esk/pricing/*`); `pricing` izni gerektirir
+- `app/routes_feeds.py` — Google Merchant Center XML feed endpoint'leri (her dil için ayrı)
+- `app/routes_push.py` — Web Push / VAPID push notification endpoint'leri
 - `app/routes_webhook.py` — Webhook endpoint'leri
+
+**Servis katmanı (`app/services/`):**
+- `currency_service.py` — TCMB XML feed, 1 saatlik cache, fallback kurlar; `LANG_CURRENCY`, `convert()`, `get_rates()` export eder
+- `pricing_service.py` — 3 aşamalı iç maliyet hesaplama (hammadde → yarı mamul → nihai ürün); tüm maliyetler USD cinsinden
+
+**Yardımcı modüller:**
+- `app/main.py` — FastAPI başlatma, tüm router'ları bağlama, DB tablo oluşturma + kolon migrasyonu, varsayılan veri seed
+- `app/models.py` — Tüm SQLAlchemy ORM modelleri
 - `app/auth.py` — JWT token oluşturma/doğrulama, bcrypt şifre hash
-- `app/config.py` — Ürün kategorileri, palet sabitleri (20ft=13, 40ft=24 palet)
-- `app/lang.py` — Dil tespiti ve URL yönlendirme
-- `app/currency_service.py` — TCMB XML feed, 1 saatlik cache, fallback kurlar
+- `app/config.py` — Ürün kategorileri (`CATEGORIES`), konteyner sabitleri (`PALLETS_PER_20FT=13`, `PALLETS_PER_40FT=24`), `SECRET_KEY`; `.env` ile yapılandırılır
+- `app/lang.py` — Dil tespiti ve URL yönlendirme (şu an devre dışı — bkz. aşağıdaki not)
+- `app/image_optimizer.py` — PIL tabanlı görsel optimizasyon; WebP dönüşümü + srcset (sm/md/lg) üretimi
 - `app/database.py` — SQLAlchemy engine, `SessionLocal`, `Base`
-- `templates/` — Jinja2 HTML şablonları; `templates/partials/` ortak parçalar
-- `static/upload/` — Kullanıcı yüklü görsel, video ve belgeler
+
+**Şablonlar:**
+- `templates/` — Jinja2 HTML şablonları
+- `templates/partials/` — `site_header.html`, `site_footer.html`, `media_picker_modal.html`
+- `templates/base.html` — Public sayfa temel şablonu
+- `templates/admin_layout.html` — Admin panel temel şablonu
 
 ### Çok Dilli Sistem
 
-Dil URL prefix'i ile belirlenir (`/tr/`, `/de/`) → cookie → Accept-Language header → varsayılan EN.
-Dile özel URL slug'ları mevcuttur (ör: `/product/{slug}` EN, `/tr/urun/{slug}` TR).
-Döviz eşlemesi: EN→USD, TR→TRY, DE/FR/RU/ES→EUR.
+`LangMiddleware` şu an **devre dışı**; dil rotaları `routes_showroom.py` içinde manuel tanımlıdır:
+- `/` → EN, `/tr` → TR, `/de` → DE, `/fr` → FR
+- Ürün detay: `/product/{slug}` (EN), `/tr/urun/{slug}` (TR), `/de/produkt/{slug}` (DE), `/fr/produit/{slug}` (FR)
+
+Dil tespiti: URL prefix → cookie → Accept-Language header → varsayılan EN.
+Döviz eşlemesi: EN→USD, TR→TRY, DE/FR/RU/ES/AR→EUR.
 
 ### Veritabanı
 
 SQLite (`heni.db`). Tablolar startup'ta `Base.metadata.create_all()` ile oluşturulur.
-Kolon migrasyonları `main.py` içinde ham `ALTER TABLE` ile yapılır (migration aracı yoktur).
+Kolon migrasyonları `main.py` içinde `inspect(engine)` ile mevcut kolonlar kontrol edilerek ham `ALTER TABLE` ile yapılır.
 
 **⚠️ Önemli:** PostgreSQL'e geçiş planlanmaktadır. Yeni yazılan kodlar bu geçişe uyumlu olmalıdır:
-- SQLite'a özgü sözdizimi (ör: `PRAGMA`, `AUTOINCREMENT`) kullanma.
+- SQLite'a özgü sözdizimi (`PRAGMA`, `AUTOINCREMENT`) kullanma.
 - Genel SQLAlchemy ORM pattern'larına sadık kal.
 
 **Ana tablolar:**
-- `products`, `product_translations` — çok dilli ürünler, palet fiyatlandırma kademeleri
+- `products`, `product_translations` — çok dilli ürünler; palet bazlı indirim kademeleri (1–5+ palet)
 - `customers`, `suppliers` — iş bağlantıları
-- `quote_requests` — B2B lead formu
-- `finance`, `account_transactions` — finans takibi
-- `pages`, `page_translations`, `faq_items` — CMS
+- `quote_requests`, `request_messages`, `request_attachments` — B2B talep formu + konuşma geçmişi
+- `finance`, `account_transactions` — finans ve cari hesap takibi
+- `pages`, `page_translations`, `faq_items` — CMS (generic + landing page şablonları)
 - `category_contents`, `category_translations`, `category_faqs` — kategori bazlı CMS
 - `homepage_contents` — JSON tabanlı anasayfa editör blokları
-- `site_settings` — logo, sosyal bağlantılar, analitik kodu, özel CSS için tekil satır
+- `site_settings` — tekil satır; logo, sosyal linkler, analitik kodu, özel CSS, sertifika logoları
+- **Fiyatlandırma motoru:** `stock_items`, `pricing_products`, `formula_items`, `finished_products`, `packaging_items`, `pricing_results`
+- `push_subscriptions` — Web Push VAPID abone kayıtları
+- `product_ratings` — tarayıcı başına bir kez oy (browser_id ile deduplicate)
+- `service_page_contents` — hizmet sayfaları için JSON içerik blokları
 
-### Kimlik Doğrulama
+### Kimlik Doğrulama ve İzin Sistemi
 
 JWT tabanlı admin kimlik doğrulama. Token'lar HTTP-only cookie'de saklanır.
+`User.is_superadmin=True` olan kullanıcı her şeye erişir. Diğer kullanıcılar `User.permissions` (JSON liste) ile kontrol edilir.
+İzin anahtarları: `urunler`, `musteriler`, `talepler`, `finans`, `pricing`, `ayarlar`, vb.
 Varsayılan admin bilgileri, kullanıcı yoksa `main.py` içinde seed edilir.
-JWT secret `app/config.py` içindedir (`SECRET_KEY`).
 
 ### Temel Pattern'lar
 
 - Her route dosyası DB erişimi için `db: Session = Depends(get_db)` alır.
-- Admin route'ları her handler başında JWT cookie doğrular.
-- Ürün fiyatlandırması 5 palet-miktar kademesi kullanır (1, 2, 3, 4, 5+ palet).
+- Admin route'ları her handler başında JWT cookie doğrular ve `user.has_permission(...)` ile izin kontrol eder.
+- Ürün fiyatlandırması 5 palet-miktar kademesi kullanır (1, 2, 3, 4, 5+ palet); `Product.calculate_discounted_price(pallets)` metodu kullanılır.
+- `Product.get_translation(lang)` ve `Product.get_slug_for(lang)` EN fallback'i otomatik uygular — tüm dil erişimleri bu metodlar üzerinden yapılmalıdır.
 - `HomepageContent` satırları esnek anasayfa bölümü düzenleme için JSON blob saklar.
 - `SiteSettings` her zaman `.first()` ile çekilen tek satırdır.
+- Görsel upload'larında `image_optimizer.py` çağrılır; `static/upload/` altına WebP + srcset versiyonları yazılır.
+- Push notification'lar `routes_push.py` üzerinden; ENV değişkenleri: `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_CLAIMS_EMAIL`.
 
 ---
 

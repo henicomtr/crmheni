@@ -27,3 +27,8 @@ static/upload/
 
 # Log dosyaları
 *.log
+
+# Google OAuth token ve gizli anahtar dosyaları — asla commit etme
+secrets/
+*.json
+!requirements*.json

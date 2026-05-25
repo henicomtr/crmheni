@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from fastapi import APIRouter, Request, Form, Depends, Cookie, UploadFile, File
+from fastapi import APIRouter, Request, Form, Depends, Cookie, UploadFile, File, BackgroundTasks
+from app.services.google_indexing import notify_google
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -933,6 +934,7 @@ def edit_product_page(
 async def update_product(
     product_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     admin = Depends(admin_required)
 ):
@@ -1058,6 +1060,11 @@ async def update_product(
             db.add(new_t)
 
     db.commit()
+    # Google Indexing API bildirimi (arka planda çalışır)
+    en_trans = next((t for t in product.translations if t.lang == "en"), None)
+    if en_trans and en_trans.slug:
+        page_url = f"https://henib2b.com/product/{en_trans.slug}"
+        background_tasks.add_task(notify_google, page_url)
     return RedirectResponse(f"/esk/products/edit/{product_id}", status_code=302)
 
 
@@ -3332,6 +3339,7 @@ def page_edit_get(
 def page_edit_post(
     page_id: int,
     request: Request,
+    background_tasks: BackgroundTasks,
     lang: str = Form("en"),
     slug: str = Form(""),
     title: str = Form(""),
@@ -3374,6 +3382,10 @@ def page_edit_post(
     trans.og_description   = og_description
 
     db.commit()
+    # Google Indexing API bildirimi (arka planda çalışır)
+    if page.is_published and trans and trans.slug:
+        page_url = f"https://henib2b.com/{trans.lang}/{trans.slug}"
+        background_tasks.add_task(notify_google, page_url)
     return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
 
 
