@@ -1,37 +1,65 @@
 User-agent: *
 Allow: /
 
-# Admin ve API yollarını engelle
+# Admin, API ve dahili yolları engelle
 Disallow: /admin
 Disallow: /api/
 Disallow: /static/upload/
 
-# Sepet ve başarı sayfaları — noindex ama disallow ile de destekle
+# Sepet ve işlem sonrası sayfalar (noindex ile de destekleniyor)
 Disallow: /basket
 Disallow: /*/basket
 Disallow: /*/sepet
 Disallow: /*/warenkorb
 Disallow: /*/panier
+Disallow: /*/salla
+Disallow: /*/korzina
+Disallow: /*/carrito
 Disallow: /quote-success
 Disallow: /*/quote-success
 
-# Filtre ve oturum parametreli URL'leri engelle
+# Filtre ve parametre içeren URL'leri engelle (duplicate content)
 Disallow: /*?*
 Disallow: /search?*
 
-# GPTBot ve CCBot'u engelle
+# ────────────────────────────────────────────
+# AI TARAYICILARI
+# ────────────────────────────────────────────
+
+# OpenAI — eğitim botu engelli, arama botları serbest
 User-agent: GPTBot
 Disallow: /
 
-User-agent: CCBot
-Disallow: /
-
-# OAI-SearchBot'a izin ver (Bing/OpenAI arama entegrasyonu)
 User-agent: OAI-SearchBot
 Allow: /
 
-# Anthropic yapay zeka botuna izin ver (Claude arama entegrasyonu)
+User-agent: ChatGPT-User
+Allow: /
+
+# Anthropic (Claude)
 User-agent: anthropic-ai
 Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# Meta AI
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: Meta-ExternalFetcher
+Allow: /
+
+# You.com
+User-agent: YouBot
+Allow: /
+
+# Common Crawl (akademik veri seti) — engelli
+User-agent: CCBot
+Disallow: /
 
 Sitemap: https://henib2b.com/sitemap.xml

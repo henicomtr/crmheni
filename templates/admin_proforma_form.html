@@ -1,0 +1,310 @@
+{% extends "admin_layout.html" %}
+{% block title %}{% if mode == 'edit' %}Proforma Düzenle{% else %}Yeni Proforma{% endif %} — HENİ CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{% if mode == 'edit' %}Proforma Düzenle — {{ invoice.pi_number }}{% else %}Yeni Proforma{% endif %}</h1>
+    <p class="page-subtitle">Tüm alanları doldurun; ürün satırı ekleyip çıkarabilirsiniz.</p>
+  </div>
+  <a href="/esk/proformalar" class="btn btn-ghost">← Listeye Dön</a>
+</div>
+
+<form method="post" action="{% if mode == 'edit' %}/esk/proformalar/{{ invoice.id }}/duzenle{% else %}/esk/proformalar/yeni{% endif %}" id="proformaForm">
+
+  <!-- ── Belge Meta ── -->
+  <div class="form-card">
+    <h3 class="form-section-title">Belge Bilgileri</h3>
+    <div class="form-grid-4">
+      <div class="form-group">
+        <label>PI Numarası</label>
+        <input type="text" name="pi_number" value="{{ invoice.pi_number if invoice else next_pi }}" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Tarih</label>
+        <input type="text" name="issue_date" value="{{ invoice.issue_date if invoice else today }}" placeholder="gg.aa.yyyy" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>Geçerlilik (gün)</label>
+        <input type="number" name="validity_days" value="{{ invoice.validity_days if invoice else 15 }}" min="1" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Para Birimi</label>
+        <select name="currency" class="form-control">
+          {% for cur in ['USD','EUR','GBP','TRY'] %}
+          <option value="{{ cur }}" {% if (invoice and invoice.currency == cur) or (not invoice and cur == 'USD') %}selected{% endif %}>{{ cur }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Incoterm</label>
+        <select name="incoterm" class="form-control">
+          {% for inc in ['FOB','EXW','CIF','CFR','DAP','DDP'] %}
+          <option value="{{ inc }}" {% if invoice and invoice.incoterm == inc %}selected{% endif %}>{{ inc }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Alıcı Bilgileri ── -->
+  <div class="form-card">
+    <h3 class="form-section-title">Alıcı Bilgileri</h3>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Firma Adı</label>
+        <input type="text" name="buyer_company" value="{{ invoice.buyer_company or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Ülke</label>
+        <input type="text" name="buyer_country" value="{{ invoice.buyer_country or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Yetkili Kişi</label>
+        <input type="text" name="buyer_contact" value="{{ invoice.buyer_contact or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>E-posta <span class="required">*</span></label>
+        <input type="email" name="buyer_email" value="{{ invoice.buyer_email or '' if invoice else '' }}" class="form-control" required>
+        <small class="form-hint">Proforma bu adrese gönderilecektir.</small>
+      </div>
+      <div class="form-group">
+        <label>Telefon</label>
+        <input type="text" name="buyer_phone" value="{{ invoice.buyer_phone or '' if invoice else '' }}" class="form-control">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Adres</label>
+      <textarea name="buyer_address" rows="2" class="form-control">{{ invoice.buyer_address or '' if invoice else '' }}</textarea>
+    </div>
+  </div>
+
+  <!-- ── Ürün Kalemleri ── -->
+  <div class="form-card">
+    <div class="section-title-row">
+      <h3 class="form-section-title" style="margin:0">Ürün Kalemleri</h3>
+      <button type="button" class="btn btn-sm btn-secondary" onclick="addRow()">+ Satır Ekle</button>
+    </div>
+
+    <div class="table-wrapper" style="margin-top:14px;">
+      <table class="items-table" id="itemsTable">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>Ürün Açıklaması</th>
+            <th style="width:160px;">Ambalaj</th>
+            <th style="width:100px;">Miktar</th>
+            <th style="width:80px;">Birim</th>
+            <th style="width:130px;">Birim Fiyat</th>
+            <th style="width:130px;">Toplam</th>
+            <th style="width:40px;"></th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          {% if invoice and invoice.items %}
+            {% for item in invoice.items %}
+            <tr class="item-row" data-line="{{ item.line_number }}">
+              <td class="line-num">{{ item.line_number }}</td>
+              <td><input type="text" name="desc_{{ item.line_number }}" value="{{ item.product_description }}" class="form-control" placeholder="Ürün adı / açıklama" required></td>
+              <td><input type="text" name="pkg_{{ item.line_number }}"  value="{{ item.packaging or '' }}"          class="form-control" placeholder="5L Bottle"></td>
+              <td><input type="number" name="qty_{{ item.line_number }}"   value="{{ item.quantity }}"   step="0.01" min="0" class="form-control qty-input"   data-line="{{ item.line_number }}" onchange="calcRow({{ item.line_number }})"></td>
+              <td><input type="text"   name="unit_{{ item.line_number }}"  value="{{ item.quantity_unit }}"         class="form-control" placeholder="PCS"></td>
+              <td><input type="number" name="price_{{ item.line_number }}" value="{{ item.unit_price }}" step="0.0001" min="0" class="form-control price-input" data-line="{{ item.line_number }}" onchange="calcRow({{ item.line_number }})"></td>
+              <td><input type="number" name="total_{{ item.line_number }}" value="{{ item.total }}"      step="0.01"   readonly class="form-control total-input" data-line="{{ item.line_number }}" style="background:#f5f7f9;"></td>
+              <td><button type="button" onclick="removeRow(this)" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">×</button></td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <!-- Varsayılan 1 boş satır -->
+            <tr class="item-row" data-line="1">
+              <td class="line-num">1</td>
+              <td><input type="text" name="desc_1" class="form-control" placeholder="Ürün adı / açıklama" required></td>
+              <td><input type="text" name="pkg_1"  class="form-control" placeholder="5L Bottle"></td>
+              <td><input type="number" name="qty_1"   step="0.01" min="0" value="0" class="form-control qty-input"   data-line="1" onchange="calcRow(1)"></td>
+              <td><input type="text"   name="unit_1"  value="PCS"              class="form-control" placeholder="PCS"></td>
+              <td><input type="number" name="price_1" step="0.0001" min="0" value="0" class="form-control price-input" data-line="1" onchange="calcRow(1)"></td>
+              <td><input type="number" name="total_1" step="0.01" readonly value="0" class="form-control total-input" data-line="1" style="background:#f5f7f9;"></td>
+              <td><button type="button" onclick="removeRow(this)" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">×</button></td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Özet -->
+    <div class="totals-preview">
+      <div class="totals-preview-row">
+        <span>Ara Toplam</span>
+        <span id="previewSubtotal">0.00</span>
+      </div>
+      <div class="totals-preview-row">
+        <span>Nakliye</span>
+        <span id="previewFreight">0.00</span>
+      </div>
+      <div class="totals-preview-row totals-grand">
+        <span>Genel Toplam</span>
+        <span id="previewTotal">0.00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sevkiyat Bilgileri ── -->
+  <div class="form-card">
+    <h3 class="form-section-title">Sevkiyat Bilgileri</h3>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Yükleme Limanı</label>
+        <input type="text" name="loading_port" value="{{ invoice.loading_port or 'Istanbul / Türkiye' if invoice else 'Istanbul / Türkiye' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Varış Limanı</label>
+        <input type="text" name="destination_port" value="{{ invoice.destination_port or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Teslimat Süresi</label>
+        <input type="text" name="delivery_time" value="{{ invoice.delivery_time or '21 Working Days' if invoice else '21 Working Days' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Ödeme Koşulu</label>
+        <input type="text" name="payment_term" value="{{ invoice.payment_term or '50% Advance – 50% Before Shipment' if invoice else '50% Advance – 50% Before Shipment' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>Nakliye Ücreti ({{ invoice.currency if invoice else 'USD' }})</label>
+        <input type="number" name="freight_cost" id="freightInput" value="{{ invoice.freight_cost or 0 if invoice else 0 }}" step="0.01" min="0" class="form-control" onchange="updateTotals()">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Banka Bilgileri ── -->
+  <div class="form-card">
+    <h3 class="form-section-title">Banka Bilgileri</h3>
+    <div class="form-grid-2">
+      <div class="form-group">
+        <label>Banka Adı</label>
+        <input type="text" name="bank_name" value="{{ invoice.bank_name or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>IBAN</label>
+        <input type="text" name="bank_iban" value="{{ invoice.bank_iban or '' if invoice else '' }}" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>SWIFT / BIC Kodu</label>
+        <input type="text" name="bank_swift" value="{{ invoice.bank_swift or '' if invoice else '' }}" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Notlar / Özel Şartlar ── -->
+  <div class="form-card">
+    <h3 class="form-section-title">Özel Şartlar / Notlar</h3>
+    <p class="form-hint mb-2">Boş bırakırsanız standart Terms &amp; Conditions metni kullanılır.</p>
+    <textarea name="notes" rows="5" class="form-control" placeholder="Özel koşullar, notlar...">{{ invoice.notes or '' if invoice else '' }}</textarea>
+  </div>
+
+  <!-- ── Kaydet Butonu ── -->
+  <div class="form-actions">
+    <a href="/esk/proformalar" class="btn btn-ghost">İptal</a>
+    <button type="submit" class="btn btn-primary">
+      {% if mode == 'edit' %}Değişiklikleri Kaydet{% else %}Proforma Oluştur{% endif %}
+    </button>
+  </div>
+
+</form>
+
+<style>
+.form-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:24px; margin-bottom:20px; }
+.form-section-title { font-size:14px; font-weight:700; color:#0f3d56; margin-bottom:18px; text-transform:uppercase; letter-spacing:0.4px; }
+.form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.form-grid-4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group label { font-size:12px; font-weight:600; color:#4a5568; }
+.form-hint { font-size:11px; color:#94a3b8; }
+.required { color:#e53e3e; }
+.section-title-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:0; }
+.items-table { width:100%; border-collapse:collapse; }
+.items-table thead th { background:#0f3d56; color:#fff; padding:10px 8px; font-size:11px; text-transform:uppercase; }
+.items-table tbody td { padding:6px 4px; border-bottom:1px solid #f0f4f8; vertical-align:middle; }
+.items-table .form-control { padding:6px 8px; font-size:13px; }
+.totals-preview { width:320px; margin-left:auto; margin-top:16px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden; }
+.totals-preview-row { display:flex; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f0f4f8; font-size:13px; }
+.totals-grand { background:#0f3d56; color:#fff; font-weight:700; font-size:15px; border-bottom:none; }
+.form-actions { display:flex; justify-content:flex-end; gap:12px; padding:8px 0 20px; }
+.btn-danger-ghost:hover { color:#e53e3e; }
+.mb-2 { margin-bottom:8px; }
+@media (max-width:768px) {
+  .form-grid-2, .form-grid-4 { grid-template-columns:1fr; }
+}
+</style>
+
+<script>
+let rowCount = {{ (invoice.items | length) if invoice and invoice.items else 1 }};
+
+function addRow() {
+  rowCount++;
+  const tbody = document.getElementById('itemsBody');
+  const tr = document.createElement('tr');
+  tr.className = 'item-row';
+  tr.dataset.line = rowCount;
+  tr.innerHTML = `
+    <td class="line-num">${rowCount}</td>
+    <td><input type="text" name="desc_${rowCount}" class="form-control" placeholder="Ürün adı / açıklama" required></td>
+    <td><input type="text" name="pkg_${rowCount}"  class="form-control" placeholder="5L Bottle"></td>
+    <td><input type="number" name="qty_${rowCount}"   step="0.01" min="0" value="0" class="form-control qty-input"   data-line="${rowCount}" onchange="calcRow(${rowCount})"></td>
+    <td><input type="text"   name="unit_${rowCount}"  value="PCS" class="form-control" placeholder="PCS"></td>
+    <td><input type="number" name="price_${rowCount}" step="0.0001" min="0" value="0" class="form-control price-input" data-line="${rowCount}" onchange="calcRow(${rowCount})"></td>
+    <td><input type="number" name="total_${rowCount}" step="0.01" readonly value="0" class="form-control total-input" data-line="${rowCount}" style="background:#f5f7f9;"></td>
+    <td><button type="button" onclick="removeRow(this)" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">×</button></td>
+  `;
+  tbody.appendChild(tr);
+  renumberRows();
+}
+
+function removeRow(btn) {
+  const rows = document.querySelectorAll('#itemsBody .item-row');
+  if (rows.length <= 1) return;
+  btn.closest('tr').remove();
+  renumberRows();
+  updateTotals();
+}
+
+function renumberRows() {
+  document.querySelectorAll('#itemsBody .item-row').forEach((tr, i) => {
+    const n = i + 1;
+    tr.querySelector('.line-num').textContent = n;
+    tr.dataset.line = n;
+    ['desc','pkg','qty','unit','price','total'].forEach(f => {
+      const el = tr.querySelector(`[name^="${f}_"]`);
+      if (el) { el.name = `${f}_${n}`; el.dataset.line = n; }
+    });
+    const qEl = tr.querySelector('.qty-input');
+    const pEl = tr.querySelector('.price-input');
+    if (qEl) qEl.setAttribute('onchange', `calcRow(${n})`);
+    if (pEl) pEl.setAttribute('onchange', `calcRow(${n})`);
+  });
+}
+
+function calcRow(line) {
+  const qty   = parseFloat(document.querySelector(`[name="qty_${line}"]`)?.value)   || 0;
+  const price = parseFloat(document.querySelector(`[name="price_${line}"]`)?.value) || 0;
+  const totalEl = document.querySelector(`[name="total_${line}"]`);
+  if (totalEl) totalEl.value = (qty * price).toFixed(2);
+  updateTotals();
+}
+
+function updateTotals() {
+  let subtotal = 0;
+  document.querySelectorAll('.total-input').forEach(el => {
+    subtotal += parseFloat(el.value) || 0;
+  });
+  const freight = parseFloat(document.getElementById('freightInput')?.value) || 0;
+  document.getElementById('previewSubtotal').textContent = subtotal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('previewFreight').textContent  = freight.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('previewTotal').textContent    = (subtotal + freight).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Sayfa yüklendiğinde toplamları hesapla
+document.addEventListener('DOMContentLoaded', updateTotals);
+</script>
+{% endblock %}

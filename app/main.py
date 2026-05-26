@@ -13,6 +13,7 @@ from .routes_webhook import router as webhook_router
 from .routes_pricing import router as pricing_router
 from .routes_feeds import router as feeds_router
 from .routes_push import router as push_router
+from .routes_proforma import router as proforma_router
 from sqlalchemy import text, inspect
 import os
 
@@ -479,6 +480,17 @@ def _migrate_stock():
 
 _migrate_stock()
 
+# ── Proforma tabloları ───────────────────────────────────────────────
+def _migrate_proforma():
+    """ProformaInvoice ve ProformaItem tablolarını oluşturur (yoksa)."""
+    from .models import ProformaInvoice, ProformaItem  # noqa: F401
+    Base.metadata.create_all(bind=engine, tables=[
+        ProformaInvoice.__table__,
+        ProformaItem.__table__,
+    ])
+
+_migrate_proforma()
+
 # ── Admin kullanıcı seed ────────────────────────────────────────────
 def _seed_admin():
     """Varsayılan admin kullanıcısını oluşturur (yoksa) veya superadmin olarak işaretler."""
@@ -621,6 +633,7 @@ app.include_router(admin_router)
 app.include_router(push_router)
 app.include_router(feeds_router)     # catch-all /{slug}'den önce kayıtlı olmalı
 app.include_router(webhook_router)   # showroom catch-all'dan önce kayıtlı olmalı
+app.include_router(proforma_router)
 app.include_router(showroom_router)
 app.include_router(pricing_router)
 

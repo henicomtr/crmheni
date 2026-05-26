@@ -1,9 +1,9 @@
 # 🔍 SEO Kontrol Raporu
 
-**Tarih:** 24.03.2026 13:40  
+**Tarih:** 25.05.2026 19:55  
 **Kontrol Eden:** Claude Code SEO Ajanı  
-**Taranan Dosya:** 27  
-**Kritik Sorun İçeren:** 25  
+**Taranan Dosya:** 40  
+**Kritik Sorun İçeren:** 36  
 **Temiz Dosya:** 0  
 
 ---
@@ -20,25 +20,38 @@
 | 🔴 | `admin_dashboard.html` | 2 | 3 | 1 |
 | 🔴 | `admin_finance.html` | 2 | 4 | 1 |
 | 🔴 | `admin_homepage.html` | 3 | 4 | 1 |
-| 🔴 | `admin_layout.html` | 2 | 5 | 0 |
+| 🔴 | `admin_layout.html` | 2 | 3 | 1 |
+| 🔴 | `admin_media.html` | 2 | 3 | 2 |
 | 🔴 | `admin_page_edit.html` | 2 | 5 | 2 |
+| 🔴 | `admin_page_landing.html` | 3 | 4 | 1 |
 | 🔴 | `admin_pages.html` | 2 | 5 | 1 |
+| 🔴 | `admin_pricing.html` | 3 | 4 | 0 |
 | 🔴 | `admin_product_edit.html` | 3 | 3 | 1 |
-| 🔴 | `admin_products.html` | 3 | 3 | 1 |
+| 🔴 | `admin_products.html` | 3 | 4 | 1 |
+| 🔴 | `admin_request_detail.html` | 4 | 3 | 0 |
 | 🔴 | `admin_requests.html` | 2 | 3 | 1 |
+| 🔴 | `admin_service_page.html` | 3 | 4 | 1 |
 | 🔴 | `admin_settings.html` | 3 | 4 | 1 |
+| 🔴 | `admin_stock.html` | 2 | 4 | 1 |
 | 🔴 | `admin_suppliers.html` | 2 | 3 | 1 |
 | 🔴 | `admin_suppliers_edit.html` | 2 | 4 | 1 |
 | 🔴 | `admin_suppliers_edit_backup.html` | 2 | 3 | 1 |
-| 🔴 | `base.html` | 2 | 2 | 2 |
-| 🔴 | `basket.html` | 2 | 3 | 3 |
-| 🟢 | `homepage.html` | 0 | 2 | 5 |
+| 🔴 | `admin_users.html` | 2 | 3 | 1 |
+| 🔴 | `base.html` | 2 | 1 | 3 |
+| 🔴 | `basket.html` | 1 | 2 | 4 |
+| 🔴 | `homepage.html` | 1 | 3 | 3 |
+| 🔴 | `landing_quote_success.html` | 1 | 2 | 4 |
 | 🔴 | `login.html` | 1 | 3 | 2 |
-| 🔴 | `page_generic.html` | 1 | 3 | 3 |
-| 🔴 | `partials\site_header.html` | 3 | 3 | 1 |
+| 🟢 | `page_generic.html` | 0 | 1 | 5 |
+| 🟢 | `page_landing.html` | 0 | 2 | 5 |
+| 🔴 | `partials\media_picker_modal.html` | 4 | 3 | 0 |
+| 🔴 | `partials\site_footer.html` | 3 | 3 | 1 |
+| 🔴 | `partials\site_header.html` | 4 | 4 | 0 |
+| 🔴 | `pin_gate.html` | 2 | 3 | 1 |
 | 🟢 | `product_detail.html` | 0 | 1 | 6 |
-| 🔴 | `quote_success.html` | 1 | 3 | 3 |
-| 🔴 | `showroom.html` | 1 | 3 | 4 |
+| 🔴 | `quote_success.html` | 1 | 2 | 4 |
+| 🔴 | `service_page.html` | 1 | 1 | 5 |
+| 🟢 | `showroom.html` | 0 | 1 | 6 |
 
 ---
 
@@ -74,38 +87,67 @@
 ### `admin_homepage.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
-- ❌ 5 görselde alt text eksik/boş
+- ❌ 6 görselde alt text eksik/boş
 
 ### `admin_layout.html`
 - ❌ Meta description eksik
 - ❌ Sayfada H1 etiketi yok
 
+### `admin_media.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+
 ### `admin_page_edit.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
+
+### `admin_page_landing.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ 6 görselde alt text eksik/boş
 
 ### `admin_pages.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
 
+### `admin_pricing.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ Sayfada H1 etiketi yok
+
 ### `admin_product_edit.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
-- ❌ 1 görselde alt text eksik/boş
+- ❌ 2 görselde alt text eksik/boş
 
 ### `admin_products.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
 - ❌ 2 görselde alt text eksik/boş
 
+### `admin_request_detail.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ Sayfada H1 etiketi yok
+- ❌ 1 görselde alt text eksik/boş
+
 ### `admin_requests.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
 
-### `admin_settings.html`
+### `admin_service_page.html`
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
 - ❌ 7 görselde alt text eksik/boş
+
+### `admin_settings.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ 9 görselde alt text eksik/boş
+
+### `admin_stock.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
 
 ### `admin_suppliers.html`
 - ❌ `<title>` etiketi eksik
@@ -119,30 +161,52 @@
 - ❌ `<title>` etiketi eksik
 - ❌ Meta description eksik
 
+### `admin_users.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+
 ### `base.html`
 - ❌ Meta description eksik
 - ❌ Sayfada H1 etiketi yok
 
 ### `basket.html`
 - ❌ Meta description eksik
-- ❌ Sayfada H1 etiketi yok
+
+### `homepage.html`
+- ❌ 1 görselde alt text eksik/boş
+
+### `landing_quote_success.html`
+- ❌ Meta description eksik
 
 ### `login.html`
 - ❌ Meta description eksik
 
-### `page_generic.html`
+### `partials\media_picker_modal.html`
 - ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ Sayfada H1 etiketi yok
+- ❌ 1 görselde alt text eksik/boş
+
+### `partials\site_footer.html`
+- ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ Sayfada H1 etiketi yok
 
 ### `partials\site_header.html`
 - ❌ `<title>` etiketi eksik
+- ❌ Meta description eksik
+- ❌ Sayfada H1 etiketi yok
+- ❌ 1 görselde alt text eksik/boş
+
+### `pin_gate.html`
 - ❌ Meta description eksik
 - ❌ Sayfada H1 etiketi yok
 
 ### `quote_success.html`
 - ❌ Meta description eksik
 
-### `showroom.html`
-- ❌ Birden fazla H1 var (2 adet)
+### `service_page.html`
+- ❌ 1 görselde alt text eksik/boş
 
 ---
 
@@ -191,28 +255,43 @@
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Yüksek inline CSS kullanımı (45 adet)
+- ⚠️ Yüksek inline CSS kullanımı (47 adet)
 
 ### `admin_layout.html`
-- ⚠️ Title çok kısa (8 karakter, önerilen: 50–60)
+- ⚠️ Title çok kısa (16 karakter, önerilen: 50–60)
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+
+### `admin_media.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Az içerik: yaklaşık 100 kelime (önerilen: 300+)
 
 ### `admin_page_edit.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Yüksek inline CSS kullanımı (93 adet)
+- ⚠️ Yüksek inline CSS kullanımı (91 adet)
 - ⚠️ 2 adet boş/# href tespit edildi
+
+### `admin_page_landing.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ Yüksek inline CSS kullanımı (21 adet)
 
 ### `admin_pages.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Yüksek inline CSS kullanımı (46 adet)
-- ⚠️ Az içerik: yaklaşık 60 kelime (önerilen: 300+)
+- ⚠️ Yüksek inline CSS kullanımı (47 adet)
+- ⚠️ Az içerik: yaklaşık 96 kelime (önerilen: 300+)
+
+### `admin_pricing.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ Yüksek inline CSS kullanımı (64 adet)
 
 ### `admin_product_edit.html`
 - ⚠️ Canonical URL etiketi eksik
@@ -223,17 +302,35 @@
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ Yüksek inline CSS kullanımı (21 adet)
+
+### `admin_request_detail.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
 ### `admin_requests.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
+### `admin_service_page.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ Yüksek inline CSS kullanımı (48 adet)
+
 ### `admin_settings.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Yüksek inline CSS kullanımı (81 adet)
+- ⚠️ Yüksek inline CSS kullanımı (141 adet)
+
+### `admin_stock.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ Yüksek inline CSS kullanımı (29 adet)
 
 ### `admin_suppliers.html`
 - ⚠️ Canonical URL etiketi eksik
@@ -251,32 +348,58 @@
 - ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
-### `base.html`
+### `admin_users.html`
 - ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+
+### `base.html`
+- ⚠️ Hreflang eksik: 3/7 dil tanımlanmış
 
 ### `basket.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Az içerik: yaklaşık 90 kelime (önerilen: 300+)
 
 ### `homepage.html`
+- ⚠️ Description kısa (10 karakter, önerilen: 150–160)
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang eksik: 2/7 dil tanımlanmış
 
+### `landing_quote_success.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+
 ### `login.html`
-- ⚠️ Title çok kısa (22 karakter, önerilen: 50–60)
+- ⚠️ Title çok kısa (16 karakter, önerilen: 50–60)
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
 ### `page_generic.html`
-- ⚠️ `<html lang='...'>` attribute eksik
 - ⚠️ Hreflang eksik: 3/7 dil tanımlanmış
-- ⚠️ Az içerik: yaklaşık 3 kelime (önerilen: 300+)
+
+### `page_landing.html`
+- ⚠️ Description kısa (12 karakter, önerilen: 150–160)
+- ⚠️ Hreflang eksik: 3/7 dil tanımlanmış
+
+### `partials\media_picker_modal.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+
+### `partials\site_footer.html`
+- ⚠️ Canonical URL etiketi eksik
+- ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
 ### `partials\site_header.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ `<html lang='...'>` attribute eksik
+- ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
+- ⚠️ 1 adet boş/# href tespit edildi
+
+### `pin_gate.html`
+- ⚠️ Title çok kısa (16 karakter, önerilen: 50–60)
+- ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
 
 ### `product_detail.html`
@@ -285,12 +408,12 @@
 ### `quote_success.html`
 - ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang etiketleri eksik (7 dil için gerekli)
-- ⚠️ Az içerik: yaklaşık 20 kelime (önerilen: 300+)
+
+### `service_page.html`
+- ⚠️ Hreflang eksik: 2/7 dil tanımlanmış
 
 ### `showroom.html`
-- ⚠️ Canonical URL etiketi eksik
 - ⚠️ Hreflang eksik: 3/7 dil tanımlanmış
-- ⚠️ Az içerik: yaklaşık 66 kelime (önerilen: 300+)
 
 ---
 
@@ -304,23 +427,33 @@
 **`admin_dashboard.html`:** ✅ Tek H1 mevcut
 **`admin_finance.html`:** ✅ Tek H1 mevcut
 **`admin_homepage.html`:** ✅ Tek H1 mevcut
+**`admin_layout.html`:** ✅ Lang attribute var: `tr`
+**`admin_media.html`:** ✅ Tek H1 mevcut, ✅ Tüm görsellerde alt text var (1 görsel)
 **`admin_page_edit.html`:** ✅ Tek H1 mevcut, ✅ Tüm görsellerde alt text var (3 görsel)
+**`admin_page_landing.html`:** ✅ Tek H1 mevcut
 **`admin_pages.html`:** ✅ Tek H1 mevcut
 **`admin_product_edit.html`:** ✅ Tek H1 mevcut
 **`admin_products.html`:** ✅ Tek H1 mevcut
 **`admin_requests.html`:** ✅ Tek H1 mevcut
+**`admin_service_page.html`:** ✅ Tek H1 mevcut
 **`admin_settings.html`:** ✅ Tek H1 mevcut
+**`admin_stock.html`:** ✅ Tek H1 mevcut
 **`admin_suppliers.html`:** ✅ Tek H1 mevcut
 **`admin_suppliers_edit.html`:** ✅ Tek H1 mevcut
 **`admin_suppliers_edit_backup.html`:** ✅ Tek H1 mevcut
-**`base.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Lang attribute var: `{{ active_lang if active_lang is defined else `
-**`basket.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tüm görsellerde alt text var (1 görsel)
-**`homepage.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Description dinamik Jinja2 değişkeni içeriyor
+**`admin_users.html`:** ✅ Tek H1 mevcut
+**`base.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Canonical etiketi mevcut
+**`basket.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
+**`homepage.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
+**`landing_quote_success.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
 **`login.html`:** ✅ Tek H1 mevcut, ✅ Lang attribute var: `tr`
-**`page_generic.html`:** ✅ Description dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
-**`partials\site_header.html`:** ✅ Tüm görsellerde alt text var (2 görsel)
+**`page_generic.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Description dinamik Jinja2 değişkeni içeriyor
+**`page_landing.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
+**`partials\site_footer.html`:** ✅ Tüm görsellerde alt text var (9 görsel)
+**`pin_gate.html`:** ✅ Lang attribute var: `tr`
 **`product_detail.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Description dinamik Jinja2 değişkeni içeriyor
 **`quote_success.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Tek H1 mevcut
+**`service_page.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Description dinamik Jinja2 değişkeni içeriyor
 **`showroom.html`:** ✅ Title dinamik Jinja2 değişkeni içeriyor, ✅ Description dinamik Jinja2 değişkeni içeriyor
 
 ---

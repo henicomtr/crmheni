@@ -876,3 +876,106 @@ class PricingResult(Base):
         """breakdown'ı JSON olarak saklar."""
         import json
         self.breakdown_json = json.dumps(d, ensure_ascii=False)
+
+
+# ─────────────────────────────────────────────────────────────────────
+# PROFORMA INVOICE — Uluslararası B2B proforma fatura sistemi
+# ─────────────────────────────────────────────────────────────────────
+
+class ProformaInvoice(Base):
+    """
+    Proforma fatura başlık bilgileri.
+    revision_number: İlk oluşturmada 1, her revizyon sonrası artar.
+    parent_id: Revize edilmiş proformanın orijinal kaydı (NULL ise ilk versiyon).
+    status: draft | sent | revised | accepted | rejected
+    """
+    __tablename__ = "proforma_invoices"
+
+    id               = Column(Integer, primary_key=True, index=True)
+    pi_number        = Column(String, unique=True, nullable=False, index=True)  # ör. PI-2026-001
+
+    # Belge meta
+    issue_date       = Column(String, nullable=False)   # ör. 26.05.2026
+    validity_days    = Column(Integer, default=15)
+    incoterm         = Column(String, nullable=True)    # FOB / EXW / CIF
+    currency         = Column(String, default="USD")
+
+    # Alıcı bilgileri
+    buyer_company    = Column(String, nullable=True)
+    buyer_country    = Column(String, nullable=True)
+    buyer_address    = Column(Text,   nullable=True)
+    buyer_contact    = Column(String, nullable=True)
+    buyer_phone      = Column(String, nullable=True)
+    buyer_email      = Column(String, nullable=True)
+
+    # Sevkiyat bilgileri
+    loading_port     = Column(String, nullable=True)
+    destination_port = Column(String, nullable=True)
+    delivery_time    = Column(String, nullable=True)    # ör. 21 Working Days
+    payment_term     = Column(String, nullable=True)    # ör. 50% Advance – 50% Before Shipment
+
+    # Nakliye & banka
+    freight_cost     = Column(Float, default=0.0)
+    bank_name        = Column(String, nullable=True)
+    bank_iban        = Column(String, nullable=True)
+    bank_swift       = Column(String, nullable=True)
+
+    # Özel notlar / şartlar (Terms & Conditions override)
+    notes            = Column(Text, nullable=True)
+
+    # Revizyon takibi
+    revision_number  = Column(Integer, default=1)
+    parent_id        = Column(Integer, ForeignKey("proforma_invoices.id"), nullable=True)
+
+    # Durum
+    status           = Column(String, default="draft")  # draft | sent | revised | accepted | rejected
+    sent_at          = Column(DateTime, nullable=True)
+    created_at       = Column(DateTime, default=datetime.utcnow)
+    updated_at       = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by       = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    items     = relationship("ProformaItem", back_populates="invoice", cascade="all, delete-orphan", order_by="ProformaItem.line_number")
+    # Kendine referans: parent → çocuklar (revizyon zincirleme)
+    revisions = relationship(
+        "ProformaInvoice",
+        foreign_keys="ProformaInvoice.parent_id",
+        primaryjoin="ProformaInvoice.id == foreign(ProformaInvoice.parent_id)",
+    )
+
+    @property
+    def subtotal(self) -> float:
+        """Tüm kalemlerin toplamı (nakliye hariç)."""
+        return sum(item.total for item in self.items)
+
+    @property
+    def grand_total(self) -> float:
+        """Nakliye dahil genel toplam."""
+        return self.subtotal + (self.freight_cost or 0.0)
+
+    @property
+    def status_label(self) -> str:
+        """Durum etiketini Türkçe döner."""
+        return {
+            "draft":    "Taslak",
+            "sent":     "Gönderildi",
+            "revised":  "Revize Edildi",
+            "accepted": "Kabul Edildi",
+            "rejected": "Reddedildi",
+        }.get(self.status, self.status)
+
+
+class ProformaItem(Base):
+    """Proforma fatura satır kalemi."""
+    __tablename__ = "proforma_items"
+
+    id                  = Column(Integer, primary_key=True, index=True)
+    invoice_id          = Column(Integer, ForeignKey("proforma_invoices.id", ondelete="CASCADE"), nullable=False)
+    line_number         = Column(Integer, nullable=False, default=1)
+    product_description = Column(String, nullable=False)
+    packaging           = Column(String, nullable=True)   # ör. 5L Bottle
+    quantity            = Column(Float,  nullable=False, default=0.0)
+    quantity_unit       = Column(String, default="PCS")
+    unit_price          = Column(Float,  nullable=False, default=0.0)
+    total               = Column(Float,  nullable=False, default=0.0)  # quantity × unit_price
+
+    invoice = relationship("ProformaInvoice", back_populates="items")

@@ -1,0 +1,333 @@
+{% extends "admin_layout.html" %}
+{% block title %}{{ invoice.pi_number }} — Proforma Önizleme{% endblock %}
+
+{% block content %}
+
+<!-- Üst Aksiyon Çubuğu -->
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ invoice.pi_number }}
+      {% if invoice.revision_number > 1 %}
+        <span class="rev-badge">Rev.{{ invoice.revision_number }}</span>
+      {% endif %}
+    </h1>
+    <p class="page-subtitle">
+      {{ invoice.buyer_company or '—' }} &nbsp;·&nbsp; {{ invoice.issue_date }}
+      &nbsp;·&nbsp;
+      {% if invoice.status == 'draft' %}<span class="st draft">Taslak</span>
+      {% elif invoice.status == 'sent' %}<span class="st sent">Gönderildi</span>
+      {% elif invoice.status == 'revised' %}<span class="st revised">Revize Edildi</span>
+      {% elif invoice.status == 'accepted' %}<span class="st accepted">Kabul Edildi</span>
+      {% elif invoice.status == 'rejected' %}<span class="st rejected">Reddedildi</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="header-actions">
+    <a href="/esk/proformalar" class="btn btn-ghost">← Liste</a>
+    <a href="/esk/proformalar/{{ invoice.id }}/duzenle" class="btn btn-secondary">Düzenle</a>
+    <a href="/esk/proformalar/{{ invoice.id }}/pdf" class="btn btn-secondary" target="_blank">PDF İndir</a>
+    {% if invoice.status != 'revised' %}
+    <button onclick="sendProforma()" class="btn btn-primary" id="sendBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Gönder
+    </button>
+    <button onclick="reviseProforma()" class="btn btn-orange" id="reviseBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Revize Oluştur
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Revizyon Geçmişi -->
+{% if revision_chain | length > 1 %}
+<div class="revision-bar">
+  <span class="rev-label">Revizyon Geçmişi:</span>
+  {% for rev in revision_chain %}
+  <a href="/esk/proformalar/{{ rev.id }}" class="rev-chip {% if rev.id == invoice.id %}active{% endif %}">
+    {{ rev.pi_number }}
+    {% if rev.revision_number > 1 %}<small>Rev.{{ rev.revision_number }}</small>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Mesaj Alanı -->
+<div id="alertBox" style="display:none;margin-bottom:16px;"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     PROFORMA ÖNIZLEMESI — Paylaşılan Tasarıma Uygun
+     ════════════════════════════════════════════════════════ -->
+<div class="pi-wrapper">
+
+  <!-- Üst Bar -->
+  <div class="pi-top-bar">
+    <div class="pi-company">
+      <h1>HENI KOZMETIK</h1>
+      <p>
+        Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        Eskişehir / Türkiye<br>
+        Web: www.heni.com.tr<br>
+        E-mail: export@heni.com.tr<br>
+        {% if settings and settings.contact_phone %}Tel: {{ settings.contact_phone }}{% endif %}
+      </p>
+    </div>
+    <div class="pi-invoice-title">
+      <h2>PROFORMA INVOICE</h2>
+      <div class="pi-invoice-meta">
+        <strong>PI No:</strong> {{ invoice.pi_number }}<br>
+        <strong>Date:</strong> {{ invoice.issue_date }}<br>
+        <strong>Validity:</strong> {{ invoice.validity_days }} Days<br>
+        <strong>Incoterm:</strong> {{ invoice.incoterm or '—' }}
+        {% if invoice.revision_number > 1 %}<br><strong>Revision:</strong> Rev.{{ invoice.revision_number }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Satıcı / Alıcı -->
+  <div class="pi-section-grid">
+    <div class="pi-card">
+      <h3>Seller Information</h3>
+      <p>
+        <span class="hl">Company:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        <span class="hl">Address:</span> Eskişehir, Türkiye<br>
+        <span class="hl">Tax Office:</span> —<br>
+        <span class="hl">Tax Number:</span> —<br>
+        <span class="hl">E-mail:</span> export@heni.com.tr
+      </p>
+    </div>
+    <div class="pi-card">
+      <h3>Buyer Information</h3>
+      <p>
+        <span class="hl">Company:</span> {{ invoice.buyer_company or '—' }}<br>
+        <span class="hl">Country:</span> {{ invoice.buyer_country or '—' }}<br>
+        <span class="hl">Address:</span> {{ invoice.buyer_address or '—' }}<br>
+        <span class="hl">Contact Person:</span> {{ invoice.buyer_contact or '—' }}<br>
+        <span class="hl">Phone / E-mail:</span>
+          {{ invoice.buyer_phone or '' }}{% if invoice.buyer_phone and invoice.buyer_email %} / {% endif %}{{ invoice.buyer_email or '—' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Ürün Tablosu -->
+  <table class="pi-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Product Description</th>
+        <th>Packaging</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in invoice.items %}
+      <tr>
+        <td>{{ item.line_number }}</td>
+        <td>{{ item.product_description }}</td>
+        <td>{{ item.packaging or '—' }}</td>
+        <td>{{ '{:,.0f}'.format(item.quantity) }} {{ item.quantity_unit }}</td>
+        <td>{{ '{:,.2f}'.format(item.unit_price) }} {{ invoice.currency }}</td>
+        <td><strong>{{ '{:,.2f}'.format(item.total) }} {{ invoice.currency }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Toplamlar -->
+  <div class="pi-totals">
+    <div class="pi-totals-row">
+      <span>Subtotal</span>
+      <span>{{ '{:,.2f}'.format(invoice.subtotal) }} {{ invoice.currency }}</span>
+    </div>
+    <div class="pi-totals-row">
+      <span>Freight Cost</span>
+      <span>{{ '{:,.2f}'.format(invoice.freight_cost or 0) }} {{ invoice.currency }}</span>
+    </div>
+    <div class="pi-totals-row pi-totals-grand">
+      <span>Total Amount</span>
+      <span>{{ '{:,.2f}'.format(invoice.grand_total) }} {{ invoice.currency }}</span>
+    </div>
+  </div>
+
+  <!-- Sevkiyat / Banka -->
+  <div class="pi-section-grid">
+    <div class="pi-card">
+      <h3>Shipping Details</h3>
+      <p>
+        <span class="hl">Loading Port:</span> {{ invoice.loading_port or '—' }}<br>
+        <span class="hl">Destination Port:</span> {{ invoice.destination_port or '—' }}<br>
+        <span class="hl">Delivery Time:</span> {{ invoice.delivery_time or '—' }}<br>
+        <span class="hl">Payment Term:</span> {{ invoice.payment_term or '—' }}<br>
+        <span class="hl">Origin:</span> Made in Türkiye
+      </p>
+    </div>
+    <div class="pi-card">
+      <h3>Bank Information</h3>
+      <p>
+        <span class="hl">Bank Name:</span> {{ invoice.bank_name or '—' }}<br>
+        <span class="hl">Account Name:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        <span class="hl">IBAN:</span> {{ invoice.bank_iban or '—' }}<br>
+        <span class="hl">SWIFT Code:</span> {{ invoice.bank_swift or '—' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Şartlar -->
+  <div class="pi-terms">
+    <h3>Terms &amp; Conditions</h3>
+    {% if invoice.notes %}
+    <p style="font-size:14px;line-height:1.7;color:#444;">{{ invoice.notes }}</p>
+    {% else %}
+    <ul>
+      <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
+      <li>All products are manufactured according to international export standards.</li>
+      <li>Packaging design and private label applications can be customized upon request.</li>
+      <li>Production starts after advance payment confirmation.</li>
+      <li>Delivery schedule may vary depending on production planning and shipping conditions.</li>
+    </ul>
+    {% endif %}
+  </div>
+
+  <!-- Footer -->
+  <div class="pi-footer">
+    <div class="pi-bank-info">
+      <strong>Export Department</strong><br>
+      Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+      www.heni.com.tr
+    </div>
+    <div class="pi-signature">
+      <div class="pi-signature-line">Authorized Signature</div>
+    </div>
+  </div>
+
+</div><!-- /pi-wrapper -->
+
+<!-- ── Stiller ── -->
+<style>
+/* Aksiyon çubuğu */
+.header-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.btn-orange { background:#ea6c00; color:#fff; border:none; }
+.btn-orange:hover { background:#c85c00; }
+.rev-badge { font-size:14px; background:#e0f2fe; color:#0369a1; border-radius:99px; padding:2px 10px; font-weight:600; }
+
+/* Revizyon çubuğu */
+.revision-bar { display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.rev-label { font-size:12px; color:#64748b; font-weight:600; }
+.rev-chip { padding:4px 12px; border-radius:99px; border:1px solid #cbd5e1; font-size:12px; color:#475569; text-decoration:none; background:#fff; }
+.rev-chip.active { background:#0f3d56; color:#fff; border-color:#0f3d56; }
+.rev-chip:hover:not(.active) { background:#f1f5f9; }
+
+/* Durum etiketleri */
+.st { font-weight:600; border-radius:99px; padding:2px 10px; font-size:12px; }
+.st.draft { background:#f0f0f0; color:#666; }
+.st.sent { background:#dbeafe; color:#1d4ed8; }
+.st.revised { background:#ffedd5; color:#c2410c; }
+.st.accepted { background:#dcfce7; color:#16a34a; }
+.st.rejected { background:#fee2e2; color:#dc2626; }
+
+/* Proforma kart */
+.pi-wrapper {
+  max-width: 1100px;
+  background: #fff;
+  padding: 50px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  margin: 0 auto;
+}
+
+/* Üst bar */
+.pi-top-bar { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #0f3d56; padding-bottom:25px; margin-bottom:35px; }
+.pi-company h1 { font-size:34px; color:#0f3d56; margin-bottom:8px; letter-spacing:1px; }
+.pi-company p { font-size:14px; line-height:1.7; color:#555; }
+.pi-invoice-title { text-align:right; }
+.pi-invoice-title h2 { font-size:38px; color:#0f3d56; margin-bottom:12px; }
+.pi-invoice-meta { font-size:14px; line-height:1.8; color:#444; }
+
+/* Bilgi kartları */
+.pi-section-grid { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin-bottom:35px; }
+.pi-card { border:1px solid #d9e2e8; border-radius:10px; padding:24px; background:#fafcfd; }
+.pi-card h3 { font-size:14px; color:#0f3d56; margin-bottom:14px; text-transform:uppercase; letter-spacing:0.5px; }
+.pi-card p { font-size:14px; line-height:1.8; color:#444; }
+.hl { color:#0f3d56; font-weight:bold; }
+
+/* Tablo */
+.pi-table { width:100%; border-collapse:collapse; margin-top:15px; margin-bottom:30px; }
+.pi-table thead { background:#0f3d56; color:#fff; }
+.pi-table th { padding:15px 10px; font-size:13px; text-transform:uppercase; letter-spacing:0.5px; text-align:left; }
+.pi-table td { padding:14px 10px; border-bottom:1px solid #e5e5e5; font-size:14px; color:#333; }
+.pi-table tbody tr:nth-child(even) { background:#fafafa; }
+
+/* Toplamlar */
+.pi-totals { width:380px; margin-left:auto; border:1px solid #d9e2e8; border-radius:10px; overflow:hidden; margin-bottom:35px; }
+.pi-totals-row { display:flex; justify-content:space-between; padding:14px 18px; border-bottom:1px solid #e6eef2; font-size:14px; }
+.pi-totals-grand { background:#0f3d56; color:#fff; font-weight:bold; font-size:16px; border-bottom:none; }
+
+/* Şartlar */
+.pi-terms { border-top:2px solid #e8eef2; padding-top:25px; margin-top:20px; }
+.pi-terms h3 { color:#0f3d56; margin-bottom:12px; font-size:16px; }
+.pi-terms ul { padding-left:18px; }
+.pi-terms li { margin-bottom:10px; line-height:1.7; font-size:14px; color:#444; }
+
+/* Footer */
+.pi-footer { margin-top:40px; display:flex; justify-content:space-between; align-items:center; border-top:2px solid #e8eef2; padding-top:25px; }
+.pi-bank-info { font-size:13px; line-height:1.8; color:#444; }
+.pi-signature { text-align:center; width:250px; }
+.pi-signature-line { border-top:1px solid #333; margin-top:60px; padding-top:8px; font-size:13px; color:#444; }
+
+/* Alert */
+.alert-success { background:#dcfce7; color:#16a34a; border:1px solid #bbf7d0; padding:12px 16px; border-radius:8px; }
+.alert-error   { background:#fee2e2; color:#dc2626; border:1px solid #fecaca; padding:12px 16px; border-radius:8px; }
+</style>
+
+<!-- ── Gönder / Revize JS ── -->
+<script>
+async function sendProforma() {
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.textContent = 'Gönderiliyor...';
+  try {
+    const res = await fetch('/esk/proformalar/{{ invoice.id }}/gonder', { method: 'POST' });
+    const data = await res.json();
+    const box = document.getElementById('alertBox');
+    box.style.display = 'block';
+    if (data.ok) {
+      box.className = 'alert-success';
+      box.textContent = data.message;
+      btn.textContent = 'Gönderildi ✓';
+    } else {
+      box.className = 'alert-error';
+      box.textContent = 'Hata: ' + data.error;
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Gönder';
+    }
+  } catch (e) {
+    document.getElementById('alertBox').style.display = 'block';
+    document.getElementById('alertBox').className = 'alert-error';
+    document.getElementById('alertBox').textContent = 'Bağlantı hatası: ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function reviseProforma() {
+  if (!confirm('Bu proforma revize edilecek ve yeni taslak oluşturulacak. Devam edilsin mi?')) return;
+  const btn = document.getElementById('reviseBtn');
+  btn.disabled = true;
+  btn.textContent = 'Oluşturuluyor...';
+  try {
+    const res = await fetch('/esk/proformalar/{{ invoice.id }}/revize', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      window.location.href = '/esk/proformalar/' + data.new_id;
+    } else {
+      alert('Hata: ' + data.error);
+      btn.disabled = false;
+    }
+  } catch (e) {
+    alert('Bağlantı hatası: ' + e.message);
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

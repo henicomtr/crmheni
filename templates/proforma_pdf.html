@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Proforma Invoice – {{ invoice.pi_number }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #ffffff;
+      color: #1a1a1a;
+      padding: 30px;
+      font-size: 13px;
+    }
+
+    /* ── Üst bar ── */
+    .top-bar {
+      width: 100%;
+      border-bottom: 3px solid #0f3d56;
+      padding-bottom: 18px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .company { float: left; }
+    .company h1 { font-size: 26px; color: #0f3d56; margin-bottom: 6px; letter-spacing: 1px; }
+    .company p  { font-size: 12px; line-height: 1.7; color: #555; }
+    .invoice-title { float: right; text-align: right; }
+    .invoice-title h2 { font-size: 28px; color: #0f3d56; margin-bottom: 8px; }
+    .invoice-meta { font-size: 12px; line-height: 1.8; color: #444; }
+    .clearfix::after { content: ""; display: table; clear: both; }
+
+    /* ── Bilgi kartları ── */
+    .section-grid { width: 100%; margin-bottom: 24px; overflow: hidden; }
+    .card {
+      width: 48%;
+      float: left;
+      border: 1px solid #d9e2e8;
+      border-radius: 6px;
+      padding: 16px;
+      background: #fafcfd;
+    }
+    .card + .card { margin-left: 4%; }
+    .card h3 {
+      font-size: 12px;
+      color: #0f3d56;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card p { font-size: 12px; line-height: 1.8; color: #444; }
+
+    /* ── Tablo ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    thead { background: #0f3d56; color: white; }
+    th { padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    td { padding: 9px 8px; border-bottom: 1px solid #e5e5e5; font-size: 12px; color: #333; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+
+    /* ── Toplamlar ── */
+    .totals { width: 320px; margin-left: auto; border: 1px solid #d9e2e8; border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
+    .totals-row { overflow: hidden; padding: 10px 14px; border-bottom: 1px solid #e6eef2; font-size: 12px; }
+    .totals-row span:first-child { float: left; }
+    .totals-row span:last-child  { float: right; }
+    .totals-row:last-child { background: #0f3d56; color: white; font-weight: bold; font-size: 14px; border-bottom: none; }
+
+    /* ── Şartlar ── */
+    .terms { border-top: 2px solid #e8eef2; padding-top: 16px; margin-top: 14px; }
+    .terms h3 { color: #0f3d56; margin-bottom: 8px; font-size: 13px; }
+    .terms ul { padding-left: 16px; }
+    .terms li { margin-bottom: 7px; line-height: 1.6; font-size: 12px; color: #444; }
+
+    /* ── Footer ── */
+    .footer { margin-top: 30px; overflow: hidden; border-top: 2px solid #e8eef2; padding-top: 18px; }
+    .bank-info { float: left; font-size: 12px; line-height: 1.8; color: #444; }
+    .signature { float: right; text-align: center; width: 200px; }
+    .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 6px; font-size: 12px; color: #444; }
+
+    .highlight { color: #0f3d56; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <!-- Üst Bar -->
+  <div class="top-bar clearfix">
+    <div class="company">
+      <h1>HENI KOZMETIK</h1>
+      <p>
+        Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        Eskişehir / Türkiye<br>
+        Web: www.heni.com.tr<br>
+        E-mail: export@heni.com.tr<br>
+        {% if settings and settings.contact_phone %}Tel: {{ settings.contact_phone }}{% endif %}
+      </p>
+    </div>
+    <div class="invoice-title">
+      <h2>PROFORMA INVOICE</h2>
+      <div class="invoice-meta">
+        <strong>PI No:</strong> {{ invoice.pi_number }}<br>
+        <strong>Date:</strong> {{ invoice.issue_date }}<br>
+        <strong>Validity:</strong> {{ invoice.validity_days }} Days<br>
+        <strong>Incoterm:</strong> {{ invoice.incoterm or '—' }}
+        {% if invoice.revision_number > 1 %}<br><strong>Revision:</strong> Rev.{{ invoice.revision_number }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Satıcı / Alıcı -->
+  <div class="section-grid clearfix">
+    <div class="card">
+      <h3>Seller Information</h3>
+      <p>
+        <span class="highlight">Company:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        <span class="highlight">Address:</span> Eskişehir, Türkiye<br>
+        <span class="highlight">Tax Office:</span> —<br>
+        <span class="highlight">Tax Number:</span> —<br>
+        <span class="highlight">E-mail:</span> export@heni.com.tr
+      </p>
+    </div>
+    <div class="card">
+      <h3>Buyer Information</h3>
+      <p>
+        <span class="highlight">Company:</span> {{ invoice.buyer_company or '—' }}<br>
+        <span class="highlight">Country:</span> {{ invoice.buyer_country or '—' }}<br>
+        <span class="highlight">Address:</span> {{ invoice.buyer_address or '—' }}<br>
+        <span class="highlight">Contact:</span> {{ invoice.buyer_contact or '—' }}<br>
+        <span class="highlight">Phone / E-mail:</span> {{ invoice.buyer_phone or '' }}{% if invoice.buyer_phone and invoice.buyer_email %} / {% endif %}{{ invoice.buyer_email or '—' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Ürün Tablosu -->
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Product Description</th>
+        <th>Packaging</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in invoice.items %}
+      <tr>
+        <td>{{ item.line_number }}</td>
+        <td>{{ item.product_description }}</td>
+        <td>{{ item.packaging or '—' }}</td>
+        <td>{{ '{:,.0f}'.format(item.quantity) }} {{ item.quantity_unit }}</td>
+        <td>{{ '{:,.2f}'.format(item.unit_price) }} {{ invoice.currency }}</td>
+        <td>{{ '{:,.2f}'.format(item.total) }} {{ invoice.currency }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Toplamlar -->
+  <div class="totals">
+    <div class="totals-row clearfix">
+      <span>Subtotal</span>
+      <span>{{ '{:,.2f}'.format(invoice.subtotal) }} {{ invoice.currency }}</span>
+    </div>
+    <div class="totals-row clearfix">
+      <span>Freight Cost</span>
+      <span>{{ '{:,.2f}'.format(invoice.freight_cost or 0) }} {{ invoice.currency }}</span>
+    </div>
+    <div class="totals-row clearfix">
+      <span>Total Amount</span>
+      <span>{{ '{:,.2f}'.format(invoice.grand_total) }} {{ invoice.currency }}</span>
+    </div>
+  </div>
+
+  <!-- Sevkiyat / Banka -->
+  <div class="section-grid clearfix">
+    <div class="card">
+      <h3>Shipping Details</h3>
+      <p>
+        <span class="highlight">Loading Port:</span> {{ invoice.loading_port or '—' }}<br>
+        <span class="highlight">Destination Port:</span> {{ invoice.destination_port or '—' }}<br>
+        <span class="highlight">Delivery Time:</span> {{ invoice.delivery_time or '—' }}<br>
+        <span class="highlight">Payment Term:</span> {{ invoice.payment_term or '—' }}<br>
+        <span class="highlight">Origin:</span> Made in Türkiye
+      </p>
+    </div>
+    <div class="card">
+      <h3>Bank Information</h3>
+      <p>
+        <span class="highlight">Bank Name:</span> {{ invoice.bank_name or '—' }}<br>
+        <span class="highlight">Account Name:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+        <span class="highlight">IBAN:</span> {{ invoice.bank_iban or '—' }}<br>
+        <span class="highlight">SWIFT Code:</span> {{ invoice.bank_swift or '—' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Şartlar -->
+  <div class="terms">
+    <h3>Terms &amp; Conditions</h3>
+    {% if invoice.notes %}
+    <p style="font-size:12px;color:#444;line-height:1.7;">{{ invoice.notes }}</p>
+    {% else %}
+    <ul>
+      <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
+      <li>All products are manufactured according to international export standards.</li>
+      <li>Packaging design and private label applications can be customized upon request.</li>
+      <li>Production starts after advance payment confirmation.</li>
+      <li>Delivery schedule may vary depending on production planning and shipping conditions.</li>
+    </ul>
+    {% endif %}
+  </div>
+
+  <!-- Footer -->
+  <div class="footer clearfix">
+    <div class="bank-info">
+      <strong>Export Department</strong><br>
+      Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
+      www.heni.com.tr
+    </div>
+    <div class="signature">
+      <div class="signature-line">Authorized Signature</div>
+    </div>
+  </div>
+
+</body>
+</html>

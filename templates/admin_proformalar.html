@@ -1,0 +1,136 @@
+{% extends "admin_layout.html" %}
+{% block title %}Proformalar — HENİ CRM{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Proforma Invoice</h1>
+    <p class="page-subtitle">Tüm proforma faturaları yönetin, gönderin ve takip edin.</p>
+  </div>
+  <a href="/esk/proformalar/yeni" class="btn btn-primary">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Yeni Proforma
+  </a>
+</div>
+
+<!-- Filtreler -->
+<div class="card mb-4">
+  <form method="get" action="/esk/proformalar" class="filter-row">
+    <input type="text" name="q" value="{{ q }}" placeholder="PI No, Firma, E-posta ara..." class="form-control" style="max-width:280px;">
+    <select name="status" class="form-control" style="max-width:180px;">
+      <option value="">Tüm Durumlar</option>
+      <option value="draft"    {% if status_filter == 'draft'    %}selected{% endif %}>Taslak</option>
+      <option value="sent"     {% if status_filter == 'sent'     %}selected{% endif %}>Gönderildi</option>
+      <option value="revised"  {% if status_filter == 'revised'  %}selected{% endif %}>Revize Edildi</option>
+      <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Kabul Edildi</option>
+      <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Reddedildi</option>
+    </select>
+    <button type="submit" class="btn btn-secondary">Filtrele</button>
+    {% if q or status_filter %}
+    <a href="/esk/proformalar" class="btn btn-ghost">Temizle</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Tablo -->
+<div class="card">
+  {% if proformalar %}
+  <div class="table-wrapper">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>PI Numarası</th>
+          <th>Tarih</th>
+          <th>Alıcı Firma</th>
+          <th>Ülke</th>
+          <th>Toplam</th>
+          <th>Durum</th>
+          <th>Gönderildi</th>
+          <th>İşlemler</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in proformalar %}
+        <tr>
+          <td>
+            <a href="/esk/proformalar/{{ p.id }}" class="link-primary fw-600">{{ p.pi_number }}</a>
+            {% if p.revision_number > 1 %}
+            <span class="badge badge-info" style="font-size:10px;">Rev.{{ p.revision_number }}</span>
+            {% endif %}
+          </td>
+          <td>{{ p.issue_date }}</td>
+          <td>{{ p.buyer_company or '—' }}</td>
+          <td>{{ p.buyer_country or '—' }}</td>
+          <td class="fw-600">
+            {% if p.grand_total %}
+              {{ '{:,.2f}'.format(p.grand_total) }} {{ p.currency }}
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if p.status == 'draft' %}
+              <span class="badge badge-gray">Taslak</span>
+            {% elif p.status == 'sent' %}
+              <span class="badge badge-blue">Gönderildi</span>
+            {% elif p.status == 'revised' %}
+              <span class="badge badge-orange">Revize Edildi</span>
+            {% elif p.status == 'accepted' %}
+              <span class="badge badge-green">Kabul Edildi</span>
+            {% elif p.status == 'rejected' %}
+              <span class="badge badge-red">Reddedildi</span>
+            {% else %}
+              <span class="badge badge-gray">{{ p.status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ p.sent_at.strftime('%d.%m.%Y %H:%M') if p.sent_at else '—' }}</td>
+          <td>
+            <div class="action-btns">
+              <a href="/esk/proformalar/{{ p.id }}" class="btn btn-sm btn-ghost" title="Görüntüle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </a>
+              <a href="/esk/proformalar/{{ p.id }}/duzenle" class="btn btn-sm btn-ghost" title="Düzenle">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </a>
+              <a href="/esk/proformalar/{{ p.id }}/pdf" class="btn btn-sm btn-ghost" title="PDF İndir">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </a>
+              <form method="post" action="/esk/proformalar/{{ p.id }}/sil" style="display:inline;" onsubmit="return confirm('{{ p.pi_number }} silinsin mi?')">
+                <button type="submit" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5cdd6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <p>Henüz proforma oluşturulmamış.</p>
+    <a href="/esk/proformalar/yeni" class="btn btn-primary mt-2">İlk Proformayı Oluştur</a>
+  </div>
+  {% endif %}
+</div>
+
+<style>
+.filter-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.fw-600 { font-weight:600; }
+.action-btns { display:flex; gap:4px; align-items:center; }
+.link-primary { color:#0f3d56; text-decoration:none; font-weight:600; }
+.link-primary:hover { text-decoration:underline; }
+.btn-danger-ghost:hover { color:#e53e3e !important; }
+.badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; }
+.badge-gray   { background:#f0f0f0; color:#666; }
+.badge-blue   { background:#dbeafe; color:#1d4ed8; }
+.badge-green  { background:#dcfce7; color:#16a34a; }
+.badge-orange { background:#ffedd5; color:#c2410c; }
+.badge-red    { background:#fee2e2; color:#dc2626; }
+.badge-info   { background:#e0f2fe; color:#0369a1; }
+.empty-state  { text-align:center; padding:60px 20px; color:#999; }
+.empty-state p { margin-top:12px; }
+.mt-2 { margin-top:12px; display:inline-block; }
+.mb-4 { margin-bottom:16px; }
+</style>
+{% endblock %}
