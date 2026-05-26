@@ -5,10 +5,12 @@ PDF: xhtml2pdf (HTML → PDF, saf Python, harici bağımlılık gerektirmez)
 Mail: smtplib standart kütüphanesi, PDF ek olarak gönderilir.
 """
 
+import base64
 import io
 import os
 import smtplib
 import logging
+import tempfile
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
@@ -17,6 +19,7 @@ from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader
 from xhtml2pdf import pisa
+import xhtml2pdf.files as _xhtml2pdf_files
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +28,47 @@ _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 _TEMPLATES_DIR = os.path.join(_PROJECT_ROOT, "templates")
 
 
+# ── Windows NamedTemporaryFile yaması ────────────────────────────────────────
+# xhtml2pdf, fontu NamedTemporaryFile'a yazıp dosyayı KAPAMADAN ReportLab'a
+# geçiriyor. Windows'ta aynı dosya iki kez açılamaz → PermissionError.
+# Çözüm: dosyayı yazıp kapatmak (delete=False), ReportLab adı üzerinden okur.
+_original_get_named_tmp_file = _xhtml2pdf_files.BaseFile.get_named_tmp_file
+
+
+def _windows_safe_get_named_tmp_file(self):
+    data = self.get_data()
+    suffix = getattr(self, "suffix", ".tmp")
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    if data:
+        tmp.write(data)
+        tmp.flush()
+    tmp.close()
+    if getattr(self, "path", None) is None:
+        self.path = tmp.name
+    return tmp
+
+
+_xhtml2pdf_files.BaseFile.get_named_tmp_file = _windows_safe_get_named_tmp_file
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _get_font_data_url() -> str:
+    """
+    Arial TTF'yi data URL'e çevirir.
+    MIME tipi 'font/ttf' olmalı — xhtml2pdf bu değeri kontrol eder.
+    """
+    font_path = os.path.join(_PROJECT_ROOT, "static", "fonts", "arial.ttf")
+    with open(font_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("ascii")
+    return f"data:font/ttf;base64,{encoded}"
+
+
 def _render_pdf_html(invoice, settings) -> str:
     """Proforma HTML şablonunu Jinja2 ile render eder, PDF'e kaynak olur."""
     env = Environment(loader=FileSystemLoader(_TEMPLATES_DIR))
     template = env.get_template("proforma_pdf.html")
-    return template.render(invoice=invoice, settings=settings)
+    font_data_url = _get_font_data_url()
+    return template.render(invoice=invoice, settings=settings, font_data_url=font_data_url)
 
 
 def generate_pdf_bytes(invoice, settings) -> bytes:

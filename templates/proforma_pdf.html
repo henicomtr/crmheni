@@ -4,6 +4,12 @@
   <meta charset="UTF-8" />
   <title>Proforma Invoice – {{ invoice.pi_number }}</title>
   <style>
+    /* Arial TTF — Türkçe karakter desteği (ı ş ğ ü ö ç); data URL ile Windows yol sorunu aşılır */
+    @font-face {
+      font-family: Arial;
+      src: url("{{ font_data_url }}");
+    }
+
     @page {
       size: A4;
       margin: 16mm 15mm 16mm 15mm;
@@ -12,7 +18,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: Arial, sans-serif;
       background: #ffffff;
       color: #1a1a1a;
       font-size: 12px;

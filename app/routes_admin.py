@@ -4329,6 +4329,8 @@ def update_user_permissions(
     tedarikciler: str = Form(None),
     finans: str = Form(None),
     site_ayarlari: str = Form(None),
+    stok: str = Form(None),
+    pricing: str = Form(None),
 ):
     """Kullanıcının izinlerini günceller."""
     if not admin:
@@ -4353,6 +4355,8 @@ def update_user_permissions(
         "tedarikciler": tedarikciler,
         "finans":       finans,
         "site_ayarlari":site_ayarlari,
+        "stok":         stok,
+        "pricing":      pricing,
     }
     granted_perms = [key for key, val in perm_map.items() if val is not None]
     target_user.permissions = _json.dumps(granted_perms, ensure_ascii=False)
