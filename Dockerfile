@@ -4,14 +4,20 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Sistem bağımlılıkları
-# libpq-dev   → psycopg (PostgreSQL driver)
-# libxml2-dev / libxslt1-dev → lxml (xhtml2pdf bağımlılığı)
-# libffi-dev  → cryptography (pywebpush bağımlılığı)
+# libpq-dev        → psycopg (PostgreSQL driver)
+# libxml2-dev      → lxml (xhtml2pdf bağımlılığı)
+# libxslt1-dev     → lxml
+# libffi-dev       → cryptography (pywebpush)
+# libcairo2-dev    → pycairo (xhtml2pdf → svglib → rlpycairo → pycairo)
+# gcc / python3-dev → kaynak koddan derleme gereken paketler için
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     libxml2-dev \
     libxslt1-dev \
     libffi-dev \
+    libcairo2-dev \
+    gcc \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Python bağımlılıklarını kur (önce kopyala — Docker layer cache kazanımı)
