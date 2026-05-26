@@ -273,11 +273,14 @@ def send_proforma(
     settings = _get_settings(db)
 
     try:
+        print(f"[proforma] PDF üretimi başlıyor: invoice_id={invoice_id}", flush=True)
         pdf_bytes = generate_pdf_bytes(invoice, settings)
+        print(f"[proforma] PDF hazır ({len(pdf_bytes)} byte), mail gönderiliyor...", flush=True)
         send_proforma_email(invoice, settings, pdf_bytes)
         invoice.status = "sent"
         invoice.sent_at = datetime.utcnow()
         db.commit()
+        print(f"[proforma] Tamamlandı: {invoice.pi_number} → {invoice.buyer_email}", flush=True)
         return JSONResponse({"ok": True, "message": f"Proforma {invoice.buyer_email} adresine gönderildi."})
     except Exception as exc:
         import traceback

@@ -303,7 +303,13 @@ async function sendProforma() {
   btn.textContent = 'Gönderiliyor...';
   try {
     const res = await fetch('/esk/proformalar/{{ invoice.id }}/gonder', { method: 'POST' });
-    const data = await res.json();
+    let data;
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      data = await res.json();
+    } else {
+      data = { ok: false, error: `Sunucu yanıtı JSON değil (HTTP ${res.status}). SMTP ayarları ve sunucu loglarını kontrol edin.` };
+    }
     const box = document.getElementById('alertBox');
     box.style.display = 'block';
     if (data.ok) {

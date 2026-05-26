@@ -63,12 +63,15 @@ def send_proforma_email(invoice, settings, pdf_bytes: bytes) -> None:
 
     if not smtp_host or not smtp_user or not smtp_pass:
         raise EnvironmentError(
-            "SMTP ayarları eksik. Lütfen Site Ayarları > Mail bölümünü doldurun."
+            f"SMTP ayarları eksik. "
+            f"smtp_host={smtp_host!r}, smtp_user={smtp_user!r}, smtp_pass={'***' if smtp_pass else None!r}"
         )
 
     to_email = invoice.buyer_email
     if not to_email:
         raise ValueError("Alıcı e-posta adresi boş olamaz.")
+
+    logger.info("[proforma] SMTP bağlantısı başlıyor: %s:%s", smtp_host, smtp_port)
 
     # ── Mail mesajını oluştur ──────────────────────────────────────────
     msg = MIMEMultipart()
@@ -88,14 +91,14 @@ def send_proforma_email(invoice, settings, pdf_bytes: bytes) -> None:
     attachment.add_header("Content-Disposition", f'attachment; filename="{filename}"')
     msg.attach(attachment)
 
-    # ── SMTP bağlantısı ve gönderim ──────────────────────────────────
-    with smtplib.SMTP(smtp_host, int(smtp_port)) as server:
+    # ── SMTP bağlantısı ve gönderim (10s timeout) ────────────────────
+    with smtplib.SMTP(smtp_host, int(smtp_port), timeout=10) as server:
         server.ehlo()
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.sendmail(smtp_from, [to_email], msg.as_bytes())
 
-    logger.info("Proforma gönderildi: %s → %s", invoice.pi_number, to_email)
+    logger.info("[proforma] Mail gönderildi: %s → %s", invoice.pi_number, to_email)
 
 
 def _build_email_body(invoice) -> str:
