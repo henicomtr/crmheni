@@ -92,11 +92,19 @@ def send_proforma_email(invoice, settings, pdf_bytes: bytes) -> None:
     msg.attach(attachment)
 
     # ── SMTP bağlantısı ve gönderim (10s timeout) ────────────────────
-    with smtplib.SMTP(smtp_host, int(smtp_port), timeout=10) as server:
-        server.ehlo()
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.sendmail(smtp_from, [to_email], msg.as_bytes())
+    # Port 465 → doğrudan SSL; diğerleri → STARTTLS (587, 25)
+    port = int(smtp_port)
+    if port == 465:
+        with smtplib.SMTP_SSL(smtp_host, port, timeout=10) as server:
+            server.ehlo()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_from, [to_email], msg.as_bytes())
+    else:
+        with smtplib.SMTP(smtp_host, port, timeout=10) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(smtp_from, [to_email], msg.as_bytes())
 
     logger.info("[proforma] Mail gönderildi: %s → %s", invoice.pi_number, to_email)
 
