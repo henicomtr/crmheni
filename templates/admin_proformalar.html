@@ -35,7 +35,9 @@
 <!-- Tablo -->
 <div class="card">
   {% if proformalar %}
-  <div class="table-wrapper">
+
+  <!-- Masaüstü tablo -->
+  <div class="table-wrapper desktop-table">
     <table class="data-table">
       <thead>
         <tr>
@@ -105,6 +107,50 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Mobil kart listesi -->
+  <div class="mobile-cards">
+    {% for p in proformalar %}
+    <div class="pi-mobile-card">
+      <div class="pi-card-top">
+        <a href="/esk/proformalar/{{ p.id }}" class="pi-card-number">
+          {{ p.pi_number }}
+          {% if p.revision_number > 1 %}<span class="badge badge-info" style="font-size:10px;margin-left:4px;">Rev.{{ p.revision_number }}</span>{% endif %}
+        </a>
+        {% if p.status == 'draft' %}<span class="badge badge-gray">Taslak</span>
+        {% elif p.status == 'sent' %}<span class="badge badge-blue">Gönderildi</span>
+        {% elif p.status == 'revised' %}<span class="badge badge-orange">Revize</span>
+        {% elif p.status == 'accepted' %}<span class="badge badge-green">Kabul</span>
+        {% elif p.status == 'rejected' %}<span class="badge badge-red">Reddedildi</span>
+        {% else %}<span class="badge badge-gray">{{ p.status }}</span>{% endif %}
+      </div>
+      <div class="pi-card-row">
+        <span class="pi-card-company">{{ p.buyer_company or '—' }} · {{ p.buyer_country or '' }}</span>
+        <span class="pi-card-total">{% if p.grand_total %}{{ '{:,.2f}'.format(p.grand_total) }} {{ p.currency }}{% else %}—{% endif %}</span>
+      </div>
+      <div class="pi-card-row">
+        <span class="pi-card-meta">{{ p.issue_date }}{% if p.sent_at %} · Gönderildi: {{ p.sent_at.strftime('%d.%m.%Y') }}{% endif %}</span>
+        <div class="pi-card-actions">
+          <a href="/esk/proformalar/{{ p.id }}" class="btn btn-sm btn-ghost" title="Görüntüle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </a>
+          <a href="/esk/proformalar/{{ p.id }}/duzenle" class="btn btn-sm btn-ghost" title="Düzenle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </a>
+          <a href="/esk/proformalar/{{ p.id }}/pdf" class="btn btn-sm btn-ghost" title="PDF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </a>
+          <form method="post" action="/esk/proformalar/{{ p.id }}/sil" style="display:inline;" onsubmit="return confirm('{{ p.pi_number }} silinsin mi?')">
+            <button type="submit" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
   {% else %}
   <div class="empty-state">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c5cdd6" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -115,22 +161,208 @@
 </div>
 
 <style>
-.filter-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.fw-600 { font-weight:600; }
-.action-btns { display:flex; gap:4px; align-items:center; }
-.link-primary { color:#0f3d56; text-decoration:none; font-weight:600; }
-.link-primary:hover { text-decoration:underline; }
-.btn-danger-ghost:hover { color:#e53e3e !important; }
-.badge { display:inline-block; padding:2px 8px; border-radius:99px; font-size:11px; font-weight:600; }
-.badge-gray   { background:#f0f0f0; color:#666; }
-.badge-blue   { background:#dbeafe; color:#1d4ed8; }
-.badge-green  { background:#dcfce7; color:#16a34a; }
-.badge-orange { background:#ffedd5; color:#c2410c; }
-.badge-red    { background:#fee2e2; color:#dc2626; }
-.badge-info   { background:#e0f2fe; color:#0369a1; }
-.empty-state  { text-align:center; padding:60px 20px; color:#999; }
-.empty-state p { margin-top:12px; }
-.mt-2 { margin-top:12px; display:inline-block; }
-.mb-4 { margin-bottom:16px; }
+/* ── Sayfa başlığı ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  margin: 0;
+}
+.page-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 3px 0 0;
+}
+
+/* ── Butonlar ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+.btn-primary {
+  background: #0a0a0a;
+  color: #fff;
+  border-color: #0a0a0a;
+}
+.btn-primary:hover { background: #2e2e2e; border-color: #2e2e2e; }
+.btn-secondary {
+  background: #fff;
+  color: #374151;
+  border-color: #d1d5db;
+}
+.btn-secondary:hover { background: #f9fafb; }
+.btn-ghost {
+  background: transparent;
+  color: #6b7280;
+  border-color: transparent;
+}
+.btn-ghost:hover { background: #f3f4f6; color: #374151; }
+.btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 6px; }
+.btn-danger-ghost:hover { color: #e53e3e !important; }
+
+/* ── Kart ── */
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  overflow: hidden;
+}
+.mb-4 { margin-bottom: 16px; }
+
+/* ── Filtre alanı ── */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+}
+.form-control {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-family: inherit;
+  font-size: 13px;
+  color: #1d1d1f;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-control:focus {
+  border-color: #0f3d56;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(15,61,86,0.08);
+}
+
+/* ── Tablo ── */
+.table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table thead th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  color: #374151;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: #fafafa; }
+
+/* ── Bant/Badge ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-gray   { background: #f3f4f6; color: #6b7280; }
+.badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.badge-green  { background: #dcfce7; color: #15803d; }
+.badge-orange { background: #ffedd5; color: #c2410c; }
+.badge-red    { background: #fee2e2; color: #dc2626; }
+.badge-info   { background: #e0f2fe; color: #0369a1; }
+
+/* ── Aksiyon butonları ── */
+.action-btns { display: flex; gap: 2px; align-items: center; }
+.action-btns .btn-sm { color: #6b7280; }
+.action-btns .btn-sm:hover { color: #0f3d56; background: #f0f4f8; }
+
+/* ── Yardımcı ── */
+.fw-600 { font-weight: 600; }
+.link-primary { color: #0f3d56; text-decoration: none; font-weight: 600; }
+.link-primary:hover { color: #0a2a3d; text-decoration: underline; }
+.mt-2 { margin-top: 12px; display: inline-block; }
+
+/* ── Boş durum ── */
+.empty-state { text-align: center; padding: 64px 20px; color: #9ca3af; }
+.empty-state p { margin-top: 14px; font-size: 14px; }
+
+/* ── Mobil: tablonun yerine kart listesi ── */
+@media (max-width: 640px) {
+  .page-header { margin-bottom: 14px; }
+  .page-title { font-size: 17px; }
+  .page-subtitle { font-size: 12px; }
+  .filter-row { padding: 12px; gap: 8px; }
+  .filter-row .form-control { font-size: 14px; }
+
+  /* Tablo gizle, kart liste göster */
+  .desktop-table { display: none; }
+  .mobile-cards { display: block; }
+}
+@media (min-width: 641px) {
+  .mobile-cards { display: none; }
+  .desktop-table { display: block; }
+}
+
+/* Mobil proforma kartı */
+.pi-mobile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  text-decoration: none;
+  color: inherit;
+}
+.pi-mobile-card:last-child { border-bottom: none; }
+.pi-mobile-card:hover { background: #fafafa; }
+.pi-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pi-card-number { font-weight: 700; color: #0f3d56; font-size: 14px; }
+.pi-card-meta { font-size: 12px; color: #6b7280; }
+.pi-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pi-card-company { font-size: 13px; font-weight: 600; color: #374151; }
+.pi-card-total { font-size: 13px; font-weight: 700; color: #1d1d1f; }
+.pi-card-actions { display: flex; gap: 4px; justify-content: flex-end; margin-top: 2px; }
 </style>
 {% endblock %}
