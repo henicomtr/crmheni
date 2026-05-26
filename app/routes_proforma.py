@@ -280,6 +280,8 @@ def send_proforma(
         db.commit()
         return JSONResponse({"ok": True, "message": f"Proforma {invoice.buyer_email} adresine gönderildi."})
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
 
 
