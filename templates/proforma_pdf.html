@@ -45,7 +45,6 @@
       font-size: 12px;
       color: #0f3d56;
       margin-bottom: 10px;
-      text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .card p { font-size: 12px; line-height: 1.8; color: #444; }
@@ -53,7 +52,7 @@
     /* ── Tablo ── */
     table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
     thead { background: #0f3d56; color: white; }
-    th { padding: 10px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+    th { padding: 10px 8px; font-size: 11px; letter-spacing: 0.5px; text-align: left; }
     td { padding: 9px 8px; border-bottom: 1px solid #e5e5e5; font-size: 12px; color: #333; }
     tbody tr:nth-child(even) { background: #fafafa; }
 
@@ -108,7 +107,7 @@
   <!-- Satıcı / Alıcı -->
   <div class="section-grid clearfix">
     <div class="card">
-      <h3>Seller Information</h3>
+      <h3>SELLER INFORMATION</h3>
       <p>
         <span class="highlight">Company:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
         <span class="highlight">Address:</span> Eskişehir, Türkiye<br>
@@ -118,7 +117,7 @@
       </p>
     </div>
     <div class="card">
-      <h3>Buyer Information</h3>
+      <h3>BUYER INFORMATION</h3>
       <p>
         <span class="highlight">Company:</span> {{ invoice.buyer_company or '—' }}<br>
         <span class="highlight">Country:</span> {{ invoice.buyer_country or '—' }}<br>
@@ -134,11 +133,11 @@
     <thead>
       <tr>
         <th>#</th>
-        <th>Product Description</th>
-        <th>Packaging</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Total</th>
+        <th>PRODUCT DESCRIPTION</th>
+        <th>PACKAGING</th>
+        <th>QUANTITY</th>
+        <th>UNIT PRICE</th>
+        <th>TOTAL</th>
       </tr>
     </thead>
     <tbody>
