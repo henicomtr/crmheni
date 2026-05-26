@@ -4,222 +4,345 @@
   <meta charset="UTF-8" />
   <title>Proforma Invoice – {{ invoice.pi_number }}</title>
   <style>
+    @page {
+      size: A4;
+      margin: 16mm 15mm 16mm 15mm;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Helvetica, Arial, sans-serif;
       background: #ffffff;
       color: #1a1a1a;
-      padding: 30px;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     /* ── Üst bar ── */
-    .top-bar {
-      width: 100%;
-      border-bottom: 3px solid #0f3d56;
-      padding-bottom: 18px;
-      margin-bottom: 24px;
-      overflow: hidden;
-    }
-    .company { float: left; }
-    .company h1 { font-size: 26px; color: #0f3d56; margin-bottom: 6px; letter-spacing: 1px; }
-    .company p  { font-size: 12px; line-height: 1.7; color: #555; }
-    .invoice-title { float: right; text-align: right; }
-    .invoice-title h2 { font-size: 28px; color: #0f3d56; margin-bottom: 8px; }
-    .invoice-meta { font-size: 12px; line-height: 1.8; color: #444; }
-    .clearfix::after { content: ""; display: table; clear: both; }
+    .top-table { width: 100%; margin-bottom: 16px; }
+    .top-table td { vertical-align: top; padding: 0; }
+    .top-border { border-bottom: 3px solid #0f3d56; padding-bottom: 12px; }
 
-    /* ── Bilgi kartları ── */
-    .section-grid { width: 100%; margin-bottom: 24px; overflow: hidden; }
-    .card {
-      width: 48%;
-      float: left;
-      border: 1px solid #d9e2e8;
-      border-radius: 6px;
-      padding: 16px;
-      background: #fafcfd;
-    }
-    .card + .card { margin-left: 4%; }
-    .card h3 {
-      font-size: 12px;
+    .company-name {
+      font-size: 26px;
+      font-weight: bold;
       color: #0f3d56;
-      margin-bottom: 10px;
-      letter-spacing: 0.5px;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
     }
-    .card p { font-size: 12px; line-height: 1.8; color: #444; }
+    .company-info { font-size: 11px; line-height: 1.7; color: #555; }
 
-    /* ── Tablo ── */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    thead { background: #0f3d56; color: white; }
-    th { padding: 10px 8px; font-size: 11px; letter-spacing: 0.5px; text-align: left; }
-    td { padding: 9px 8px; border-bottom: 1px solid #e5e5e5; font-size: 12px; color: #333; }
-    tbody tr:nth-child(even) { background: #fafafa; }
+    .invoice-title-cell { text-align: right; }
+    .invoice-title-cell h2 {
+      font-size: 28px;
+      font-weight: bold;
+      color: #0f3d56;
+      margin-bottom: 8px;
+    }
+    .invoice-meta { font-size: 11px; line-height: 1.9; color: #444; }
+    .invoice-meta strong { color: #1a1a1a; }
+
+    /* İki sütunlu kart bölümler — table-layout:fixed ile xhtml2pdf'de güvenli genişlik */
+    .two-col-table { width: 100%; margin-bottom: 16px; table-layout: fixed; border-collapse: separate; border-spacing: 8px 0; }
+
+    /* Kart yapısı: iç tablo ile başlık + gövde ayrımı */
+    .info-card { width: 100%; border-collapse: collapse; border: 1px solid #c8d8e2; table-layout: fixed; }
+    .info-card-head td {
+      background: #0f3d56;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.6px;
+      padding: 7px 12px;
+    }
+    .info-card-body td {
+      background: #f8fbfd;
+      padding: 12px 14px;
+      font-size: 11px;
+      line-height: 1.9;
+      color: #333;
+      border-top: 1px solid #dde8ef;
+    }
+    .info-card-body strong { color: #0f3d56; }
+
+    /* ── Ürün tablosu ── */
+    .product-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .product-table thead tr { background: #0f3d56; color: #ffffff; }
+    .product-table th {
+      padding: 9px 7px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-align: left;
+    }
+    .product-table th.col-num      { width: 4%;  }
+    .product-table th.col-desc     { width: 30%; }
+    .product-table th.col-pack     { width: 17%; }
+    .product-table th.col-qty      { width: 16%; }
+    .product-table th.col-uprice   { width: 16%; }
+    .product-table th.col-total    { width: 17%; }
+
+    .product-table td {
+      padding: 8px 7px;
+      font-size: 11px;
+      color: #333;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    .product-table tbody tr.even-row { background: #f7fafb; }
+    .td-right { text-align: right; }
 
     /* ── Toplamlar ── */
-    .totals { width: 320px; margin-left: auto; border: 1px solid #d9e2e8; border-radius: 6px; overflow: hidden; margin-bottom: 24px; }
-    .totals-row { overflow: hidden; padding: 10px 14px; border-bottom: 1px solid #e6eef2; font-size: 12px; }
-    .totals-row span:first-child { float: left; }
-    .totals-row span:last-child  { float: right; }
-    .totals-row:last-child { background: #0f3d56; color: white; font-weight: bold; font-size: 14px; border-bottom: none; }
+    /* xhtml2pdf margin-left:auto desteklemez; boş spacer hücre ile sağa hizalanır */
+    .totals-outer { width: 100%; margin-bottom: 0; }
+    .totals-outer td.spacer { }
+    .totals-outer td.totals-cell { width: 310px; }
+
+    .totals-inner { width: 100%; border-collapse: collapse; border: 1px solid #d0dde5; }
+    .totals-inner td {
+      padding: 6px 14px;
+      font-size: 12px;
+      border-bottom: 1px solid #e6eef2;
+      color: #444;
+    }
+    .totals-inner tr:last-child td {
+      background: #0f3d56;
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 13px;
+      padding: 7px 14px;
+      border-bottom: none;
+    }
+
+    /* ── Sayfa 2 ── */
+    .page2 { page-break-before: always; }
+
+    /* ── Sayfa 2 mini üst bar ── */
+    .page2-header {
+      width: 100%;
+      border-bottom: 2px solid #0f3d56;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .page2-header td { vertical-align: middle; }
+    .page2-co  { font-size: 13px; font-weight: bold; color: #0f3d56; }
+    .page2-ref { font-size: 11px; color: #666; text-align: right; }
 
     /* ── Şartlar ── */
-    .terms { border-top: 2px solid #e8eef2; padding-top: 16px; margin-top: 14px; }
-    .terms h3 { color: #0f3d56; margin-bottom: 8px; font-size: 13px; }
+    .terms { margin-bottom: 20px; }
+    .terms-title {
+      color: #0f3d56;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      padding-bottom: 5px;
+      border-bottom: 1px solid #dde8ef;
+    }
+    .terms p  { font-size: 11px; color: #444; line-height: 1.7; }
     .terms ul { padding-left: 16px; }
-    .terms li { margin-bottom: 7px; line-height: 1.6; font-size: 12px; color: #444; }
+    .terms li { font-size: 11px; color: #444; line-height: 1.7; margin-bottom: 5px; }
 
-    /* ── Footer ── */
-    .footer { margin-top: 30px; overflow: hidden; border-top: 2px solid #e8eef2; padding-top: 18px; }
-    .bank-info { float: left; font-size: 12px; line-height: 1.8; color: #444; }
-    .signature { float: right; text-align: center; width: 200px; }
-    .signature-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 6px; font-size: 12px; color: #444; }
-
-    .highlight { color: #0f3d56; font-weight: bold; }
+    /* ── Footer / İmza ── */
+    .footer-table { width: 100%; margin-top: 30px; }
+    .footer-table td { vertical-align: top; }
+    .footer-left  { font-size: 11px; line-height: 1.8; color: #444; }
+    .footer-right { text-align: center; width: 200px; font-size: 11px; color: #444; }
+    .sig-line {
+      border-top: 1px solid #555;
+      margin-top: 50px;
+      padding-top: 5px;
+    }
+    .footer-divider {
+      width: 100%;
+      border-top: 2px solid #e8eef2;
+      margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
 
+  <!-- ════════════════════════════════
+       SAYFA 1
+       ════════════════════════════════ -->
+
   <!-- Üst Bar -->
-  <div class="top-bar clearfix">
-    <div class="company">
-      <h1>HENI KOZMETIK</h1>
-      <p>
-        Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
-        Eskişehir / Türkiye<br>
-        Web: www.heni.com.tr<br>
-        E-mail: export@heni.com.tr<br>
-        {% if settings and settings.contact_phone %}Tel: {{ settings.contact_phone }}{% endif %}
-      </p>
-    </div>
-    <div class="invoice-title">
-      <h2>PROFORMA INVOICE</h2>
-      <div class="invoice-meta">
-        <strong>PI No:</strong> {{ invoice.pi_number }}<br>
-        <strong>Date:</strong> {{ invoice.issue_date }}<br>
-        <strong>Validity:</strong> {{ invoice.validity_days }} Days<br>
-        <strong>Incoterm:</strong> {{ invoice.incoterm or '—' }}
-        {% if invoice.revision_number > 1 %}<br><strong>Revision:</strong> Rev.{{ invoice.revision_number }}{% endif %}
-      </div>
-    </div>
-  </div>
+  <table class="top-table" cellspacing="0" cellpadding="0">
+    <tr>
+      <td class="top-border">
+        <div class="company-name">HENI KOZMETIK</div>
+        <div class="company-info">
+          Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
+          Eski&scaron;ehir / T&uuml;rkiye<br>
+          Web: www.heni.com.tr<br>
+          E-mail: export@heni.com.tr{% if settings and settings.contact_phone %}<br>Tel: {{ settings.contact_phone }}{% endif %}
+        </div>
+      </td>
+      <td class="top-border invoice-title-cell" style="width:46%">
+        <h2>PROFORMA INVOICE</h2>
+        <div class="invoice-meta">
+          <strong>PI No:</strong> {{ invoice.pi_number }}<br>
+          <strong>Date:</strong> {{ invoice.issue_date }}<br>
+          <strong>Validity:</strong> {{ invoice.validity_days }} Days<br>
+          <strong>Incoterm:</strong> {{ invoice.incoterm or '&mdash;' }}
+          {% if invoice.revision_number > 1 %}<br><strong>Revision:</strong> Rev.{{ invoice.revision_number }}{% endif %}
+        </div>
+      </td>
+    </tr>
+  </table>
 
   <!-- Satıcı / Alıcı -->
-  <div class="section-grid clearfix">
-    <div class="card">
-      <h3>SELLER INFORMATION</h3>
-      <p>
-        <span class="highlight">Company:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
-        <span class="highlight">Address:</span> Eskişehir, Türkiye<br>
-        <span class="highlight">Tax Office:</span> —<br>
-        <span class="highlight">Tax Number:</span> —<br>
-        <span class="highlight">E-mail:</span> export@heni.com.tr
-      </p>
-    </div>
-    <div class="card">
-      <h3>BUYER INFORMATION</h3>
-      <p>
-        <span class="highlight">Company:</span> {{ invoice.buyer_company or '—' }}<br>
-        <span class="highlight">Country:</span> {{ invoice.buyer_country or '—' }}<br>
-        <span class="highlight">Address:</span> {{ invoice.buyer_address or '—' }}<br>
-        <span class="highlight">Contact:</span> {{ invoice.buyer_contact or '—' }}<br>
-        <span class="highlight">Phone / E-mail:</span> {{ invoice.buyer_phone or '' }}{% if invoice.buyer_phone and invoice.buyer_email %} / {% endif %}{{ invoice.buyer_email or '—' }}
-      </p>
-    </div>
-  </div>
+  <table class="two-col-table" cellspacing="0" cellpadding="0">
+    <tr>
+      <td width="50%">
+        <table class="info-card" cellspacing="0" cellpadding="0">
+          <tr class="info-card-head"><td>SELLER INFORMATION</td></tr>
+          <tr class="info-card-body"><td>
+            <strong>Company:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
+            <strong>Address:</strong> Eski&scaron;ehir, T&uuml;rkiye<br>
+            <strong>Tax Office:</strong> &mdash;<br>
+            <strong>Tax Number:</strong> &mdash;<br>
+            <strong>E-mail:</strong> export@heni.com.tr
+          </td></tr>
+        </table>
+      </td>
+      <td width="50%">
+        <table class="info-card" cellspacing="0" cellpadding="0">
+          <tr class="info-card-head"><td>BUYER INFORMATION</td></tr>
+          <tr class="info-card-body"><td>
+            <strong>Company:</strong> {{ invoice.buyer_company or '&mdash;' }}<br>
+            <strong>Country:</strong> {{ invoice.buyer_country or '&mdash;' }}<br>
+            <strong>Address:</strong> {{ invoice.buyer_address or '&mdash;' }}<br>
+            <strong>Contact Person:</strong> {{ invoice.buyer_contact or '&mdash;' }}<br>
+            <strong>Phone / E-mail:</strong>
+              {{ invoice.buyer_phone or '' }}{% if invoice.buyer_phone and invoice.buyer_email %} / {% endif %}{{ invoice.buyer_email or '&mdash;' }}
+          </td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
   <!-- Ürün Tablosu -->
-  <table>
+  <table class="product-table" cellspacing="0" cellpadding="0">
     <thead>
       <tr>
-        <th>#</th>
-        <th>PRODUCT DESCRIPTION</th>
-        <th>PACKAGING</th>
-        <th>QUANTITY</th>
-        <th>UNIT PRICE</th>
-        <th>TOTAL</th>
+        <th class="col-num">#</th>
+        <th class="col-desc">PRODUCT DESCRIPTION</th>
+        <th class="col-pack">PACKAGING</th>
+        <th class="col-qty">QUANTITY</th>
+        <th class="col-uprice td-right">UNIT PRICE</th>
+        <th class="col-total td-right">TOTAL</th>
       </tr>
     </thead>
     <tbody>
       {% for item in invoice.items %}
-      <tr>
+      <tr{% if loop.index is even %} class="even-row"{% endif %}>
         <td>{{ item.line_number }}</td>
         <td>{{ item.product_description }}</td>
-        <td>{{ item.packaging or '—' }}</td>
+        <td>{{ item.packaging or '&mdash;' }}</td>
         <td>{{ '{:,.0f}'.format(item.quantity) }} {{ item.quantity_unit }}</td>
-        <td>{{ '{:,.2f}'.format(item.unit_price) }} {{ invoice.currency }}</td>
-        <td>{{ '{:,.2f}'.format(item.total) }} {{ invoice.currency }}</td>
+        <td class="td-right">{{ '{:,.2f}'.format(item.unit_price) }} {{ invoice.currency }}</td>
+        <td class="td-right">{{ '{:,.2f}'.format(item.total) }} {{ invoice.currency }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <!-- Toplamlar -->
-  <div class="totals">
-    <div class="totals-row clearfix">
-      <span>Subtotal</span>
-      <span>{{ '{:,.2f}'.format(invoice.subtotal) }} {{ invoice.currency }}</span>
-    </div>
-    <div class="totals-row clearfix">
-      <span>Freight Cost</span>
-      <span>{{ '{:,.2f}'.format(invoice.freight_cost or 0) }} {{ invoice.currency }}</span>
-    </div>
-    <div class="totals-row clearfix">
-      <span>Total Amount</span>
-      <span>{{ '{:,.2f}'.format(invoice.grand_total) }} {{ invoice.currency }}</span>
-    </div>
-  </div>
+  <!-- Toplamlar (sağa hizalı, spacer hücre ile) -->
+  <table class="totals-outer" cellspacing="0" cellpadding="0">
+    <tr>
+      <td class="spacer"></td>
+      <td class="totals-cell">
+        <table class="totals-inner" cellspacing="0" cellpadding="0">
+          <tr>
+            <td>Subtotal</td>
+            <td class="td-right">{{ '{:,.2f}'.format(invoice.subtotal) }} {{ invoice.currency }}</td>
+          </tr>
+          <tr>
+            <td>Freight Cost</td>
+            <td class="td-right">{{ '{:,.2f}'.format(invoice.freight_cost or 0) }} {{ invoice.currency }}</td>
+          </tr>
+          <tr>
+            <td><strong>Total Amount</strong></td>
+            <td class="td-right">{{ '{:,.2f}'.format(invoice.grand_total) }} {{ invoice.currency }}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
-  <!-- Sevkiyat / Banka -->
-  <div class="section-grid clearfix">
-    <div class="card">
-      <h3>Shipping Details</h3>
-      <p>
-        <span class="highlight">Loading Port:</span> {{ invoice.loading_port or '—' }}<br>
-        <span class="highlight">Destination Port:</span> {{ invoice.destination_port or '—' }}<br>
-        <span class="highlight">Delivery Time:</span> {{ invoice.delivery_time or '—' }}<br>
-        <span class="highlight">Payment Term:</span> {{ invoice.payment_term or '—' }}<br>
-        <span class="highlight">Origin:</span> Made in Türkiye
-      </p>
-    </div>
-    <div class="card">
-      <h3>Bank Information</h3>
-      <p>
-        <span class="highlight">Bank Name:</span> {{ invoice.bank_name or '—' }}<br>
-        <span class="highlight">Account Name:</span> Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
-        <span class="highlight">IBAN:</span> {{ invoice.bank_iban or '—' }}<br>
-        <span class="highlight">SWIFT Code:</span> {{ invoice.bank_swift or '—' }}
-      </p>
-    </div>
-  </div>
+  <!-- ════════════════════════════════
+       SAYFA 2
+       ════════════════════════════════ -->
+  <div class="page2">
 
-  <!-- Şartlar -->
-  <div class="terms">
-    <h3>Terms &amp; Conditions</h3>
-    {% if invoice.notes %}
-    <p style="font-size:12px;color:#444;line-height:1.7;">{{ invoice.notes }}</p>
-    {% else %}
-    <ul>
-      <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
-      <li>All products are manufactured according to international export standards.</li>
-      <li>Packaging design and private label applications can be customized upon request.</li>
-      <li>Production starts after advance payment confirmation.</li>
-      <li>Delivery schedule may vary depending on production planning and shipping conditions.</li>
-    </ul>
-    {% endif %}
-  </div>
+    <!-- Sayfa 2 mini başlık -->
+    <table class="page2-header" cellspacing="0" cellpadding="0">
+      <tr>
+        <td class="page2-co">HENI KOZMETIK</td>
+        <td class="page2-ref">{{ invoice.pi_number }} &nbsp;|&nbsp; {{ invoice.issue_date }} &nbsp;|&nbsp; Continued</td>
+      </tr>
+    </table>
 
-  <!-- Footer -->
-  <div class="footer clearfix">
-    <div class="bank-info">
-      <strong>Export Department</strong><br>
-      Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.<br>
-      www.heni.com.tr
+    <!-- Sevkiyat / Banka -->
+    <table class="two-col-table" cellspacing="0" cellpadding="0">
+      <tr>
+        <td width="50%">
+          <table class="info-card" cellspacing="0" cellpadding="0">
+            <tr class="info-card-head"><td>SHIPPING DETAILS</td></tr>
+            <tr class="info-card-body"><td>
+              <strong>Loading Port:</strong> {{ invoice.loading_port or '&mdash;' }}<br>
+              <strong>Destination Port:</strong> {{ invoice.destination_port or '&mdash;' }}<br>
+              <strong>Delivery Time:</strong> {{ invoice.delivery_time or '&mdash;' }}<br>
+              <strong>Payment Term:</strong> {{ invoice.payment_term or '&mdash;' }}<br>
+              <strong>Origin:</strong> Made in T&uuml;rkiye
+            </td></tr>
+          </table>
+        </td>
+        <td width="50%">
+          <table class="info-card" cellspacing="0" cellpadding="0">
+            <tr class="info-card-head"><td>BANK INFORMATION</td></tr>
+            <tr class="info-card-body"><td>
+              <strong>Bank Name:</strong> {{ invoice.bank_name or '&mdash;' }}<br>
+              <strong>Account Name:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
+              <strong>IBAN:</strong> {{ invoice.bank_iban or '&mdash;' }}<br>
+              <strong>SWIFT Code:</strong> {{ invoice.bank_swift or '&mdash;' }}
+            </td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Şartlar -->
+    <div class="terms">
+      <div class="terms-title">Terms &amp; Conditions</div>
+      {% if invoice.notes %}
+      <p>{{ invoice.notes }}</p>
+      {% else %}
+      <ul>
+        <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
+        <li>All products are manufactured according to international export standards.</li>
+        <li>Packaging design and private label applications can be customized upon request.</li>
+        <li>Production starts after advance payment confirmation.</li>
+        <li>Delivery schedule may vary depending on production planning and shipping conditions.</li>
+      </ul>
+      {% endif %}
     </div>
-    <div class="signature">
-      <div class="signature-line">Authorized Signature</div>
-    </div>
-  </div>
+
+    <!-- Footer / İmza -->
+    <div class="footer-divider"></div>
+    <table class="footer-table" cellspacing="0" cellpadding="0">
+      <tr>
+        <td class="footer-left">
+          <strong>Export Department</strong><br>
+          Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
+          www.heni.com.tr &nbsp;|&nbsp; export@heni.com.tr
+        </td>
+        <td class="footer-right">
+          <div class="sig-line">Authorized Signature &amp; Stamp</div>
+        </td>
+      </tr>
+    </table>
+
+  </div><!-- /page2 -->
 
 </body>
 </html>
