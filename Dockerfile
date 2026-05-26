@@ -3,9 +3,15 @@ FROM python:3.11-slim
 # Çalışma dizini
 WORKDIR /app
 
-# Sistem bağımlılıkları (psycopg binary için libpq gerekli)
+# Sistem bağımlılıkları
+# libpq-dev   → psycopg (PostgreSQL driver)
+# libxml2-dev / libxslt1-dev → lxml (xhtml2pdf bağımlılığı)
+# libffi-dev  → cryptography (pywebpush bağımlılığı)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Python bağımlılıklarını kur (önce kopyala — Docker layer cache kazanımı)
