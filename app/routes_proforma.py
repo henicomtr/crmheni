@@ -31,7 +31,7 @@ templates = Jinja2Templates(directory="templates")
 
 def _get_current_user(request: Request, db: Session) -> Optional[User]:
     """Cookie'den JWT token okur, User nesnesini döner. Geçersizse None."""
-    token = request.cookies.get("access_token")
+    token = request.cookies.get("token")
     if not token:
         return None
     try:
