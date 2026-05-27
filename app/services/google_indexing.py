@@ -6,20 +6,15 @@ import datetime
 import httpx
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
+from sqlalchemy.orm import Session
 
-# uvicorn.error logger'ı Docker'da her zaman stdout'a yazar
 logger = logging.getLogger("uvicorn.error")
 
 INDEXING_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications:publish"
-METADATA_ENDPOINT = "https://indexing.googleapis.com/v3/urlNotifications/metadata"
 BASE_URL = "https://henib2b.com"
 
-# Günlük kota limiti (Google varsayılanı 200/gün, 20 burst/dakika)
+# Günlük kota limiti (Google varsayılanı 200/gün)
 DAILY_QUOTA = 200
-BURST_QUOTA = 20
-
-# Basit in-memory kota sayacı — sunucu yeniden başlatılınca sıfırlanır
-_quota_state: dict = {"date": None, "count": 0}
 
 # routes_showroom.py'deki @router.get tanımlarından türetilmiş URL kalıpları
 PRODUCT_URL_MAP = {
@@ -74,24 +69,37 @@ def build_page_url(lang: str, slug: str) -> str:
     return f"{BASE_URL}{prefix}{slug}"
 
 
-def _check_quota() -> bool:
-    """Günlük kota kontrolü — limitdeyse False döner, loglar."""
-    today = datetime.date.today().isoformat()
-    if _quota_state["date"] != today:
-        _quota_state["date"] = today
-        _quota_state["count"] = 0
-    if _quota_state["count"] >= DAILY_QUOTA:
-        logger.warning(
-            f"[Indexing API] Günlük kota doldu ({DAILY_QUOTA} istek). "
-            f"Yarın otomatik sıfırlanır."
-        )
-        return False
-    _quota_state["count"] += 1
-    logger.info(
-        f"[Indexing API] Kota: {_quota_state['count']}/{DAILY_QUOTA} "
-        f"(bugün gönderildi)"
+def queue_url(db: Session, url: str, action: str = "URL_UPDATED") -> None:
+    """URL'yi indexing kuyruğuna ekler; aynı URL zaten pending ise atlar."""
+    from app.models import IndexingQueue
+    mevcut = (
+        db.query(IndexingQueue)
+        .filter(IndexingQueue.url == url, IndexingQueue.status == "pending")
+        .first()
     )
-    return True
+    if mevcut:
+        logger.debug(f"[IndexingQueue] Zaten kuyrukta: {url}")
+        return
+    db.add(IndexingQueue(url=url, action=action))
+    db.commit()
+    logger.info(f"[IndexingQueue] Kuyruğa eklendi: {url}")
+
+
+def get_queue_stats(db: Session) -> dict:
+    """Kuyruk durumunu özet olarak döner."""
+    from app.models import IndexingQueue
+    from sqlalchemy import func
+    rows = (
+        db.query(IndexingQueue.status, func.count(IndexingQueue.id))
+        .group_by(IndexingQueue.status)
+        .all()
+    )
+    stats = {status: count for status, count in rows}
+    return {
+        "pending": stats.get("pending", 0),
+        "sent":    stats.get("sent", 0),
+        "failed":  stats.get("failed", 0),
+    }
 
 
 def _get_credentials():
@@ -104,7 +112,6 @@ def _get_credentials():
         )
     data = json.loads(raw)
 
-    # Gerekli scope kontrolü
     scopes = data.get("scopes", [])
     indexing_scope = "https://www.googleapis.com/auth/indexing"
     if indexing_scope not in scopes:
@@ -114,7 +121,7 @@ def _get_credentials():
         )
 
     creds = Credentials(
-        token=None,  # her zaman yeni token al
+        token=None,
         refresh_token=data["refresh_token"],
         token_uri=data["token_uri"],
         client_id=data["client_id"],
@@ -122,83 +129,117 @@ def _get_credentials():
         scopes=scopes,
     )
     creds.refresh(Request())
-    logger.debug(f"[Indexing API] Token yenilendi, geçerlilik: {creds.expiry}")
     return creds
 
 
-def run_notify_google(url: str, action: str = "URL_UPDATED"):
-    """BackgroundTasks için sync wrapper."""
-    logger.info(f"[Indexing API] Görev başlatıldı: {action} → {url}")
-    if not _check_quota():
-        return
+async def _send_one(client: httpx.AsyncClient, headers: dict, url: str, action: str) -> dict:
+    """Tek URL için API isteği atar; sonucu dict olarak döner."""
+    payload = {"url": url, "type": action}
     try:
-        asyncio.run(notify_google(url, action))
-    except RuntimeError:
-        # Zaten çalışan bir event loop varsa yeni thread açar
-        loop = asyncio.new_event_loop()
+        response = await client.post(INDEXING_ENDPOINT, json=payload, headers=headers)
         try:
-            loop.run_until_complete(notify_google(url, action))
-        finally:
-            loop.close()
+            resp_body = response.json()
+        except Exception:
+            resp_body = response.text
+
+        if response.status_code == 200:
+            notify_time = (
+                resp_body.get("urlNotificationMetadata", {})
+                .get("latestUpdate", {})
+                .get("notifyTime", "?")
+            )
+            logger.info(f"[Indexing API] OK ({response.status_code}): {url} | notifyTime: {notify_time}")
+            return {"ok": True, "error": None}
+        elif response.status_code == 429:
+            msg = f"Kota aşıldı (429): {resp_body}"
+            logger.warning(f"[Indexing API] {msg} — {url}")
+            return {"ok": False, "error": msg}
+        elif response.status_code in (401, 403):
+            msg = (
+                f"Yetki hatası ({response.status_code}): {resp_body} — "
+                "Search Console'da OAuth hesabı Verified Owner olarak eklenmiş mi?"
+            )
+            logger.error(f"[Indexing API] {msg} — {url}")
+            return {"ok": False, "error": msg}
+        else:
+            msg = f"HTTP {response.status_code}: {resp_body}"
+            logger.error(f"[Indexing API] HATA: {url} — {msg}")
+            return {"ok": False, "error": msg}
     except Exception as e:
-        logger.error(f"[Indexing API] Wrapper HATA: {url} — {type(e).__name__}: {e}")
+        msg = f"{type(e).__name__}: {e}"
+        logger.error(f"[Indexing API] İSTEK HATASI: {url} — {msg}")
+        return {"ok": False, "error": msg}
 
 
-async def notify_google(url: str, action: str = "URL_UPDATED"):
-    """Google Indexing API'ye URL bildirim isteği gönderir."""
+async def _send_all_async(db: Session) -> dict:
+    """Kuyrukta bekleyen tüm pending URL'leri gönderir."""
+    from app.models import IndexingQueue
+
+    pending = (
+        db.query(IndexingQueue)
+        .filter(IndexingQueue.status == "pending")
+        .order_by(IndexingQueue.created_at)
+        .all()
+    )
+
+    if not pending:
+        return {"sent": 0, "failed": 0, "skipped": 0, "message": "Kuyrukta gönderilecek URL yok."}
+
+    if len(pending) > DAILY_QUOTA:
+        logger.warning(
+            f"[Indexing API] Kuyrukta {len(pending)} URL var, günlük kota {DAILY_QUOTA}. "
+            f"İlk {DAILY_QUOTA} gönderilecek."
+        )
+
     try:
         creds = _get_credentials()
-        headers = {
-            "Authorization": f"Bearer {creds.token}",
-            "Content-Type": "application/json",
-        }
-        payload = {"url": url, "type": action}
-
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.post(
-                INDEXING_ENDPOINT, json=payload, headers=headers
-            )
-
-            # Tam yanıt logu — başarısız isteklerde de içeriği görmek için
-            try:
-                resp_body = response.json()
-            except Exception:
-                resp_body = response.text
-
-            if response.status_code == 200:
-                notify_time = (
-                    resp_body.get("urlNotificationMetadata", {})
-                    .get("latestUpdate", {})
-                    .get("notifyTime", "?")
-                )
-                logger.info(
-                    f"[Indexing API] BAŞARILI ({response.status_code}): {url} "
-                    f"| notifyTime: {notify_time}"
-                )
-            elif response.status_code == 429:
-                logger.warning(
-                    f"[Indexing API] KOTA AŞILDI (429): {url} "
-                    f"| Yanıt: {resp_body}"
-                )
-            elif response.status_code in (401, 403):
-                logger.error(
-                    f"[Indexing API] YETKİ HATASI ({response.status_code}): {url} "
-                    f"| Yanıt: {resp_body} "
-                    f"| Search Console'da OAuth hesabı verified owner olarak eklenmiş mi?"
-                )
-            else:
-                logger.error(
-                    f"[Indexing API] HATA ({response.status_code}): {url} "
-                    f"| Yanıt: {resp_body}"
-                )
-
-            response.raise_for_status()
-
-    except httpx.HTTPStatusError as e:
-        logger.error(
-            f"[Indexing API] HTTP HATA: {url} — {e.response.status_code}: {e}"
-        )
     except Exception as e:
-        logger.error(
-            f"[Indexing API] GENEL HATA: {url} — {type(e).__name__}: {e}"
-        )
+        logger.error(f"[Indexing API] Kimlik bilgisi alınamadı: {e}")
+        return {"sent": 0, "failed": 0, "skipped": len(pending), "message": str(e)}
+
+    headers = {
+        "Authorization": f"Bearer {creds.token}",
+        "Content-Type": "application/json",
+    }
+
+    sent = 0
+    failed = 0
+    skipped = max(0, len(pending) - DAILY_QUOTA)
+    batch = pending[:DAILY_QUOTA]
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        for item in batch:
+            result = await _send_one(client, headers, item.url, item.action)
+            now = datetime.datetime.utcnow()
+            if result["ok"]:
+                item.status = "sent"
+                item.sent_at = now
+                item.error_msg = None
+                sent += 1
+            else:
+                item.status = "failed"
+                item.sent_at = now
+                item.error_msg = result["error"]
+                failed += 1
+            db.commit()
+
+    return {
+        "sent": sent,
+        "failed": failed,
+        "skipped": skipped,
+        "message": (
+            f"{sent} URL gönderildi, {failed} hata, {skipped} kota nedeniyle atlandı."
+        ),
+    }
+
+
+def send_all_pending(db: Session) -> dict:
+    """Sync wrapper — admin route'larından çağrılır."""
+    try:
+        return asyncio.run(_send_all_async(db))
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(_send_all_async(db))
+        finally:
+            loop.close()

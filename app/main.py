@@ -491,6 +491,14 @@ def _migrate_proforma():
 
 _migrate_proforma()
 
+# ── Indexing kuyruğu tablosu ─────────────────────────────────────────
+def _migrate_indexing_queue():
+    """indexing_queue tablosunu oluşturur (yoksa)."""
+    from .models import IndexingQueue  # noqa: F401
+    Base.metadata.create_all(bind=engine, tables=[IndexingQueue.__table__])
+
+_migrate_indexing_queue()
+
 # ── Admin kullanıcı seed ────────────────────────────────────────────
 def _seed_admin():
     """Varsayılan admin kullanıcısını oluşturur (yoksa) veya superadmin olarak işaretler."""

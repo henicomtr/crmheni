@@ -979,3 +979,16 @@ class ProformaItem(Base):
     total               = Column(Float,  nullable=False, default=0.0)  # quantity × unit_price
 
     invoice = relationship("ProformaInvoice", back_populates="items")
+
+
+class IndexingQueue(Base):
+    """Google Search Console Indexing API gönderim kuyruğu."""
+    __tablename__ = "indexing_queue"
+
+    id         = Column(Integer, primary_key=True, index=True)
+    url        = Column(String, nullable=False)
+    action     = Column(String, default="URL_UPDATED")  # URL_UPDATED veya URL_DELETED
+    status     = Column(String, default="pending")      # pending | sent | failed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at    = Column(DateTime, nullable=True)
+    error_msg  = Column(String, nullable=True)

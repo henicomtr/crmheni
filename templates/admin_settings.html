@@ -53,6 +53,7 @@
     <button class="settings-tab" onclick="switchSettings('social',this)">🔗 Sosyal Medya</button>
     <button class="settings-tab" onclick="switchSettings('advanced',this)">⚙️ Gelişmiş</button>
     <button class="settings-tab" onclick="switchSettings('integrations',this)">🔌 Entegrasyon</button>
+    <button class="settings-tab" onclick="switchSettings('gsc',this)">🔍 Google Indexing</button>
 </div>
 
 <form method="post" action="/esk/settings" enctype="multipart/form-data" id="settings-form">
@@ -560,6 +561,52 @@
 
     </div>
 
+    <!-- GSC INDEXING KUYRUĞU -->
+    <div id="tab-gsc" style="display:none;">
+        <div class="card">
+            <div class="card-title">🔍 Google Search Console — Toplu URL Gönderimi</div>
+            <p style="font-size:13px;color:#666;margin-bottom:20px;">
+                Gün içinde eklenen veya düzenlenen sayfalar buraya kuyruğa alınır.
+                Hazır olduğunuzda tek tıkla hepsini Google'a gönderin.
+                Günlük kota: <strong>200 istek</strong>. Aynı URL birden fazla eklenirse kuyrukta tek kayıt tutulur.
+            </p>
+
+            <!-- Kuyruk durumu -->
+            <div id="gsc-stats" style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+                <div style="padding:16px 24px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;text-align:center;min-width:120px;">
+                    <div style="font-size:28px;font-weight:700;color:#0a0a0a;" id="stat-pending">{{ gsc_stats.pending }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;">Bekliyor</div>
+                </div>
+                <div style="padding:16px 24px;background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;text-align:center;min-width:120px;">
+                    <div style="font-size:28px;font-weight:700;color:#15803d;" id="stat-sent">{{ gsc_stats.sent }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;">Gönderildi</div>
+                </div>
+                <div style="padding:16px 24px;background:#fef2f2;border-radius:10px;border:1px solid #fecaca;text-align:center;min-width:120px;">
+                    <div style="font-size:28px;font-weight:700;color:#dc2626;" id="stat-failed">{{ gsc_stats.failed }}</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:4px;">Hata</div>
+                </div>
+            </div>
+
+            <!-- Gönder butonu -->
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <button type="button" id="gsc-send-btn" onclick="gscSendAll()"
+                    {% if gsc_stats.pending == 0 %}disabled{% endif %}
+                    style="padding:12px 28px;background:{% if gsc_stats.pending > 0 %}#1a56db{% else %}#94a3b8{% endif %};color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:{% if gsc_stats.pending > 0 %}pointer{% else %}not-allowed{% endif %};">
+                    🚀 Google'a Gönder ({{ gsc_stats.pending }} URL)
+                </button>
+                <span id="gsc-result-msg" style="font-size:13px;color:#555;"></span>
+            </div>
+
+            <!-- Gereksinim notu -->
+            <div style="margin-top:20px;padding:12px 16px;background:#fef9c3;border-radius:8px;font-size:12px;color:#92400e;line-height:1.6;">
+                <strong>Gereksinimler:</strong>
+                Sunucuda <code>GOOGLE_OAUTH_TOKEN</code> ortam değişkeni tanımlı olmalı.
+                OAuth hesabı Google Search Console'da <strong>Verified Owner</strong> olarak eklenmiş olmalıdır (User yetmez).
+                Scope: <code>https://www.googleapis.com/auth/indexing</code>
+            </div>
+        </div>
+    </div>
+
     <!-- SAVE BAR -->
     <div style="position:sticky;bottom:0;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-top:1px solid #e8eaf0;padding:14px 0;display:flex;justify-content:flex-end;gap:12px;z-index:50;">
         <button type="button" onclick="window.open('/', '_blank')"
@@ -574,13 +621,38 @@
 </form>
 
 <script>
+function gscSendAll() {
+    const btn = document.getElementById('gsc-send-btn');
+    const msg = document.getElementById('gsc-result-msg');
+    btn.disabled = true;
+    btn.textContent = '⏳ Gönderiliyor...';
+    msg.textContent = '';
+    fetch('/esk/settings/gsc-send', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+            msg.textContent = data.message || 'Tamamlandı.';
+            msg.style.color = data.failed > 0 ? '#dc2626' : '#15803d';
+            document.getElementById('stat-sent').textContent = parseInt(document.getElementById('stat-sent').textContent) + (data.sent || 0);
+            document.getElementById('stat-failed').textContent = parseInt(document.getElementById('stat-failed').textContent) + (data.failed || 0);
+            document.getElementById('stat-pending').textContent = data.skipped || 0;
+            btn.textContent = '✓ Gönderildi';
+            btn.style.background = '#15803d';
+        })
+        .catch(e => {
+            msg.textContent = 'Bağlantı hatası: ' + e;
+            msg.style.color = '#dc2626';
+            btn.disabled = false;
+            btn.textContent = '🚀 Google\'a Gönder';
+        });
+}
+
 function switchSettings(name, btn) {
-    ['brand','i18n','social','advanced','integrations'].forEach(s => {
-        const el = document.getElementById('settings-' + s);
+    ['brand','i18n','social','advanced','integrations','gsc'].forEach(s => {
+        const el = document.getElementById('tab-' + s) || document.getElementById('settings-' + s);
         if (el) el.style.display = 'none';
     });
     document.querySelectorAll('.settings-tab:not(.lang-tab-i18n)').forEach(b => b.classList.remove('active'));
-    const el = document.getElementById('settings-' + name);
+    const el = document.getElementById('tab-' + name) || document.getElementById('settings-' + name);
     if (el) el.style.display = 'block';
     if (btn) btn.classList.add('active');
 }

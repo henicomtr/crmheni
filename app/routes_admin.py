@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from fastapi import APIRouter, Request, Form, Depends, Cookie, UploadFile, File, BackgroundTasks
 from app.services.google_indexing import (
-    notify_google, run_notify_google,
     build_product_urls, build_category_urls, build_page_url,
+    queue_url, get_queue_stats, send_all_pending,
 )
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -880,9 +880,9 @@ async def create_product(
 
     db.commit()
     db.refresh(new_product)
-    # Tüm dillerdeki ürün URL'lerini Google'a bildir
+    # Tüm dillerdeki ürün URL'lerini indexing kuyruğuna ekle
     for url in build_product_urls(new_product.translations):
-        background_tasks.add_task(run_notify_google, url)
+        queue_url(db, url)
     return RedirectResponse("/esk/products", status_code=302)
 
 
@@ -1068,9 +1068,9 @@ async def update_product(
             db.add(new_t)
 
     db.commit()
-    # Tüm dillerdeki ürün URL'lerini Google'a bildir
+    # Tüm dillerdeki ürün URL'lerini indexing kuyruğuna ekle
     for url in build_product_urls(product.translations):
-        background_tasks.add_task(run_notify_google, url)
+        queue_url(db, url)
     return RedirectResponse(f"/esk/products/edit/{product_id}", status_code=302)
 
 
@@ -3044,6 +3044,7 @@ def settings_get(request: Request, db: Session = Depends(get_db), admin = Depend
         db.commit()
         db.refresh(s)
     i18n = _settings_i18n_seed(s)
+    gsc_stats = get_queue_stats(db)
     return templates.TemplateResponse("admin_settings.html", {
         "request": request,
         "current_user": admin,
@@ -3051,6 +3052,7 @@ def settings_get(request: Request, db: Session = Depends(get_db), admin = Depend
         "i18n": i18n,
         "supported_langs": SUPPORTED_LANGS,
         "lang_labels": LANG_LABELS,
+        "gsc_stats": gsc_stats,
     })
 
 
@@ -3253,6 +3255,27 @@ async def settings_post(
 
 
 # =========================================================
+# GSC — INDEXING KUYRUĞU
+# =========================================================
+
+@router.get("/esk/settings/gsc-queue")
+def gsc_queue_status(db: Session = Depends(get_db), admin = Depends(admin_required)):
+    """Kuyruk durumunu JSON olarak döner (settings sayfası için)."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+    return JSONResponse(get_queue_stats(db))
+
+
+@router.post("/esk/settings/gsc-send")
+def gsc_send(db: Session = Depends(get_db), admin = Depends(admin_required)):
+    """Kuyrukta bekleyen tüm URL'leri Google'a gönderir."""
+    if not admin:
+        return JSONResponse({"error": "Yetkisiz"}, status_code=401)
+    result = send_all_pending(db)
+    return JSONResponse(result)
+
+
+# =========================================================
 # CMS — SAYFALAR LİSTESİ
 # =========================================================
 
@@ -3388,9 +3411,9 @@ def page_edit_post(
     trans.og_description   = og_description
 
     db.commit()
-    # Google Indexing API bildirimi — EN için /slug, diğerleri /lang/slug
+    # Sayfa yayınlanmışsa indexing kuyruğuna ekle
     if page.is_published and trans and trans.slug:
-        background_tasks.add_task(run_notify_google, build_page_url(trans.lang, trans.slug))
+        queue_url(db, build_page_url(trans.lang, trans.slug))
     return RedirectResponse(f"/esk/pages/{page_id}/edit?lang={lang}&saved=1", status_code=302)
 
 
@@ -3558,10 +3581,10 @@ def admin_category_save(
     trans.og_description   = og_description or None
     cat.updated_at         = datetime.utcnow()
     db.commit()
-    # Kategori yayınlanmışsa tüm dil URL'lerini Google'a bildir
+    # Kategori yayınlanmışsa URL'leri indexing kuyruğuna ekle
     if cat.is_published:
         for url in build_category_urls(cat.category_slug):
-            background_tasks.add_task(run_notify_google, url)
+            queue_url(db, url)
     return RedirectResponse(f"/esk/categories/{cat_id}/edit?lang={lang}&tab={tab}", status_code=302)
 
 
@@ -4255,6 +4278,7 @@ PERMISSION_OPTIONS = [
     ("musteriler",   "Müşteriler"),
     ("tedarikciler", "Tedarikçiler"),
     ("finans",       "Finans"),
+    ("proformalar",  "Proformalar"),
     ("site_ayarlari","Site Ayarları"),
     ("stok",         "Stok"),
     ("pricing",      "Fiyatlandırma"),
