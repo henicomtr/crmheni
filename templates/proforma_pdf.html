@@ -29,7 +29,7 @@
     .top-table td { vertical-align: top; padding: 0; }
     .top-border { border-bottom: 3px solid #0f3d56; padding-bottom: 12px; }
 
-    .company-logo { height: 42px; object-fit: contain; }
+    .company-logo { }
     .company-name {
       font-size: 26px;
       font-weight: bold;
@@ -131,7 +131,7 @@
       margin-bottom: 16px;
     }
     .page2-header td { vertical-align: middle; }
-    .page2-logo { max-height: 30px; max-width: 100px; object-fit: contain; }
+    .page2-logo { }
     .page2-co  { font-size: 13px; font-weight: bold; color: #0f3d56; }
     .page2-ref { font-size: 11px; color: #666; text-align: right; }
 
@@ -221,7 +221,7 @@
     <tr>
       <td class="top-border" style="width:54%">
         {% if logo_data_url %}
-          <img src="{{ logo_data_url }}" alt="Heni Kozmetik" class="company-logo">
+          <img src="{{ logo_data_url }}" alt="Heni Kozmetik" width="155">
         {% else %}
           <div class="company-name">HENI KOZMETIK</div>
         {% endif %}
@@ -246,8 +246,8 @@
         <table class="info-card" cellspacing="0" cellpadding="0">
           <tr class="info-card-head"><td>SELLER INFORMATION</td></tr>
           <tr class="info-card-body"><td>
-            <strong>Company:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
-            <strong>Address:</strong> Eski&scaron;ehir, T&uuml;rkiye<br>
+            <strong>Company:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &#350;ti.<br>
+            <strong>Address:</strong> Eski&#351;ehir, T&uuml;rkiye<br>
             <strong>Tax Office:</strong> ESKISEHIR<br>
             <strong>Tax Number:</strong> 4611031395<br>
             <strong>E-mail:</strong> export@heni.com.tr
@@ -329,7 +329,7 @@
       <tr>
         <td>
           {% if logo_data_url %}
-            <img src="{{ logo_data_url }}" alt="Heni Kozmetik" class="page2-logo">
+            <img src="{{ logo_data_url }}" alt="Heni Kozmetik" width="70">
           {% else %}
             <span class="page2-co">HENI KOZMETIK</span>
           {% endif %}
@@ -349,7 +349,8 @@
               <strong>Destination Port:</strong> {{ invoice.destination_port or '&mdash;' }}<br>
               <strong>Delivery Time:</strong> {{ invoice.delivery_time or '&mdash;' }}<br>
               <strong>Payment Term:</strong> {{ invoice.payment_term or '&mdash;' }}<br>
-              <strong>Origin:</strong> Made in T&uuml;rkiye
+              <strong>Origin:</strong> Made in T&uuml;rkiye<br>
+              <span style="color: transparent; font-size: 11px;">&#160;</span>
             </td></tr>
           </table>
         </td>
@@ -395,7 +396,7 @@
           <div class="sig-box-title">Seller — Authorized Signature &amp; Stamp</div>
           <div class="sig-company" style="white-space: nowrap; font-size: 9px;">HENI KOZMETIK KIMYA SAN.TIC.LTD.STI.</div>
           <div class="sig-contact">
-            Eski&scaron;ehir / T&uuml;rkiye<br>
+            Eski&#351;ehir / T&uuml;rkiye<br>
             export@heni.com.tr &nbsp;|&nbsp; www.heni.com.tr
           </div>
           {% if signature_data_url %}
