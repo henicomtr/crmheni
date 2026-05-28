@@ -29,7 +29,7 @@
     .top-table td { vertical-align: top; padding: 0; }
     .top-border { border-bottom: 3px solid #0f3d56; padding-bottom: 12px; }
 
-    .company-logo { max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 6px; }
+    .company-logo { height: 42px; object-fit: contain; }
     .company-name {
       font-size: 26px;
       font-weight: bold;
@@ -186,12 +186,12 @@
       margin-bottom: 10px;
     }
     .sig-image-wrap {
-      min-height: 60px;
+      min-height: 40px;
       display: block;
     }
     .sig-image {
-      max-height: 70px;
-      max-width: 180px;
+      max-height: 35px;
+      max-width: 90px;
       object-fit: contain;
     }
     .sig-line-empty {
@@ -219,18 +219,12 @@
   <!-- Üst Bar -->
   <table class="top-table" cellspacing="0" cellpadding="0">
     <tr>
-      <td class="top-border">
+      <td class="top-border" style="width:54%">
         {% if logo_data_url %}
           <img src="{{ logo_data_url }}" alt="Heni Kozmetik" class="company-logo">
         {% else %}
           <div class="company-name">HENI KOZMETIK</div>
         {% endif %}
-        <div class="company-info">
-          Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
-          Eski&scaron;ehir / T&uuml;rkiye<br>
-          Web: www.heni.com.tr<br>
-          E-mail: export@heni.com.tr{% if settings and settings.contact_phone %}<br>Tel: {{ settings.contact_phone }}{% endif %}
-        </div>
       </td>
       <td class="top-border invoice-title-cell" style="width:46%">
         <h2>PROFORMA INVOICE</h2>
@@ -254,8 +248,8 @@
           <tr class="info-card-body"><td>
             <strong>Company:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
             <strong>Address:</strong> Eski&scaron;ehir, T&uuml;rkiye<br>
-            <strong>Tax Office:</strong> &mdash;<br>
-            <strong>Tax Number:</strong> &mdash;<br>
+            <strong>Tax Office:</strong> ESKISEHIR<br>
+            <strong>Tax Number:</strong> 4611031395<br>
             <strong>E-mail:</strong> export@heni.com.tr
           </td></tr>
         </table>
@@ -364,7 +358,7 @@
             <tr class="info-card-head"><td>BANK INFORMATION</td></tr>
             <tr class="info-card-body"><td>
               <strong>Bank Name:</strong> {{ invoice.bank_name or '&mdash;' }}<br>
-              <strong>Account Name:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
+              <strong>Account Name:</strong> HENI KOZMETIK KIMYA SAN.TIC.LTD.STI.<br>
               <strong>IBAN:</strong> {{ invoice.bank_iban or '&mdash;' }}<br>
               <strong>SWIFT Code:</strong> {{ invoice.bank_swift or '&mdash;' }}<br>
               <strong>Currency:</strong> {{ invoice.currency }}
@@ -378,7 +372,7 @@
     <div class="terms">
       <div class="terms-title">Terms &amp; Conditions</div>
       {% if invoice.notes %}
-      <p style="white-space: pre-wrap;">{{ invoice.notes }}</p>
+      <p>{{ invoice.notes | replace('\n', '<br>') }}</p>
       {% else %}
       <ul>
         <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
@@ -399,7 +393,7 @@
         <!-- ── Satıcı imza kutusu ── -->
         <td class="sig-box" width="50%">
           <div class="sig-box-title">Seller — Authorized Signature &amp; Stamp</div>
-          <div class="sig-company">Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.</div>
+          <div class="sig-company" style="white-space: nowrap; font-size: 9px;">HENI KOZMETIK KIMYA SAN.TIC.LTD.STI.</div>
           <div class="sig-contact">
             Eski&scaron;ehir / T&uuml;rkiye<br>
             export@heni.com.tr &nbsp;|&nbsp; www.heni.com.tr
