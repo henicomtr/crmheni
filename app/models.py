@@ -660,6 +660,8 @@ class SiteSettings(Base):
     imap_password      = Column(String, nullable=True)
     # CRM'in kendi URL'si — Evolution API webhook kaydında kullanılır
     crm_base_url       = Column(String, nullable=True)
+    # Proforma PDF'inde satıcı imzası — bir kez yüklenir, tüm proformalarda kullanılır
+    seller_signature_url = Column(String, nullable=True)
     updated_at         = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def get_footer_columns(self):

@@ -3091,6 +3091,7 @@ async def settings_post(
     cert_logo_ce: UploadFile = File(None),
     cert_logo_fda: UploadFile = File(None),
     cert_logo_vegan: UploadFile = File(None),
+    seller_signature: UploadFile = File(None),
     db: Session = Depends(get_db),
     admin = Depends(admin_required),
 ):
@@ -3249,6 +3250,16 @@ async def settings_post(
             with open(_path, "wb") as f:
                 f.write(await _upload.read())
             setattr(s, _attr, f"/static/upload/images/{_fname}")
+
+    # Satıcı imzası — proforma PDF'inde kullanılır, bir kez yüklenince saklı kalır
+    if seller_signature and seller_signature.filename:
+        os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
+        _ext = os.path.splitext(seller_signature.filename)[1]
+        _fname = f"seller_signature{_ext}"
+        _path = os.path.join(UPLOAD_DIR_IMAGES, _fname)
+        with open(_path, "wb") as f:
+            f.write(await seller_signature.read())
+        s.seller_signature_url = f"/static/upload/images/{_fname}"
 
     db.commit()
     return RedirectResponse("/esk/settings?saved=1", status_code=302)

@@ -63,12 +63,45 @@ def _get_font_data_url() -> str:
     return f"data:font/ttf;base64,{encoded}"
 
 
+def _get_image_data_url(url_path: str) -> str:
+    """
+    /static/... URL'sini diskten okuyup base64 data URL'e çevirir.
+    xhtml2pdf harici URL'leri yükleyemediği için görseller embed edilmelidir.
+    Dosya bulunamazsa boş string döner.
+    """
+    if not url_path:
+        return ""
+    # URL /static/... formatında gelir; proje köküne göre diske çevir
+    relative = url_path.lstrip("/")
+    full_path = os.path.join(_PROJECT_ROOT, relative)
+    if not os.path.isfile(full_path):
+        return ""
+    ext = os.path.splitext(full_path)[1].lower()
+    mime_map = {
+        ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        ".png": "image/png", ".webp": "image/webp",
+        ".gif": "image/gif", ".svg": "image/svg+xml",
+    }
+    mime = mime_map.get(ext, "image/png")
+    with open(full_path, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
 def _render_pdf_html(invoice, settings) -> str:
     """Proforma HTML şablonunu Jinja2 ile render eder, PDF'e kaynak olur."""
     env = Environment(loader=FileSystemLoader(_TEMPLATES_DIR))
     template = env.get_template("proforma_pdf.html")
     font_data_url = _get_font_data_url()
-    return template.render(invoice=invoice, settings=settings, font_data_url=font_data_url)
+    logo_data_url = _get_image_data_url(getattr(settings, "logo_url", "") or "")
+    signature_data_url = _get_image_data_url(getattr(settings, "seller_signature_url", "") or "")
+    return template.render(
+        invoice=invoice,
+        settings=settings,
+        font_data_url=font_data_url,
+        logo_data_url=logo_data_url,
+        signature_data_url=signature_data_url,
+    )
 
 
 def generate_pdf_bytes(invoice, settings) -> bytes:

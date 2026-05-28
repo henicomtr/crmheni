@@ -30,7 +30,7 @@
       </div>
       <div class="form-group">
         <label>Para Birimi</label>
-        <select name="currency" class="form-control">
+        <select name="currency" id="currencySelect" class="form-control" onchange="fillBankInfo(this.value)">
           {% for cur in ['USD','EUR','GBP','TRY'] %}
           <option value="{{ cur }}" {% if (invoice and invoice.currency == cur) or (not invoice and cur == 'USD') %}selected{% endif %}>{{ cur }}</option>
           {% endfor %}
@@ -180,18 +180,25 @@
   <!-- ── Banka Bilgileri ── -->
   <div class="form-card">
     <h3 class="form-section-title">Banka Bilgileri</h3>
+    <p class="form-hint mb-2" style="color:#0f3d56;font-weight:600;">Para birimine göre otomatik doldurulur. Gerekirse düzenleyebilirsiniz.</p>
     <div class="form-grid-2">
       <div class="form-group">
         <label>Banka Adı</label>
-        <input type="text" name="bank_name" value="{{ invoice.bank_name or '' if invoice else '' }}" class="form-control">
+        <input type="text" id="bankName" name="bank_name"
+          value="{{ invoice.bank_name or '' if invoice else '' }}"
+          class="form-control">
       </div>
       <div class="form-group">
         <label>IBAN</label>
-        <input type="text" name="bank_iban" value="{{ invoice.bank_iban or '' if invoice else '' }}" class="form-control">
+        <input type="text" id="bankIban" name="bank_iban"
+          value="{{ invoice.bank_iban or '' if invoice else '' }}"
+          class="form-control" style="font-family:monospace;">
       </div>
       <div class="form-group">
         <label>SWIFT / BIC Kodu</label>
-        <input type="text" name="bank_swift" value="{{ invoice.bank_swift or '' if invoice else '' }}" class="form-control">
+        <input type="text" id="bankSwift" name="bank_swift"
+          value="{{ invoice.bank_swift or '' if invoice else '' }}"
+          class="form-control">
       </div>
     </div>
   </div>
@@ -427,6 +434,29 @@ function updateTotals() {
 }
 
 // Sayfa yüklendiğinde toplamları hesapla
-document.addEventListener('DOMContentLoaded', updateTotals);
+document.addEventListener('DOMContentLoaded', () => {
+  updateTotals();
+  // Yeni proformada banka alanları boşsa currency'ye göre doldur
+  const bankIban = document.getElementById('bankIban');
+  if (bankIban && !bankIban.value.trim()) {
+    fillBankInfo(document.getElementById('currencySelect').value);
+  }
+});
+
+// Para birimine göre banka bilgilerini otomatik doldurur
+const BANK_MAP = {
+  'USD': { name: 'TÜRKİYE HALK BANKASI A.Ş.', iban: 'TR910001200935100053000812', swift: 'TRHBTR2A' },
+  'EUR': { name: 'TÜRKİYE HALK BANKASI A.Ş.', iban: 'TR440001200935100058000650', swift: 'TRHBTR2A' },
+  'GBP': { name: 'TÜRKİYE HALK BANKASI A.Ş.', iban: 'TR340001200935100055000038', swift: 'TRHBTR2A' },
+  'TRY': { name: 'TÜRKİYE HALK BANKASI A.Ş.', iban: 'TR480001200935100010263677', swift: 'TRHBTR2A' },
+};
+
+function fillBankInfo(currency) {
+  const bank = BANK_MAP[currency];
+  if (!bank) return;
+  document.getElementById('bankName').value  = bank.name;
+  document.getElementById('bankIban').value  = bank.iban;
+  document.getElementById('bankSwift').value = bank.swift;
+}
 </script>
 {% endblock %}

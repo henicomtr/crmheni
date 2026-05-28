@@ -15,7 +15,7 @@ import json
 
 from .database import get_db
 from .models import ProformaInvoice, ProformaItem, SiteSettings, User
-from .config import SECRET_KEY, ALGORITHM
+from .config import SECRET_KEY, ALGORITHM, BANK_ACCOUNTS
 from .services.proforma_service import (
     generate_pdf_bytes,
     send_proforma_email,
@@ -438,9 +438,12 @@ def _update_invoice_from_form(invoice: ProformaInvoice, form) -> None:
     invoice.delivery_time    = form.get("delivery_time", "")
     invoice.payment_term     = form.get("payment_term", "")
     invoice.freight_cost     = _float(form.get("freight_cost"), 0.0)
-    invoice.bank_name        = form.get("bank_name", "")
-    invoice.bank_iban        = form.get("bank_iban", "")
-    invoice.bank_swift       = form.get("bank_swift", "")
+    # Currency'ye göre banka bilgilerini otomatik doldur; kullanıcı override edebildiği için form değerini önce dene
+    currency = invoice.currency or "USD"
+    bank_defaults = BANK_ACCOUNTS.get(currency, BANK_ACCOUNTS.get("USD", {}))
+    invoice.bank_name  = form.get("bank_name") or bank_defaults.get("name", "")
+    invoice.bank_iban  = form.get("bank_iban") or bank_defaults.get("iban", "")
+    invoice.bank_swift = form.get("bank_swift") or bank_defaults.get("swift", "")
     invoice.notes            = form.get("notes", "")
 
 

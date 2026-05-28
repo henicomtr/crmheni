@@ -205,6 +205,23 @@ def _migrate_site_settings_v4():
 
 _migrate_site_settings_v4()
 
+# ── SiteSettings v5: seller_signature_url kolonu ─────────────────────
+def _migrate_site_settings_v5():
+    """Proforma satıcı imzası için seller_signature_url kolonunu ekler."""
+    insp = inspect(engine)
+    if "site_settings" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("site_settings")}
+    if "seller_signature_url" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE site_settings ADD COLUMN seller_signature_url VARCHAR"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_site_settings_v5()
+
 # ── RequestMessage: direction kolonu ────────────────────────────────
 def _migrate_request_messages_v2():
     """direction (outgoing/incoming) kolonunu ekler."""

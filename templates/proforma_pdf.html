@@ -29,6 +29,7 @@
     .top-table td { vertical-align: top; padding: 0; }
     .top-border { border-bottom: 3px solid #0f3d56; padding-bottom: 12px; }
 
+    .company-logo { max-height: 60px; max-width: 200px; object-fit: contain; margin-bottom: 6px; }
     .company-name {
       font-size: 26px;
       font-weight: bold;
@@ -130,6 +131,7 @@
       margin-bottom: 16px;
     }
     .page2-header td { vertical-align: middle; }
+    .page2-logo { max-height: 30px; max-width: 100px; object-fit: contain; }
     .page2-co  { font-size: 13px; font-weight: bold; color: #0f3d56; }
     .page2-ref { font-size: 11px; color: #666; text-align: right; }
 
@@ -147,20 +149,64 @@
     .terms ul { padding-left: 16px; }
     .terms li { font-size: 11px; color: #444; line-height: 1.7; margin-bottom: 5px; }
 
-    /* ── Footer / İmza ── */
-    .footer-table { width: 100%; margin-top: 30px; }
-    .footer-table td { vertical-align: top; }
-    .footer-left  { font-size: 11px; line-height: 1.8; color: #444; }
-    .footer-right { text-align: center; width: 200px; font-size: 11px; color: #444; }
-    .sig-line {
-      border-top: 1px solid #555;
-      margin-top: 50px;
-      padding-top: 5px;
-    }
+    /* ── Footer / İmza — iki sütunlu ── */
     .footer-divider {
       width: 100%;
       border-top: 2px solid #e8eef2;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .sig-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 16px 0; margin-top: 8px; }
+    .sig-box {
+      border: 1px solid #c8d8e2;
+      border-radius: 4px;
+      padding: 14px;
+      vertical-align: top;
+    }
+    .sig-box-title {
+      font-size: 9px;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      color: #0f3d56;
+      text-transform: uppercase;
+      border-bottom: 1px solid #dde8ef;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+    .sig-company {
+      font-size: 10px;
+      font-weight: bold;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+    .sig-contact {
+      font-size: 10px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+    .sig-image-wrap {
+      min-height: 60px;
+      display: block;
+    }
+    .sig-image {
+      max-height: 70px;
+      max-width: 180px;
+      object-fit: contain;
+    }
+    .sig-line-empty {
+      border-top: 1px solid #bbb;
+      margin-top: 60px;
+      padding-top: 5px;
+      font-size: 9px;
+      color: #888;
+      text-align: center;
+    }
+    .sig-label {
+      font-size: 9px;
+      color: #888;
+      margin-top: 6px;
+      text-align: center;
     }
   </style>
 </head>
@@ -174,7 +220,11 @@
   <table class="top-table" cellspacing="0" cellpadding="0">
     <tr>
       <td class="top-border">
-        <div class="company-name">HENI KOZMETIK</div>
+        {% if logo_data_url %}
+          <img src="{{ logo_data_url }}" alt="Heni Kozmetik" class="company-logo">
+        {% else %}
+          <div class="company-name">HENI KOZMETIK</div>
+        {% endif %}
         <div class="company-info">
           Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
           Eski&scaron;ehir / T&uuml;rkiye<br>
@@ -283,7 +333,13 @@
     <!-- Sayfa 2 mini başlık -->
     <table class="page2-header" cellspacing="0" cellpadding="0">
       <tr>
-        <td class="page2-co">HENI KOZMETIK</td>
+        <td>
+          {% if logo_data_url %}
+            <img src="{{ logo_data_url }}" alt="Heni Kozmetik" class="page2-logo">
+          {% else %}
+            <span class="page2-co">HENI KOZMETIK</span>
+          {% endif %}
+        </td>
         <td class="page2-ref">{{ invoice.pi_number }} &nbsp;|&nbsp; {{ invoice.issue_date }} &nbsp;|&nbsp; Continued</td>
       </tr>
     </table>
@@ -310,7 +366,8 @@
               <strong>Bank Name:</strong> {{ invoice.bank_name or '&mdash;' }}<br>
               <strong>Account Name:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
               <strong>IBAN:</strong> {{ invoice.bank_iban or '&mdash;' }}<br>
-              <strong>SWIFT Code:</strong> {{ invoice.bank_swift or '&mdash;' }}
+              <strong>SWIFT Code:</strong> {{ invoice.bank_swift or '&mdash;' }}<br>
+              <strong>Currency:</strong> {{ invoice.currency }}
             </td></tr>
           </table>
         </td>
@@ -333,18 +390,41 @@
       {% endif %}
     </div>
 
-    <!-- Footer / İmza -->
+    <!-- Footer / İmza — Satıcı (solda) & Alıcı (sağda) -->
     <div class="footer-divider"></div>
-    <table class="footer-table" cellspacing="0" cellpadding="0">
+
+    <table class="sig-table" cellspacing="0" cellpadding="0">
       <tr>
-        <td class="footer-left">
-          <strong>Export Department</strong><br>
-          Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.<br>
-          www.heni.com.tr &nbsp;|&nbsp; export@heni.com.tr
+
+        <!-- ── Satıcı imza kutusu ── -->
+        <td class="sig-box" width="50%">
+          <div class="sig-box-title">Seller — Authorized Signature &amp; Stamp</div>
+          <div class="sig-company">Heni Kozmetik Kimya Sanayi Ticaret Ltd. &Scaron;ti.</div>
+          <div class="sig-contact">
+            Eski&scaron;ehir / T&uuml;rkiye<br>
+            export@heni.com.tr &nbsp;|&nbsp; www.heni.com.tr
+          </div>
+          {% if signature_data_url %}
+            <div class="sig-image-wrap">
+              <img src="{{ signature_data_url }}" alt="Signature" class="sig-image">
+            </div>
+          {% else %}
+            <div class="sig-line-empty">Signature / Stamp</div>
+          {% endif %}
         </td>
-        <td class="footer-right">
-          <div class="sig-line">Authorized Signature &amp; Stamp</div>
+
+        <!-- ── Alıcı imza kutusu (boş) ── -->
+        <td class="sig-box" width="50%">
+          <div class="sig-box-title">Buyer — Authorized Signature &amp; Stamp</div>
+          <div class="sig-company">{{ invoice.buyer_company or '&mdash;' }}</div>
+          <div class="sig-contact">
+            {{ invoice.buyer_country or '' }}<br>
+            {{ invoice.buyer_contact or '' }}
+          </div>
+          <!-- Alıcı onayı için boş bırakılır -->
+          <div class="sig-line-empty">Signature / Stamp</div>
         </td>
+
       </tr>
     </table>
 

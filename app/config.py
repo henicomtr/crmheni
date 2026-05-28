@@ -38,3 +38,27 @@ if SECRET_KEY == _DEFAULT_SECRET:
 
 # Debug modu — .env'de DEBUG=true olursa aktif
 DEBUG = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
+
+# Proforma — para birimine göre banka hesap bilgileri
+BANK_ACCOUNTS = {
+    "TRY": {
+        "name": "TÜRKİYE HALK BANKASI A.Ş.",
+        "iban": "TR480001200935100010263677",
+        "swift": "TRHBTR2A",
+    },
+    "USD": {
+        "name": "TÜRKİYE HALK BANKASI A.Ş.",
+        "iban": "TR910001200935100053000812",
+        "swift": "TRHBTR2A",
+    },
+    "EUR": {
+        "name": "TÜRKİYE HALK BANKASI A.Ş.",
+        "iban": "TR440001200935100058000650",
+        "swift": "TRHBTR2A",
+    },
+    "GBP": {
+        "name": "TÜRKİYE HALK BANKASI A.Ş.",
+        "iban": "TR340001200935100055000038",
+        "swift": "TRHBTR2A",
+    },
+}
