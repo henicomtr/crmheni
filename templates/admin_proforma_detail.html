@@ -180,7 +180,7 @@
   <div class="pi-terms">
     <h3>Terms &amp; Conditions</h3>
     {% if invoice.notes %}
-    <p style="font-size:14px;line-height:1.7;color:#444;">{{ invoice.notes }}</p>
+    <p style="font-size:14px;line-height:1.7;color:#444;white-space:pre-wrap;">{{ invoice.notes }}</p>
     {% else %}
     <ul>
       <li>This proforma invoice is issued for informational purposes only and does not constitute a final commercial invoice.</li>
