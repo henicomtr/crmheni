@@ -239,18 +239,51 @@
     </tr>
   </table>
 
-  <!-- Satıcı / Alıcı -->
+  <!-- Satıcı / Alıcı — satır sayısı dinamik olarak eşitlenir -->
+  {# Alıcı telefon+e-posta birleştiriliyor #}
+  {% if invoice.buyer_phone and invoice.buyer_email %}
+    {% set buyer_contact_str = invoice.buyer_phone ~ ' / ' ~ invoice.buyer_email %}
+  {% elif invoice.buyer_phone %}
+    {% set buyer_contact_str = invoice.buyer_phone %}
+  {% elif invoice.buyer_email %}
+    {% set buyer_contact_str = invoice.buyer_email %}
+  {% else %}
+    {% set buyer_contact_str = '&mdash;' %}
+  {% endif %}
+
+  {# Satıcı satırları — sabit bilgiler #}
+  {% set seller_rows = [
+    ('Company',    'Heni Kozmetik Kimya Sanayi Ticaret Ltd. &#350;ti.'),
+    ('Address',    'Eski&#351;ehir, T&uuml;rkiye'),
+    ('Tax Office', 'ESKISEHIR'),
+    ('Tax Number', '4611031395'),
+    ('E-mail',     'export@heni.com.tr')
+  ] %}
+
+  {# Alıcı satırları — fatura verisinden #}
+  {% set buyer_rows = [
+    ('Company',        invoice.buyer_company  or '&mdash;'),
+    ('Country',        invoice.buyer_country  or '&mdash;'),
+    ('Address',        invoice.buyer_address  or '&mdash;'),
+    ('Contact Person', invoice.buyer_contact  or '&mdash;'),
+    ('Phone / E-mail', buyer_contact_str)
+  ] %}
+
+  {# Hangi tablo uzunsa ona göre padding hesaplanır #}
+  {% set p1_max = [seller_rows|length, buyer_rows|length]|max %}
+
   <table class="two-col-table" cellspacing="0" cellpadding="0">
     <tr>
       <td width="50%">
         <table class="info-card" cellspacing="0" cellpadding="0">
           <tr class="info-card-head"><td>SELLER INFORMATION</td></tr>
           <tr class="info-card-body"><td>
-            <strong>Company:</strong> Heni Kozmetik Kimya Sanayi Ticaret Ltd. &#350;ti.<br>
-            <strong>Address:</strong> Eski&#351;ehir, T&uuml;rkiye<br>
-            <strong>Tax Office:</strong> ESKISEHIR<br>
-            <strong>Tax Number:</strong> 4611031395<br>
-            <strong>E-mail:</strong> export@heni.com.tr
+            {% for label, value in seller_rows %}
+            <strong>{{ label }}:</strong> {{ value }}<br>
+            {% endfor %}
+            {% for _ in range(p1_max - seller_rows|length) %}
+            <span style="color: transparent; line-height: 1.9;">&#160;</span><br>
+            {% endfor %}
           </td></tr>
         </table>
       </td>
@@ -258,12 +291,12 @@
         <table class="info-card" cellspacing="0" cellpadding="0">
           <tr class="info-card-head"><td>BUYER INFORMATION</td></tr>
           <tr class="info-card-body"><td>
-            <strong>Company:</strong> {{ invoice.buyer_company or '&mdash;' }}<br>
-            <strong>Country:</strong> {{ invoice.buyer_country or '&mdash;' }}<br>
-            <strong>Address:</strong> {{ invoice.buyer_address or '&mdash;' }}<br>
-            <strong>Contact Person:</strong> {{ invoice.buyer_contact or '&mdash;' }}<br>
-            <strong>Phone / E-mail:</strong>
-              {{ invoice.buyer_phone or '' }}{% if invoice.buyer_phone and invoice.buyer_email %} / {% endif %}{{ invoice.buyer_email or '&mdash;' }}
+            {% for label, value in buyer_rows %}
+            <strong>{{ label }}:</strong> {{ value }}<br>
+            {% endfor %}
+            {% for _ in range(p1_max - buyer_rows|length) %}
+            <span style="color: transparent; line-height: 1.9;">&#160;</span><br>
+            {% endfor %}
           </td></tr>
         </table>
       </td>
@@ -338,19 +371,40 @@
       </tr>
     </table>
 
-    <!-- Sevkiyat / Banka -->
+    <!-- Sevkiyat / Banka — satır sayısı dinamik olarak eşitlenir -->
+    {# Sevkiyat satırları #}
+    {% set shipping_rows = [
+      ('Loading Port',      invoice.loading_port     or '&mdash;'),
+      ('Destination Port',  invoice.destination_port or '&mdash;'),
+      ('Delivery Time',     invoice.delivery_time    or '&mdash;'),
+      ('Payment Term',      invoice.payment_term     or '&mdash;'),
+      ('Origin',            'Made in T&uuml;rkiye')
+    ] %}
+
+    {# Banka satırları #}
+    {% set bank_rows = [
+      ('Bank Name',     invoice.bank_name  or '&mdash;'),
+      ('Account Name',  'HENI KOZMETIK KIMYA SAN.TIC.LTD.STI.'),
+      ('IBAN',          invoice.bank_iban  or '&mdash;'),
+      ('SWIFT Code',    invoice.bank_swift or '&mdash;'),
+      ('Currency',      invoice.currency)
+    ] %}
+
+    {# Hangi tablo uzunsa ona göre padding hesaplanır #}
+    {% set p2_max = [shipping_rows|length, bank_rows|length]|max %}
+
     <table class="two-col-table" cellspacing="0" cellpadding="0">
       <tr>
         <td width="50%">
           <table class="info-card" cellspacing="0" cellpadding="0">
             <tr class="info-card-head"><td>SHIPPING DETAILS</td></tr>
             <tr class="info-card-body"><td>
-              <strong>Loading Port:</strong> {{ invoice.loading_port or '&mdash;' }}<br>
-              <strong>Destination Port:</strong> {{ invoice.destination_port or '&mdash;' }}<br>
-              <strong>Delivery Time:</strong> {{ invoice.delivery_time or '&mdash;' }}<br>
-              <strong>Payment Term:</strong> {{ invoice.payment_term or '&mdash;' }}<br>
-              <strong>Origin:</strong> Made in T&uuml;rkiye<br>
-              <span style="color: transparent; font-size: 11px;">&#160;</span>
+              {% for label, value in shipping_rows %}
+              <strong>{{ label }}:</strong> {{ value }}<br>
+              {% endfor %}
+              {% for _ in range(p2_max - shipping_rows|length) %}
+              <span style="color: transparent; line-height: 1.9;">&#160;</span><br>
+              {% endfor %}
             </td></tr>
           </table>
         </td>
@@ -358,11 +412,12 @@
           <table class="info-card" cellspacing="0" cellpadding="0">
             <tr class="info-card-head"><td>BANK INFORMATION</td></tr>
             <tr class="info-card-body"><td>
-              <strong>Bank Name:</strong> {{ invoice.bank_name or '&mdash;' }}<br>
-              <strong>Account Name:</strong> HENI KOZMETIK KIMYA SAN.TIC.LTD.STI.<br>
-              <strong>IBAN:</strong> {{ invoice.bank_iban or '&mdash;' }}<br>
-              <strong>SWIFT Code:</strong> {{ invoice.bank_swift or '&mdash;' }}<br>
-              <strong>Currency:</strong> {{ invoice.currency }}
+              {% for label, value in bank_rows %}
+              <strong>{{ label }}:</strong> {{ value }}<br>
+              {% endfor %}
+              {% for _ in range(p2_max - bank_rows|length) %}
+              <span style="color: transparent; line-height: 1.9;">&#160;</span><br>
+              {% endfor %}
             </td></tr>
           </table>
         </td>
