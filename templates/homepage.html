@@ -790,7 +790,7 @@
                         {% if svc.short_description %}
                         <p>{{ svc.short_description }}</p>
                         {% endif %}
-                        {% if svc.url %}<p><a href="{{ svc.url }}" style="color:var(--metallic);font-weight:600;">Daha fazla →</a></p>{% endif %}
+                        {% if svc.url %}<p><a href="{{ svc.url }}" style="color:var(--metallic);font-weight:600;">{{ svc.title }} →</a></p>{% endif %}
                 </div>
             </div>
             {% endif %}
