@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from .database import Base, engine
 from .routes_admin import router as admin_router
 from .routes_showroom import router as showroom_router
-from .routes_webhook import router as webhook_router
 from .routes_pricing import router as pricing_router
 from .routes_feeds import router as feeds_router
 from .routes_push import router as push_router
@@ -657,15 +656,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(admin_router)
 app.include_router(push_router)
 app.include_router(feeds_router)     # catch-all /{slug}'den önce kayıtlı olmalı
-app.include_router(webhook_router)   # showroom catch-all'dan önce kayıtlı olmalı
 app.include_router(proforma_router)
 app.include_router(showroom_router)
 app.include_router(pricing_router)
 
 
-@app.on_event("startup")
-async def on_startup():
-    """Uygulama ayağa kalktığında IMAP polling ve Evolution webhook kaydını başlatır."""
-    from .routes_webhook import start_imap_polling, _register_evolution_webhook
-    start_imap_polling(app)
-    await _register_evolution_webhook()
