@@ -51,6 +51,7 @@
 
     /* İki sütunlu kart bölümler — table-layout:fixed ile xhtml2pdf'de güvenli genişlik */
     .two-col-table { width: 100%; margin-bottom: 16px; table-layout: fixed; border-collapse: separate; border-spacing: 8px 0; }
+    .two-col-table-cell { vertical-align: top; }
 
     /* Kart yapısı: iç tablo ile başlık + gövde ayrımı */
     .info-card { width: 100%; border-collapse: collapse; border: 1px solid #c8d8e2; table-layout: fixed; }
@@ -276,7 +277,7 @@
 
   <table class="two-col-table" cellspacing="0" cellpadding="0">
     <tr>
-      <td width="50%">
+      <td width="50%" class="two-col-table-cell">
         <table class="info-card" cellspacing="0" cellpadding="0">
           <tr class="info-card-head"><td>SELLER INFORMATION</td></tr>
           <tr class="info-card-body"><td>
@@ -289,7 +290,7 @@
           </td></tr>
         </table>
       </td>
-      <td width="50%">
+      <td width="50%" class="two-col-table-cell">
         <table class="info-card" cellspacing="0" cellpadding="0">
           <tr class="info-card-head"><td>BUYER INFORMATION</td></tr>
           <tr class="info-card-body"><td>
@@ -397,7 +398,7 @@
 
     <table class="two-col-table" cellspacing="0" cellpadding="0">
       <tr>
-        <td width="50%">
+        <td width="50%" class="two-col-table-cell">
           <table class="info-card" cellspacing="0" cellpadding="0">
             <tr class="info-card-head"><td>SHIPPING DETAILS</td></tr>
             <tr class="info-card-body"><td>
@@ -410,7 +411,7 @@
             </td></tr>
           </table>
         </td>
-        <td width="50%">
+        <td width="50%" class="two-col-table-cell">
           <table class="info-card" cellspacing="0" cellpadding="0">
             <tr class="info-card-head"><td>BANK INFORMATION</td></tr>
             <tr class="info-card-body"><td>
