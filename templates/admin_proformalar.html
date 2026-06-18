@@ -95,6 +95,14 @@
               <a href="/esk/proformalar/{{ p.id }}/pdf" class="btn btn-sm btn-ghost" title="PDF İndir">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
               </a>
+              {% if p.status not in ('accepted', 'rejected') %}
+              <button type="button"
+                      class="btn btn-sm btn-approve"
+                      title="Onayla — Müşteri kaydı ve cari borç oluştur"
+                      onclick="onaylaProforma({{ p.id }}, '{{ p.pi_number }}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              {% endif %}
               <form method="post" action="/esk/proformalar/{{ p.id }}/sil" style="display:inline;" onsubmit="return confirm('{{ p.pi_number }} silinsin mi?')">
                 <button type="submit" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -140,6 +148,14 @@
           <a href="/esk/proformalar/{{ p.id }}/pdf" class="btn btn-sm btn-ghost" title="PDF">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           </a>
+          {% if p.status not in ('accepted', 'rejected') %}
+          <button type="button"
+                  class="btn btn-sm btn-approve"
+                  title="Onayla"
+                  onclick="onaylaProforma({{ p.id }}, '{{ p.pi_number }}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+          {% endif %}
           <form method="post" action="/esk/proformalar/{{ p.id }}/sil" style="display:inline;" onsubmit="return confirm('{{ p.pi_number }} silinsin mi?')">
             <button type="submit" class="btn btn-sm btn-ghost btn-danger-ghost" title="Sil">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
@@ -364,5 +380,48 @@
 .pi-card-company { font-size: 13px; font-weight: 600; color: #374151; }
 .pi-card-total { font-size: 13px; font-weight: 700; color: #1d1d1f; }
 .pi-card-actions { display: flex; gap: 4px; justify-content: flex-end; margin-top: 2px; }
+
+/* Onayla butonu */
+.btn-approve {
+  background: transparent;
+  color: #15803d;
+  border-color: transparent;
+}
+.btn-approve:hover { background: #dcfce7; color: #166534; }
 </style>
+
+<!-- Bildirim toast -->
+<div id="piToast" style="
+  display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  background:#1d1d1f; color:#fff; padding:12px 20px; border-radius:10px;
+  font-size:13px; font-weight:500; z-index:9999; max-width:480px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.25); text-align:center; line-height:1.5;
+"></div>
+
+<script>
+function onaylaProforma(id, piNo) {
+  if (!confirm(piNo + ' proformasını onaylamak istiyor musunuz?\n\nMüşteri kaydı ve cari borç otomatik oluşturulacak.')) return;
+
+  fetch('/esk/proformalar/' + id + '/onayla', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        _piToast(data.message, false);
+        // Satırı "Kabul Edildi" badge'iyle güncelle
+        setTimeout(() => location.reload(), 2800);
+      } else {
+        _piToast(data.error || 'Bir hata oluştu.', true);
+      }
+    })
+    .catch(() => _piToast('Sunucuya ulaşılamadı.', true));
+}
+
+function _piToast(msg, hata) {
+  const el = document.getElementById('piToast');
+  el.textContent = msg;
+  el.style.background = hata ? '#dc2626' : '#166534';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+</script>
 {% endblock %}

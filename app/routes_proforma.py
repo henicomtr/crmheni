@@ -14,7 +14,7 @@ from typing import Optional, List
 import json
 
 from .database import get_db
-from .models import ProformaInvoice, ProformaItem, SiteSettings, User
+from .models import ProformaInvoice, ProformaItem, SiteSettings, User, Customer, AccountTransaction
 from .config import SECRET_KEY, ALGORITHM, BANK_ACCOUNTS
 from .services.proforma_service import (
     generate_pdf_bytes,
@@ -385,6 +385,82 @@ def revise_proforma(
 
     db.commit()
     return JSONResponse({"ok": True, "new_id": new_invoice.id, "pi_number": new_pi})
+
+
+# ────────────────────────────────────────────────────────────────────
+# ONAYLA — Müşteri kaydı + cari borç oluştur
+# ────────────────────────────────────────────────────────────────────
+
+@router.post("/esk/proformalar/{invoice_id}/onayla")
+def approve_proforma(
+    invoice_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    result = _require_permission(request, db, "proformalar")
+    if isinstance(result, RedirectResponse):
+        return result
+
+    invoice = db.query(ProformaInvoice).filter(ProformaInvoice.id == invoice_id).first()
+    if not invoice:
+        return JSONResponse({"ok": False, "error": "Proforma bulunamadı."}, status_code=404)
+
+    if invoice.status in ("accepted", "rejected"):
+        return JSONResponse({"ok": False, "error": "Bu proforma zaten sonuçlandırılmış."}, status_code=400)
+
+    # Kalem toplamı + navlun maliyeti
+    toplam = sum(item.total for item in invoice.items)
+    if invoice.freight_cost:
+        toplam += invoice.freight_cost
+
+    # E-posta veya şirket adıyla mevcut müşteri ara
+    musteri = None
+    if invoice.buyer_email:
+        musteri = db.query(Customer).filter(Customer.email == invoice.buyer_email).first()
+    if not musteri and invoice.buyer_company:
+        musteri = db.query(Customer).filter(Customer.name == invoice.buyer_company).first()
+
+    musteri_yeni = False
+    if not musteri:
+        musteri = Customer(
+            name=invoice.buyer_company or invoice.buyer_contact or "—",
+            country=invoice.buyer_country or None,
+            email=invoice.buyer_email or None,
+            phone=invoice.buyer_phone or None,
+            contact_person=invoice.buyer_contact or None,
+            notes=f"Proforma onayından otomatik oluşturuldu: {invoice.pi_number}",
+        )
+        db.add(musteri)
+        db.flush()  # ID almak için
+        musteri_yeni = True
+
+    # Müşterinin ödemesi gereken tutarı cari borç olarak aç
+    borc = AccountTransaction(
+        type="debit",
+        amount=round(toplam, 2),
+        currency=invoice.currency or "USD",
+        description=f"Proforma: {invoice.pi_number}",
+        reference_no=invoice.pi_number,
+        customer_id=musteri.id,
+        transaction_date=datetime.utcnow(),
+    )
+    db.add(borc)
+
+    invoice.status = "accepted"
+    invoice.updated_at = datetime.utcnow()
+    db.commit()
+
+    if musteri_yeni:
+        musteri_bilgi = f"Yeni müşteri kaydı oluşturuldu: {musteri.name}."
+    else:
+        musteri_bilgi = f"Mevcut müşteri hesabına işlendi: {musteri.name}."
+
+    return JSONResponse({
+        "ok": True,
+        "message": f"Proforma onaylandı. {musteri_bilgi} {toplam:,.2f} {invoice.currency or 'USD'} tutarında cari borç açıldı.",
+        "customer_id": musteri.id,
+        "musteri_yeni": musteri_yeni,
+    })
 
 
 # ────────────────────────────────────────────────────────────────────
