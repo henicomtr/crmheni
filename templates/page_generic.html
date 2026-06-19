@@ -398,36 +398,49 @@
     {%- set _page_url = _base ~ request.url.path %}
     {%- set _page_title = trans.title if trans else page.slug %}
 
-    {# Organization — yayıncı kuruluş kimliği ve E-E-A-T sinyali #}
+    {# Organization — tam ticari unvan, E-E-A-T, sertifikalar ve çalışan sinyalleri #}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
       "@id": "{{ _base }}/#organization",
-      "name": {{ (site.site_name or "Heni B2B") | tojson }},
-      "url": "{{ _base }}"
+      "name": "Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.",
+      "alternateName": {{ (site.site_name or "Heni Kozmetik") | tojson }},
+      "url": "{{ _base }}",
+      "foundingDate": "2010",
+      "hasCredential": [
+        {"@type": "EducationalOccupationalCredential", "name": "ISO 9001:2015", "description": "Quality Management System"},
+        {"@type": "EducationalOccupationalCredential", "name": "ISO 14001:2015", "description": "Environmental Management System"},
+        {"@type": "EducationalOccupationalCredential", "name": "ISO 45001:2018", "description": "Occupational Health and Safety Management System"},
+        {"@type": "EducationalOccupationalCredential", "name": "GMP-TS EN ISO", "description": "Good Manufacturing Practice"}
+      ],
+      "employee": {"@type": "Person", "name": "Musa Yılmaz", "jobTitle": "İhracat ve B2B Sorumlusu"},
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "email": "export@heni.com.tr"
+          {%- if site and site.contact_phone %},
+          "telephone": {{ site.contact_phone | tojson }}
+          {%- endif %},
+          "availableLanguage": ["English", "Turkish", "German", "French", "Arabic", "Russian", "Spanish"]
+        }
+        {%- if site and site.social_whatsapp %},
+        {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "contactOption": "WhatsApp",
+          "telephone": {{ site.social_whatsapp | tojson }}
+        }
+        {%- endif %}
+      ]
       {%- if site and site.logo_url %},
       "logo": {{ ((_base + site.logo_url) if site.logo_url.startswith('/') else site.logo_url) | tojson }}
       {%- endif %}
-      {%- if site and (site.contact_email or site.contact_phone) %},
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "contactType": "customer service"
-        {%- if site.contact_email %},
-        "email": {{ site.contact_email | tojson }}
-        {%- endif %}
-        {%- if site.contact_phone %},
-        "telephone": {{ site.contact_phone | tojson }}
-        {%- endif %},
-        "availableLanguage": ["English", "Turkish", "German", "French", "Arabic", "Russian", "Spanish"]
-      }
-      {%- endif %}
       {%- set _ns = namespace(socials=[]) %}
-      {%- if site %}
-        {%- if site.social_instagram %}{% set _ns.socials = _ns.socials + [site.social_instagram] %}{% endif %}
-        {%- if site.social_linkedin %}{% set _ns.socials = _ns.socials + [site.social_linkedin] %}{% endif %}
-        {%- if site.social_twitter %}{% set _ns.socials = _ns.socials + [site.social_twitter] %}{% endif %}
-      {%- endif %}
+      {%- if site and site.social_instagram %}{% set _ns.socials = _ns.socials + [site.social_instagram] %}{% endif %}
+      {%- if site and site.social_linkedin %}{% set _ns.socials = _ns.socials + [site.social_linkedin] %}{% endif %}
+      {%- if site and site.social_twitter %}{% set _ns.socials = _ns.socials + [site.social_twitter] %}{% endif %}
       {%- if _ns.socials %},
       "sameAs": {{ _ns.socials | tojson }}
       {%- endif %}
@@ -507,6 +520,34 @@
         }{%- if not loop.last %},{% endif %}
         {%- endfor %}
       ]
+    }
+    </script>
+    {%- endif %}
+
+    {# LocalBusiness — yalnızca iletişim sayfasında üretilir (EN master slug: 'contact') #}
+    {%- if page.slug == 'contact' %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "@id": "{{ _base }}/#localbusiness",
+      "name": "Heni Kozmetik Kimya Sanayi Ticaret Ltd. Şti.",
+      "image": "{{ _base }}/static/upload/images/img_7142dac88fc2.webp",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "75. Yıl Mahallesi, Sultandere Gümüşhane Sokak No:13, Odunpazarı",
+        "addressLocality": "Eskişehir",
+        "addressCountry": "TR"
+      },
+      "telephone": {{ (site.contact_phone or "+90-212-909-26-26") | tojson }},
+      "email": "export@heni.com.tr",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        "opens": "09:00",
+        "closes": "17:00"
+      },
+      "priceRange": "$$"
     }
     </script>
     {%- endif %}
