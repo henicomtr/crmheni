@@ -29,6 +29,9 @@
     <meta name="twitter:image"      content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
     {% endif %}
     <link rel="canonical" href="{{ request.url._url }}">
+    <!-- Coğrafi konum sinyalleri (yerel SEO) -->
+    <meta name="geo.region" content="TR">
+    <meta name="geo.placename" content="Turkey">
 
     {% set base_url = request.url.scheme ~ '://' ~ request.url.hostname ~ (':' ~ request.url.port if request.url.port and request.url.port not in [80, 443] else '') %}
     {% for lc in langs %}
@@ -389,6 +392,124 @@
 
     <!-- ═══ FOOTER ═══ -->
     {% include 'partials/site_footer.html' %}
+
+    <!-- ═══ SCHEMA.ORG / JSON-LD ═══ -->
+    {%- set _base = 'https://henib2b.com' %}
+    {%- set _page_url = _base ~ request.url.path %}
+    {%- set _page_title = trans.title if trans else page.slug %}
+
+    {# Organization — yayıncı kuruluş kimliği ve E-E-A-T sinyali #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "{{ _base }}/#organization",
+      "name": {{ (site.site_name or "Heni B2B") | tojson }},
+      "url": "{{ _base }}"
+      {%- if site and site.logo_url %},
+      "logo": {{ ((_base + site.logo_url) if site.logo_url.startswith('/') else site.logo_url) | tojson }}
+      {%- endif %}
+      {%- if site and (site.contact_email or site.contact_phone) %},
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service"
+        {%- if site.contact_email %},
+        "email": {{ site.contact_email | tojson }}
+        {%- endif %}
+        {%- if site.contact_phone %},
+        "telephone": {{ site.contact_phone | tojson }}
+        {%- endif %},
+        "availableLanguage": ["English", "Turkish", "German", "French", "Arabic", "Russian", "Spanish"]
+      }
+      {%- endif %}
+      {%- set _ns = namespace(socials=[]) %}
+      {%- if site %}
+        {%- if site.social_instagram %}{% set _ns.socials = _ns.socials + [site.social_instagram] %}{% endif %}
+        {%- if site.social_linkedin %}{% set _ns.socials = _ns.socials + [site.social_linkedin] %}{% endif %}
+        {%- if site.social_twitter %}{% set _ns.socials = _ns.socials + [site.social_twitter] %}{% endif %}
+      {%- endif %}
+      {%- if _ns.socials %},
+      "sameAs": {{ _ns.socials | tojson }}
+      {%- endif %}
+    }
+    </script>
+
+    {# WebPage — sayfa kimliği, yayın tarihleri ve E-E-A-T yayıncı referansı #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": {{ _page_url | tojson }},
+      "url": {{ _page_url | tojson }},
+      "name": {{ meta_title | tojson }},
+      "description": {{ meta_description | tojson }},
+      "inLanguage": {{ lang | tojson }},
+      "isPartOf": {
+        "@type": "WebSite",
+        "@id": "{{ _base }}/#website",
+        "url": "{{ _base }}",
+        "name": {{ (site.site_name or "Heni B2B") | tojson }}
+      },
+      "publisher": {
+        "@type": "Organization",
+        "@id": "{{ _base }}/#organization"
+      },
+      "breadcrumb": {
+        "@id": "{{ _page_url }}#breadcrumb"
+      }
+      {%- if page.created_at %},
+      "datePublished": {{ page.created_at.strftime('%Y-%m-%dT%H:%M:%S') | tojson }}
+      {%- endif %}
+      {%- if page.updated_at %},
+      "dateModified": {{ page.updated_at.strftime('%Y-%m-%dT%H:%M:%S') | tojson }}
+      {%- endif %}
+    }
+    </script>
+
+    {# BreadcrumbList — navigasyon hiyerarşisi zengin sonuçları #}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "@id": "{{ _page_url }}#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": {{ ui.home | tojson }},
+          "item": "{{ _base }}{{ '' if lang == 'en' else '/' ~ lang }}"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": {{ _page_title | tojson }},
+          "item": {{ _page_url | tojson }}
+        }
+      ]
+    }
+    </script>
+
+    {# FAQPage — SSS zengin sonuçları (yalnızca SSS öğeleri varsa üretilir) #}
+    {%- if faqs and faqs|length > 0 %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {%- for faq in faqs %}
+        {
+          "@type": "Question",
+          "name": {{ faq.question | tojson }},
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": {{ faq.answer | striptags | tojson }}
+          }
+        }{%- if not loop.last %},{% endif %}
+        {%- endfor %}
+      ]
+    }
+    </script>
+    {%- endif %}
 
 </body>
 </html>
