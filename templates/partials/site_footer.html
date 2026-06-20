@@ -314,6 +314,15 @@
     {{ _sa | join(',\n    ') | safe }}
   ]
   {% endif %}
-  ,"description": "ISO 9001:2015, ISO 14001:2015, ISO 45001:2018 ve GMP-TS EN ISO sertifikalı B2B temizlik ve kişisel bakım ürünleri üreticisi."
+  {%- set _org_desc = {
+    'en': 'GMP- and ISO-certified (9001:2015, 14001:2015, 45001:2018) B2B manufacturer of cleaning and personal care products.',
+    'tr': 'ISO 9001:2015, ISO 14001:2015, ISO 45001:2018 ve GMP-TS EN ISO sertifikalı B2B temizlik ve kişisel bakım ürünleri üreticisi.',
+    'de': 'GMP- und ISO-zertifizierter (9001:2015, 14001:2015, 45001:2018) B2B-Hersteller von Reinigungs- und Körperpflegeprodukten.',
+    'fr': 'Fabricant B2B certifié GMP et ISO (9001:2015, 14001:2015, 45001:2018) de produits d\'entretien et de soins personnels.',
+    'ar': 'شركة مصنعة B2B حاصلة على شهادات GMP وISO (9001:2015، 14001:2015، 45001:2018) لمنتجات التنظيف والعناية الشخصية.',
+    'ru': 'B2B-производитель чистящих средств и средств личной гигиены, сертифицированный по GMP и ISO (9001:2015, 14001:2015, 45001:2018).',
+    'es': 'Fabricante B2B certificado en GMP e ISO (9001:2015, 14001:2015, 45001:2018) de productos de limpieza y cuidado personal.'
+  } -%}
+  ,"description": {{ _org_desc.get(lang, _org_desc['en']) | tojson }}
 }
 </script>
