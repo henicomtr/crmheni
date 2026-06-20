@@ -126,6 +126,7 @@ class ProductTranslation(Base):
     long_description  = Column(Text)
     meta_title        = Column(String)
     meta_description  = Column(String)
+    faq_json          = Column(Text, nullable=True)  # JSON: [{"q": "...", "a": "..."}]
 
     product = relationship("Product", back_populates="translations")
 

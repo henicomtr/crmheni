@@ -1552,6 +1552,15 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
                 "product_url":     product_url(lang, rp_slug) if rp_slug else "#",
             })
 
+    # FAQ JSON'ını parse et; hata varsa boş liste kullan
+    import json as _json
+    product_faqs = []
+    if trans and trans.faq_json:
+        try:
+            product_faqs = _json.loads(trans.faq_json)
+        except Exception:
+            product_faqs = []
+
     ctx = common_ctx(request, lang, product=product, db=db)
     ctx["active_page"] = "showroom"
     ctx.update({
@@ -1571,6 +1580,7 @@ def _product_detail(request: Request, lang: str, slug: str, db: Session):
         "category_label":   get_category_label(product.category or "", lang),
         "category_url":     category_url(lang, product.category or "") if product.category else None,
         "related_ctx":      related_ctx,
+        "product_faqs":     product_faqs,
     })
     return templates.TemplateResponse("product_detail.html", ctx)
 

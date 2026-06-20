@@ -612,6 +612,16 @@
                             value="{{ t.long_description if t else '' }}">
                     </div>
 
+                    <div class="form-group" style="margin-top:12px;">
+                        <label class="form-label">SSS (FAQ) — JSON formatı</label>
+                        <textarea name="faq_json_{{ lang_code }}" class="form-control" rows="5"
+                            placeholder='[{"q": "Soru?", "a": "Cevap."}]'
+                            style="font-family:monospace;font-size:12px;">{{ t.faq_json if t and t.faq_json else '' }}</textarea>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                            Her satır bir soru-cevap çifti. Örnek: <code>[{"q": "MOQ?", "a": "1 palet."}]</code>
+                        </div>
+                    </div>
+
                     <div class="lang-panel-grid" style="margin-top:12px;">
                         <div class="form-group">
                             <label class="form-label">Meta Başlık</label>

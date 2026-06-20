@@ -875,6 +875,7 @@ async def create_product(
             long_description=form.get(f"long_description_{lc}", ""),
             meta_title=form.get(f"meta_title_{lc}", ""),
             meta_description=form.get(f"meta_description_{lc}", ""),
+            faq_json=form.get(f"faq_json_{lc}", "") or None,
         )
         db.add(translation)
 
@@ -1054,6 +1055,7 @@ async def update_product(
             existing_t.long_description  = form.get(f"long_description_{lc}", existing_t.long_description or "")
             existing_t.meta_title        = form.get(f"meta_title_{lc}", existing_t.meta_title or "")
             existing_t.meta_description  = form.get(f"meta_description_{lc}", existing_t.meta_description or "")
+            existing_t.faq_json          = form.get(f"faq_json_{lc}", "") or existing_t.faq_json or None
         else:
             new_t = ProductTranslation(
                 product_id=product_id,
@@ -1064,6 +1066,7 @@ async def update_product(
                 long_description=form.get(f"long_description_{lc}", ""),
                 meta_title=form.get(f"meta_title_{lc}", ""),
                 meta_description=form.get(f"meta_description_{lc}", ""),
+                faq_json=form.get(f"faq_json_{lc}", "") or None,
             )
             db.add(new_t)
 

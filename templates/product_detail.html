@@ -20,7 +20,8 @@
     {% endif %}{% endfor %}
     <meta property="og:title"       content="{{ _page_title }}">
     <meta property="og:description" content="{{ meta_description }}">
-    <meta property="og:url"         content="{{ canonical_url }}">
+    {% set _canonical_abs = ('https://henib2b.com' + canonical_url) if canonical_url.startswith('/') else canonical_url %}
+    <meta property="og:url"         content="{{ _canonical_abs }}">
     {% set _og_img_raw = product.image or (site.default_og_image or '') %}
     {% if _og_img_raw %}
     <meta property="og:image"       content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
@@ -33,7 +34,7 @@
     {% if _og_img_raw %}
     <meta name="twitter:image"      content="{{ ('https://henib2b.com' + _og_img_raw) if _og_img_raw.startswith('/') else _og_img_raw }}">
     {% endif %}
-    <link rel="canonical" href="{{ canonical_url }}">
+    <link rel="canonical" href="{{ _canonical_abs }}">
 
     <!-- hreflang — SEO: her dildeki eşdeğer URL; göreli path'e henib2b.com prefix eklenir -->
     {% for lc, lurl in lang_urls.items() %}
@@ -842,15 +843,23 @@
             .related-price { font-size: 14px; }
         }
     </style>
-    <!-- Google Zengin Sonuçlar — Product + AggregateRating schema -->
+    <!-- Google Zengin Sonuçlar — Product schema (tek blok, offers + aggregateRating dahil) -->
     <script type="application/ld+json">
     {
-      "@context": "https://schema.org/",
+      "@context": "https://schema.org",
       "@type": "Product",
       "name": "{{ (trans.name if trans else product.slug) | e }}",
-      {% if product.image %}"image": "{{ product.image }}",{% endif %}
+      {% if product.image %}"image": "{{ ('https://henib2b.com' + product.image) if product.image.startswith('/') else product.image }}",{% endif %}
       "description": "{{ ((trans.short_description if trans else '') or '') | e }}",
-      "brand": { "@type": "Brand", "name": "Heni" }
+      "brand": { "@type": "Brand", "name": "Heni" },
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "{{ '%.2f' | format(product.unit_price * (1 - discount_tiers[-1].rate) if discount_tiers else product.unit_price) }}",
+        "highPrice": "{{ '%.2f' | format(product.unit_price) }}",
+        "offerCount": "5",
+        "availability": "https://schema.org/InStock"
+      }
       {% if product.rating_count and product.rating_count > 0 %}
       ,"aggregateRating": {
         "@type": "AggregateRating",
@@ -1105,6 +1114,9 @@
                 {% if export_list %}
                 <button class="tab-btn" data-tab="export">{{ ui.tab_export }}</button>
                 {% endif %}
+                {% if product_faqs %}
+                <button class="tab-btn" data-tab="faq">FAQ</button>
+                {% endif %}
             </div>
 
             <!-- Açıklama -->
@@ -1132,7 +1144,7 @@
                     <thead>
                         <tr>
                             <th>{{ ui.amount }}</th>
-                            <th>{{ ui.discount }}</th>
+                            <th>{{ ui.discount | capitalize }}</th>
                             <th>{{ ui.unit_price }}</th>
                         </tr>
                     </thead>
@@ -1273,6 +1285,25 @@
                     <span class="export-tag">{{ country }}</span>
                     {% endfor %}
                 </div>
+            </div>
+            {% endif %}
+
+            <!-- SSS (FAQ) -->
+            {% if product_faqs %}
+            <div class="tab-panel" id="tab-faq">
+                <dl style="margin:0;display:flex;flex-direction:column;gap:16px;">
+                    {% for item in product_faqs %}
+                    <div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;">
+                        <dt style="padding:14px 18px;font-size:14px;font-weight:700;color:var(--text-primary);background:var(--surface-2);cursor:pointer;"
+                            onclick="this.nextElementSibling.hidden=!this.nextElementSibling.hidden">
+                            {{ item.q }}
+                        </dt>
+                        <dd hidden style="padding:14px 18px;margin:0;font-size:14px;color:var(--text-secondary);line-height:1.7;">
+                            {{ item.a }}
+                        </dd>
+                    </div>
+                    {% endfor %}
+                </dl>
             </div>
             {% endif %}
 
@@ -1520,28 +1551,27 @@
 
     {% include 'partials/site_footer.html' %}
 
-    {# Product schema — Google Rich Results için yapısal veri #}
+    {# FAQPage schema — SSS varsa GEO/AI görünürlüğü için #}
+    {% if product_faqs %}
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": "{{ (trans.name if trans and trans.name else '') | e }}",
-        "description": "{{ (trans.description if trans and trans.description else '') | e | truncate(500, True, '') }}",
-        {% if product.image %}"image": "{{ product.image | e }}",{% endif %}
-        "brand": {
-            "@type": "Brand",
-            "name": "Heni B2B"
-        },
-        "offers": {
-            "@type": "AggregateOffer",
-            "priceCurrency": "USD",
-            "lowPrice": "{{ '%.2f' | format(product.unit_price * (1 - discount_tiers[-1].rate) if discount_tiers else product.unit_price) }}",
-            "highPrice": "{{ '%.2f' | format(product.unit_price) }}",
-            "offerCount": "5",
-            "availability": "https://schema.org/InStock"
-        }
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {% for item in product_faqs %}
+        {
+          "@type": "Question",
+          "name": {{ item.q | tojson }},
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": {{ item.a | tojson }}
+          }
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+      ]
     }
     </script>
+    {% endif %}
 
     {# BreadcrumbList schema — gezinti hiyerarşisi #}
     <script type="application/ld+json">

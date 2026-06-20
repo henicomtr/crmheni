@@ -291,3 +291,29 @@
     </div>
 
 </footer>
+
+{# Organization schema — E-E-A-T sertifika sinyalleri için #}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "{{ (site.site_name or 'Heni Kozmetik') | e }}",
+  "url": "https://henib2b.com",
+  {% if site and site.logo_url %}"logo": "{{ ('https://henib2b.com' + site.logo_url) if site.logo_url.startswith('/') else site.logo_url }}",{% endif %}
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Eskişehir",
+    "addressCountry": "TR"
+  }
+  {% if site and (site.social_instagram or site.social_linkedin or site.social_twitter) %}
+  ,"sameAs": [
+    {% set _sa = [] %}
+    {% if site.social_instagram %}{% set _ = _sa.append('"' + site.social_instagram + '"') %}{% endif %}
+    {% if site.social_linkedin %}{% set _ = _sa.append('"' + site.social_linkedin + '"') %}{% endif %}
+    {% if site.social_twitter %}{% set _ = _sa.append('"' + site.social_twitter + '"') %}{% endif %}
+    {{ _sa | join(',\n    ') | safe }}
+  ]
+  {% endif %}
+  ,"description": "ISO 9001:2015, ISO 14001:2015, ISO 45001:2018 ve GMP-TS EN ISO sertifikalı B2B temizlik ve kişisel bakım ürünleri üreticisi."
+}
+</script>

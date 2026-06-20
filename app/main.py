@@ -311,6 +311,23 @@ def _migrate_products():
 
 _migrate_products()
 
+# ── ProductTranslation tablo migrasyonu ─────────────────────────────
+def _migrate_product_translations():
+    """product_translations tablosuna faq_json sütunu ekler (yoksa)."""
+    insp = inspect(engine)
+    if "product_translations" not in insp.get_table_names():
+        return
+    existing = {c["name"] for c in insp.get_columns("product_translations")}
+    if "faq_json" not in existing:
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE product_translations ADD COLUMN faq_json TEXT"))
+                conn.commit()
+        except Exception:
+            pass
+
+_migrate_product_translations()
+
 # ── CategoryContent seed ────────────────────────────────────────────
 def _seed_categories():
     """Tüm kategoriler için CategoryContent kaydı oluşturur (yoksa)."""
